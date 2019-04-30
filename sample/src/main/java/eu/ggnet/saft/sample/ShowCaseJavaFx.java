@@ -36,10 +36,10 @@ public class ShowCaseJavaFx extends Application {
     public Pane build() {
         MenuBar mb = new MenuBar();
         for (Smenu smenu : MENUS) {
-            Menu submenu = new Menu(smenu.getName());
-            for (Sitem item : smenu.getItems()) {
-                MenuItem menuItem = new MenuItem(item.getKey());
-                menuItem.setOnAction((e) -> item.getValue().run());
+            Menu submenu = new Menu(smenu.name);
+            for (Sitem item : smenu.items) {
+                MenuItem menuItem = new MenuItem(item.key);
+                menuItem.setOnAction((e) -> item.value.run());
                 submenu.getItems().add(menuItem);
             }
             mb.getMenus().add(submenu);

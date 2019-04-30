@@ -18,6 +18,7 @@ package eu.ggnet.saft.core.ui;
 
 import java.awt.Component;
 import java.awt.Window;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javax.swing.SwingUtilities;
@@ -28,8 +29,6 @@ import javafx.stage.Stage;
 
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.builder.StaticParentMapperJavaFx;
-
-import lombok.NonNull;
 
 /**
  * Parent, that can hold either a swingOrMain or a javafx parent.
@@ -82,8 +81,8 @@ public abstract class UiParent {
 
         private final Node javafxElement;
 
-        public UiParentSwingModeJavaFxElement(@NonNull Node javafxElement) {
-            this.javafxElement = javafxElement;
+        public UiParentSwingModeJavaFxElement(Node javafxElement) {
+            this.javafxElement = Objects.requireNonNull(javafxElement);
         }
 
         @Override
@@ -97,8 +96,8 @@ public abstract class UiParent {
 
         private final Component swingElement;
 
-        public UiParentSwingModeSwingElement(@NonNull Component swingElement) {
-            this.swingElement = swingElement;
+        public UiParentSwingModeSwingElement(Component swingElement) {
+            this.swingElement = Objects.requireNonNull(swingElement);
         }
 
         @Override
@@ -112,8 +111,8 @@ public abstract class UiParent {
 
         private final Node javafxElement;
 
-        public UiParentJavaFxModeJavaFxElement(@NonNull Node javafxElement) {
-            this.javafxElement = javafxElement;
+        public UiParentJavaFxModeJavaFxElement(Node javafxElement) {
+            this.javafxElement = Objects.requireNonNull(javafxElement);
         }
 
         @Override
@@ -131,8 +130,8 @@ public abstract class UiParent {
 
         private final Component swingElement;
 
-        public UiParentJavaFxModeSwingElement(@NonNull Component swingElement) {
-            this.swingElement = swingElement;
+        public UiParentJavaFxModeSwingElement(Component swingElement) {
+            this.swingElement = Objects.requireNonNull(swingElement);
         }
 
         @Override
@@ -166,7 +165,8 @@ public abstract class UiParent {
      * @param swingParent the swingparent to be wrapped, must not be null.
      * @return a new wrapped parrent of a swingOrMain component.
      */
-    public static UiParent of(@NonNull Component swingParent) {
+    public static UiParent of(Component swingParent) {
+        Objects.requireNonNull(swingParent);
         if ( UiCore.isSwing() ) return new UiParentSwingModeSwingElement(swingParent);
         if ( UiCore.isFx() ) return new UiParentJavaFxModeSwingElement(swingParent);
         throw new IllegalArgumentException("UiCore is neither in FX nore in Swing mode. Is the Core running ?");
@@ -178,7 +178,8 @@ public abstract class UiParent {
      * @param javafxElement a javafxparent, must not be null.
      * @return a new wrapped parrent of a javafx parent
      */
-    public static UiParent of(@NonNull Node javafxElement) {
+    public static UiParent of(Node javafxElement) {
+        Objects.requireNonNull(javafxElement);
         if ( UiCore.isSwing() ) return new UiParentSwingModeJavaFxElement(javafxElement);
         if ( UiCore.isFx() ) return new UiParentJavaFxModeJavaFxElement(javafxElement);
         throw new IllegalArgumentException("UiCore is neither in FX nore in Swing mode. Is the Core running ?");

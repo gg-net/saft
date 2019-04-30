@@ -4,26 +4,20 @@
     <parent>
         <groupId>eu.ggnet.saft</groupId>
         <artifactId>saft</artifactId>
-        <version>1.0</version>
+        <version>1.1-SNAPSHOT</version>
     </parent>
     <artifactId>saft-sample</artifactId>
     <name>GG-Net Saft Sample</name>
     <packaging>jar</packaging>
     <dependencies>
-        <!--        <dependency>
-            <groupId>${javaee.groupId}</groupId>
-            <artifactId>${javaee.artifactId}</artifactId>
-            <version>${javaee.version}</version>
-        </dependency>-->
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>saft-experimental</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>

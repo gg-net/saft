@@ -18,24 +18,33 @@ package eu.ggnet.saft.core.ui;
 
 import javax.swing.JOptionPane;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import javafx.scene.control.Alert;
 
 /**
  * Type of an Alert.
  *
  * @author oliver.guenther
  */
-@AllArgsConstructor
 public enum AlertType {
     INFO(JOptionPane.INFORMATION_MESSAGE, javafx.scene.control.Alert.AlertType.INFORMATION),
     WARNING(JOptionPane.WARNING_MESSAGE, javafx.scene.control.Alert.AlertType.WARNING),
     ERROR(JOptionPane.ERROR_MESSAGE, javafx.scene.control.Alert.AlertType.ERROR);
 
-    @Getter
+    private AlertType(int optionPaneType, Alert.AlertType javaFxType) {
+        this.optionPaneType = optionPaneType;
+        this.javaFxType = javaFxType;
+    }
+
     private final int optionPaneType;
 
-    @Getter
     private final javafx.scene.control.Alert.AlertType javaFxType;
 
+    public int getOptionPaneType() {
+        return optionPaneType;
+    }
+
+    public Alert.AlertType getJavaFxType() {
+        return javaFxType;
+    }
+    
 }

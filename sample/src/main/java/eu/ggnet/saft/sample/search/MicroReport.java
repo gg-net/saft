@@ -16,16 +16,16 @@
  */
 package eu.ggnet.saft.sample.search;
 
-import lombok.AllArgsConstructor;
-import lombok.ToString;
-
 /**
  *
  * @author oliver.guenther
  */
-@AllArgsConstructor
-@ToString
 public class MicroReport implements SearchResult {
+
+    public MicroReport(long reportId, String shortDescription) {
+        this.reportId = reportId;
+        this.shortDescription = shortDescription;
+    }
 
     public final long reportId;
 
@@ -36,4 +36,9 @@ public class MicroReport implements SearchResult {
         return shortDescription;
     }
 
+    @Override
+    public String toString() {
+        return "MicroReport{" + "reportId=" + reportId + ", shortDescription=" + shortDescription + '}';
+    }
+    
 }

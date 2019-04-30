@@ -29,8 +29,6 @@ import eu.ggnet.saft.core.ui.StoreLocation;
 import eu.ggnet.saft.core.ui.FxCore;
 import eu.ggnet.saft.sample.support.*;
 
-import lombok.Value;
-
 import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
 
 /**
@@ -43,8 +41,11 @@ public abstract class ShowCaseUniversal {
 
     private final static Random R = new Random();
 
-    @Value
     public final static class S implements IdSupplier {
+
+        public S(String id) {
+            this.id = id;
+        }
 
         private final String id;
 
@@ -55,26 +56,34 @@ public abstract class ShowCaseUniversal {
 
     }
 
-    @Value
     protected static class Sitem {
 
-        private String key;
+        public Sitem(String key, Runnable value) {
+            this.key = key;
+            this.value = value;
+        }
+        
+        public final String key;
 
-        private Runnable value;
+        public final Runnable value;
 
     }
 
-    @Value
     protected static class Smenu {
+
+        public Smenu(String name, List<Sitem> items) {
+            this.name = name;
+            this.items = items;
+        }
 
         public Smenu(String name, Sitem... items) {
             this.name = name;
             this.items = Arrays.asList(items);
         }
 
-        private String name;
+        public final String name;
 
-        private List<Sitem> items;
+        public final List<Sitem> items;
     }
 
     protected final List<Smenu> MENUS;

@@ -25,16 +25,16 @@ import javafx.stage.FileChooser;
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.SwingCore;
 
-import lombok.Setter;
-import lombok.experimental.Accessors;
-
 import static eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type.NULL_RESULT;
 
-@Accessors(fluent = true)
 public class FileChooserBuilder {
 
-    @Setter
     private String title;
+
+    public FileChooserBuilder title(String title) {
+        this.title = title;
+        return this;
+    }
 
     /**
      * Opens a file chooser and returns the selected file or empty.

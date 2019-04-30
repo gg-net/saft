@@ -30,10 +30,10 @@ public class ShowCaseSwing extends ShowCaseUniversal {
     public JPanel build() {
         MainPanelAddButtons main = new MainPanelAddButtons();
         for (Smenu smenu : MENUS) {
-            JMenu submenu = new JMenu(smenu.getName());
-            for (Sitem item : smenu.getItems()) {
-                JMenuItem menuItem = new JMenuItem(item.getKey());
-                menuItem.addActionListener((e) -> item.getValue().run());
+            JMenu submenu = new JMenu(smenu.name);
+            for (Sitem item : smenu.items) {
+                JMenuItem menuItem = new JMenuItem(item.key);
+                menuItem.addActionListener((e) -> item.value.run());
                 submenu.add(menuItem);
             }
             main.getMenuBar().add(submenu);

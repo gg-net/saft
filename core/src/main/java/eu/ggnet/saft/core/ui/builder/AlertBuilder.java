@@ -14,9 +14,6 @@ import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.*;
 
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
 import static eu.ggnet.saft.core.ui.AlertType.INFO;
 
 /**
@@ -25,8 +22,7 @@ import static eu.ggnet.saft.core.ui.AlertType.INFO;
  *
  * @author oliver.guenther
  */
-@ToString
-@EqualsAndHashCode
+// TODO: Don't know if it was used ever @EqualsAndHashCode
 public class AlertBuilder {
 
     private final static Logger L = LoggerFactory.getLogger(AlertBuilder.class);
@@ -120,4 +116,9 @@ public class AlertBuilder {
         }
     }
 
+    @Override
+    public String toString() {
+        return "AlertBuilder{" + "title=" + title + ", message=" + message + ", parent=" + parent + '}';
+    }
+    
 }

@@ -16,15 +16,14 @@
  */
 package eu.ggnet.saft.sample.search;
 
-import eu.ggnet.saft.api.IdSupplier;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
-import lombok.ToString;
+import eu.ggnet.saft.api.IdSupplier;
 
 /**
  *
  * @author oliver.guenther
  */
-@ToString
 public class MicroUnit implements SearchResult,IdSupplier {
     
     public final int uniqueUnitId;
@@ -36,6 +35,7 @@ public class MicroUnit implements SearchResult,IdSupplier {
         this.shortDescription = shortDescription;
     }
 
+    @Override
     public String shortDescription() {
         return shortDescription;
     }
@@ -43,6 +43,11 @@ public class MicroUnit implements SearchResult,IdSupplier {
     @Override
     public String id() {
         return "" + uniqueUnitId;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this);
     }
     
 }

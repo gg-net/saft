@@ -23,9 +23,6 @@ import javafx.concurrent.Worker;
 
 import eu.ggnet.saft.core.UiCore;
 
-import lombok.Getter;
-import lombok.Setter;
-import lombok.experimental.Accessors;
 
 /**
  * Builder for progress observer.
@@ -34,13 +31,18 @@ import lombok.experimental.Accessors;
  *
  * @author oliver.guenther
  */
-@Accessors(fluent = true)
 public class ProgressBuilder {
 
-    @Setter
-    @Getter
     private String title;
 
+    public String title() {
+        return title;
+    }
+
+    public void title(String title) {
+        this.title = title;
+    }
+    
     /**
      * Wrapes a function with progress connectivity. Enables the progress information in the main ui while the supplied function is run.
      * Starts a progress display then the returned function is called and stops it, then its complete.

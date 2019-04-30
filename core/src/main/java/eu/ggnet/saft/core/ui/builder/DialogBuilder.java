@@ -81,7 +81,11 @@ public class DialogBuilder {
     private <T, P, V extends Dialog<T>> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> dialogProducer) {
         Objects.requireNonNull(dialogProducer, "The javafxPaneProducer is null, not allowed");
         // TODO: the parent handling must be optimized. And the javaFx
-        UiParameter parm = UiParameter.builder().type(Type.DIALOG).id(preBuilder.id).title(preBuilder.title).frame(preBuilder.frame)
+                
+      //  UiParameter parm = new UiParameter(UiParameter.init().type(Type.DIALOG).id(preBuilder.id).title(preBuilder.title).frame(preBuilder.frame)
+       //         .once(preBuilder.once).modality(preBuilder.modality).build(), preBuilder.uiParent);
+                                
+                UiParameter.builder().type(Type.DIALOG).id(preBuilder.id).title(preBuilder.title).frame(preBuilder.frame)
                 .once(preBuilder.once).modality(preBuilder.modality).uiParent(preBuilder.uiParent).build();
 
         // Produce the ui instance

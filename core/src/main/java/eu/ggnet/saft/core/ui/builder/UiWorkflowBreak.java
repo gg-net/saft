@@ -16,26 +16,31 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
-import lombok.*;
-
 /**
  * Used to indicate, that a Workflowbeak should happen, should never been ignored in the CompletableFuture.handle() as its expected behavior.
  *
  * @author oliver.guenther
  */
-@EqualsAndHashCode(callSuper = false)
-@ToString
+// TODO: Don't know if this is ever used @EqualsAndHashCode(callSuper = false)
 public class UiWorkflowBreak extends RuntimeException {
 
     public static enum Type {
         ONCE, NULL_RESULT
     }
 
-    @Getter
     private final Type type;
 
     UiWorkflowBreak(Type type) {
         this.type = type;
     }
 
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public String toString() {
+        return "UiWorkflowBreak{" + "type=" + type + '}';
+    }
+    
 }

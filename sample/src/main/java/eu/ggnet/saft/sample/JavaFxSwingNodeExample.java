@@ -32,7 +32,6 @@ import javafx.stage.Stage;
 
 import eu.ggnet.saft.core.ui.SwingSaft;
 
-import lombok.Value;
 
 /**
  *
@@ -40,9 +39,13 @@ import lombok.Value;
  */
 public class JavaFxSwingNodeExample extends Application {
 
-    @Value
     public static class C {
 
+        private C(JButton button, JPanel panel) {
+            this.button = button;
+            this.panel = panel;
+        }
+        
         private final JButton button;
 
         private final JPanel panel;

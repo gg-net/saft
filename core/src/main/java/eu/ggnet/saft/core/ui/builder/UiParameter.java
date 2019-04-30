@@ -27,6 +27,7 @@ import javax.swing.JComponent;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 
+import org.inferred.freebuilder.FreeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +43,51 @@ import lombok.experimental.Wither;
  *
  * @author oliver.guenther
  */
-@AllArgsConstructor
+// @AllArgsConstructor
 public class UiParameter {
+
+    @FreeBuilder
+    public static abstract class Constants {
+
+        abstract boolean once();
+
+        abstract boolean frame();
+
+        abstract Optional<String> title();
+
+        abstract Optional<String> id();
+
+        abstract Optional<Modality> modality();
+
+        abstract Type type();
+
+        abstract Optional<Class<?>> rootClass();
+
+        /**
+         * Returns a title, either set or via class annotation.
+         * 
+         * @return a title, either set or via class annotation.
+         * @throws IllegalStateException if rootClass is not set.
+         */
+        public String toTitle() throws IllegalStateException {
+            if ( !rootClass().isPresent() ) throw new IllegalStateException(("RootClass not set, toTitle() not allowed"));
+            return title().orElse(TitleUtil.title(rootClass().get(), id().orElse(null)));
+        }
+
+        static class Builder extends UiParameter_Constants_Builder {
+
+            public Builder() {
+                once(false);
+                frame(false);
+            }
+
+        }
+
+    }
+
+    public static UiParameter.Constants.Builder init() {
+        return new Constants.Builder();
+    }
 
     /**
      * Type of the build process.
@@ -84,32 +128,35 @@ public class UiParameter {
 
     private final Logger L = LoggerFactory.getLogger(UiParameter.class);
 
-    private boolean once;
+    private final boolean once;
 
     /**
      * An optional id. Replaces the id part in a title like: this is a title of {id}
      * Default = null.
      */
-    private String id;
+    private Optional<String> id;
 
     /**
      * An optional title. If no title is given, the classname is used.
      * Default = null
      */
-    private String title;
+    private final Optional<String> title;
 
     /**
      * Enables the Frame mode, makeing the created window a first class element.
      * Default = false
      */
-    private boolean frame;
+    private final boolean frame;
 
     /**
      * Optional value for the modality.
      * Default = null
      */
-    @Getter
-    private Modality modality;
+    private Optional<Modality> modality;
+
+    public Optional<Modality> modality() {
+        return modality;
+    }
 
     /**
      * Type of the build process, never null.
@@ -148,13 +195,17 @@ public class UiParameter {
     @Getter
     private javafx.scene.control.Dialog dialog;
 
+    UiParameter(UiParameter.Constants c, UiParent uip) {
+        this(c.once(), c.frame(), c.id().orElse(null), c.title().orElse(null), c.modality().orElse(null), uip, c.type());
+    }
+
     @Builder
     UiParameter(Boolean once, Boolean frame, String id, String title, Modality modality, UiParent uiParent, Type type) {
         this.once = once == null ? false : once;
         this.frame = frame == null ? false : frame;
-        this.id = id;
-        this.title = title;
-        this.modality = modality;
+        this.id = Optional.ofNullable(id);
+        this.title = Optional.ofNullable(title);
+        this.modality = Optional.ofNullable(modality);
         if ( uiParent != null ) {
             this.uiParent = uiParent;
         } else if ( UiCore.getMainFrame() != null ) {
@@ -178,7 +229,7 @@ public class UiParameter {
     public UiParameter withPreResult(Object preResult) {
         if ( preResult == null ) return this;
         this.preResult = preResult;
-        if ( id == null && preResult instanceof IdSupplier ) id = ((IdSupplier)preResult).id();
+        if ( !id.isPresent() && preResult instanceof IdSupplier ) id = Optional.of(((IdSupplier)preResult).id());
         return this;
     }
 
@@ -218,8 +269,8 @@ public class UiParameter {
      * @return the modality for swingOrMain
      */
     public Dialog.ModalityType toSwingModality() {
-        if ( modality == null ) return Dialog.ModalityType.MODELESS;
-        switch (modality) {
+        if ( !modality.isPresent() ) return Dialog.ModalityType.MODELESS;
+        switch (modality.get()) {
             case APPLICATION_MODAL:
                 return Dialog.ModalityType.APPLICATION_MODAL;
             case WINDOW_MODAL:
@@ -236,7 +287,7 @@ public class UiParameter {
      * @return the title
      */
     public String toTitle() {
-        return title == null ? TitleUtil.title(rootClass, id) : title;
+        return title.orElse(TitleUtil.title(rootClass, id.orElse(null)));
     }
 
     /**

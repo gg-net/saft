@@ -18,7 +18,6 @@ package eu.ggnet.saft.sample.support;
 
 import eu.ggnet.saft.core.Ui;
 
-import lombok.Getter;
 
 /**
  * Useful Helper for Ok/Cancel Button behavior in Swing, see Samples: support.DocumentAdressUpdateViewOkCanceler.
@@ -27,7 +26,6 @@ import lombok.Getter;
  */
 public class DialogButtonPanel extends javax.swing.JPanel {
 
-    @Getter
     private boolean ok = false;
 
     public DialogButtonPanel() {
@@ -40,6 +38,10 @@ public class DialogButtonPanel extends javax.swing.JPanel {
         cancelButton.setText(cancel);
     }
 
+    public boolean isOk() {
+        return ok;
+    }
+    
     /** This method is called from within the constructor to
      * initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is

@@ -363,7 +363,7 @@ public final class BuilderUtil {
         Pane pane = in.getPane();
         Stage stage = new Stage();
         if ( !in.isFramed() ) stage.initOwner(in.getUiParent().fxOrMain());
-        if ( in.getModality() != null ) stage.initModality(in.getModality());
+        in.modality().ifPresent(m -> stage.initModality(m));
         stage.setTitle(in.toTitle());
         stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass()));
         registerActiveWindows(in.toKey(), stage);
@@ -377,7 +377,7 @@ public final class BuilderUtil {
     static UiParameter constructDialog(UiParameter in) {
         Dialog<?> dialog = in.getDialog();
         if ( !in.isFramed() ) dialog.initOwner(in.getUiParent().fxOrMain());
-        if ( in.getModality() != null ) dialog.initModality(in.getModality());
+        in.modality().ifPresent(m -> dialog.initModality(m));
         dialog.setTitle(in.toTitle());
 //        stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); Not in dialog avialable.
         if ( in.isOnce() ) throw new IllegalArgumentException("Dialog with once mode is not supported yet");

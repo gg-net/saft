@@ -18,13 +18,10 @@ package eu.ggnet.saft.sample.search;
 
 import eu.ggnet.saft.api.IdSupplier;
 
-import lombok.ToString;
-
 /**
  *
  * @author oliver.guenther
  */
-@ToString
 public class MicroDossier implements SearchResult, IdSupplier {
 
     public final long dossierId;
@@ -46,4 +43,9 @@ public class MicroDossier implements SearchResult, IdSupplier {
         return "" + dossierId;
     }
 
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "{" + "dossierId=" + dossierId + ", shortDescription=" + shortDescription + '}';
+    }
+    
 }

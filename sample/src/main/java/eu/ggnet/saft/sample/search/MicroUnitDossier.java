@@ -16,15 +16,13 @@
  */
 package eu.ggnet.saft.sample.search;
 
-import lombok.AllArgsConstructor;
-import lombok.ToString;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+
 
 /**
  *
  * @author oliver.guenther
  */
-@AllArgsConstructor
-@ToString
 public class MicroUnitDossier implements SearchResult {
 
     public final int uniqueUnitId;
@@ -32,10 +30,21 @@ public class MicroUnitDossier implements SearchResult {
     public final long dossierId;
     
     public final String shortDescription;
-    
+
+    public MicroUnitDossier(int uniqueUnitId, long dossierId, String shortDescription) {
+        this.uniqueUnitId = uniqueUnitId;
+        this.dossierId = dossierId;
+        this.shortDescription = shortDescription;
+    }
+
     @Override
     public String shortDescription() {
         return shortDescription;
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilder.toString(this);
     }
     
 }

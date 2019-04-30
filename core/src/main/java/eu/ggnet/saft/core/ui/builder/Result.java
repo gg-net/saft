@@ -16,8 +16,7 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
-import java.util.NoSuchElementException;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
@@ -25,8 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Ui;
-
-import lombok.NonNull;
 
 /**
  * Result handler for ui activity, implements optional and completableFuture.
@@ -39,8 +36,8 @@ public class Result<T> {
 
     private CompletableFuture<T> cf = null;
 
-    public Result(@NonNull CompletableFuture<T> cf) {
-        this.cf = cf;
+    public Result(CompletableFuture<T> cf) {
+        this.cf = Objects.requireNonNull(cf);
     }
 
     /**

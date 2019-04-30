@@ -21,9 +21,8 @@ import java.util.function.Consumer;
 
 import javax.swing.Action;
 
-import eu.ggnet.saft.experimental.ops.DescriptiveConsumerFactory;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 
-import lombok.*;
 
 /**
  * A Factory for Actions.
@@ -32,12 +31,9 @@ import lombok.*;
  * <p>
  * @author oliver.guenther
  */
-// Experimental
 public interface ActionFactory {
 
-    @Getter
-    @EqualsAndHashCode
-    @ToString
+// TODO: Verify, if this was ever used.   @EqualsAndHashCode 
     public static class MetaAction {
 
         private final Action action;
@@ -64,6 +60,24 @@ public interface ActionFactory {
             menuNames.add(Objects.requireNonNull(subMenu, "Menu name must not be null"));
             this.toolbar = false;
         }
+        
+        @Override
+        public String toString() {
+            return ReflectionToStringBuilder.toString(this);
+        }
+
+        public Action getAction() {
+            return action;
+        }
+
+        public List<String> getMenuNames() {
+            return menuNames;
+        }
+
+        public boolean isToolbar() {
+            return toolbar;
+        }
+        
     }
 
     default List<MetaAction> createMetaActions() {
