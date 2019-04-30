@@ -16,53 +16,60 @@
  */
 package eu.ggnet.saft.test.javafx;
 
+import javafx.scene.control.Button;
 import javafx.scene.control.Labeled;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.stage.Stage;
 
-import org.junit.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.testfx.api.FxRobot;
 import org.testfx.api.FxToolkit;
-import org.testfx.framework.junit.ApplicationTest;
+import org.testfx.framework.junit5.ApplicationExtension;
+import org.testfx.framework.junit5.Start;
 
 import eu.ggnet.saft.core.UiCore;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.testfx.assertions.api.Assertions.assertThat;
 
 /**
  *
  * @author oliver.guenther
  */
-public class SimpleTest extends ApplicationTest {
+@ExtendWith(ApplicationExtension.class)
+public class SimpleTest  {
 
     static Logger L = LoggerFactory.getLogger(SimpleTest.class);
 
-    @Override
+    @Start
     public void start(Stage stage) throws Exception {
-        L.info("B");
         UiCore.startJavaFx(stage, () -> new MainPane());
-        L.info("C");
     }
 
     @Test
-    @Ignore // TODO: UI Tests seam to fail on different Screne sizes or OSs.
-    public void test() throws InterruptedException {
-        Thread.sleep(500);
-        clickOn("#showPane");
-        Thread.sleep(500);
+    // @Ignore // TODO: UI Tests seam to fail on different Screne sizes or OSs.
+    public void test(FxRobot r) throws InterruptedException {
+        Thread.sleep(250);
+        Button showPaneButton = r.lookup("#showPane").queryButton();
+        assertThat(showPaneButton).isNotNull();        
+        r.clickOn(showPaneButton);
+        
+        Thread.sleep(250);
 
         // Finding the label in the opened window. If it exists, it implies, that the dialog is visible.
-        Labeled label = lookup("#label").queryLabeled();
-        assertThat(label).isNotNull().returns("A Text", Labeled::getText);
+        Labeled label = r.lookup("#label").queryLabeled();
+        assertThat(label).isNotNull().hasText("A Text");
 
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    public void tearDown(FxRobot robot) throws Exception {
         FxToolkit.hideStage();
-        release(new KeyCode[]{});
-        release(new MouseButton[]{});
+        robot.release(new KeyCode[]{});
+        robot.release(new MouseButton[]{});
     }
 }
