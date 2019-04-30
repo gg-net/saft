@@ -18,7 +18,6 @@ package eu.ggnet.saft.core.ui.builder;
 
 import java.awt.Dialog;
 import java.awt.Window;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -32,62 +31,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.api.IdSupplier;
-import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.*;
-
-import lombok.*;
-import lombok.experimental.Wither;
 
 /**
  * Internal Parameter class.
  *
  * @author oliver.guenther
  */
-// @AllArgsConstructor
-public class UiParameter {
+@FreeBuilder
+public abstract class UiParameter {
 
-    @FreeBuilder
-    public static abstract class Constants {
-
-        abstract boolean once();
-
-        abstract boolean frame();
-
-        abstract Optional<String> title();
-
-        abstract Optional<String> id();
-
-        abstract Optional<Modality> modality();
-
-        abstract Type type();
-
-        abstract Optional<Class<?>> rootClass();
-
-        /**
-         * Returns a title, either set or via class annotation.
-         * 
-         * @return a title, either set or via class annotation.
-         * @throws IllegalStateException if rootClass is not set.
-         */
-        public String toTitle() throws IllegalStateException {
-            if ( !rootClass().isPresent() ) throw new IllegalStateException(("RootClass not set, toTitle() not allowed"));
-            return title().orElse(TitleUtil.title(rootClass().get(), id().orElse(null)));
-        }
-
-        static class Builder extends UiParameter_Constants_Builder {
-
-            public Builder() {
-                once(false);
-                frame(false);
-            }
-
-        }
-
-    }
-
-    public static UiParameter.Constants.Builder init() {
-        return new Constants.Builder();
-    }
+    private final static Logger L = LoggerFactory.getLogger(UiParameter.class);
 
     /**
      * Type of the build process.
@@ -97,7 +51,7 @@ public class UiParameter {
 
             @Override
             public Object selectRelevantInstance(UiParameter p) {
-                return p.getPane();
+                return p.pane().get();
             }
 
         },
@@ -105,20 +59,20 @@ public class UiParameter {
 
             @Override
             public Object selectRelevantInstance(UiParameter p) {
-                return p.getController();
+                return p.fxController().get();
             }
         },
         DIALOG {
 
             @Override
             public Object selectRelevantInstance(UiParameter p) {
-                return p.getDialog();
+                return p.dialog().get();
             }
         }, SWING {
 
             @Override
             public Object selectRelevantInstance(UiParameter p) {
-                return p.getJPanel();
+                return p.jPanel().get();
             }
         };
 
@@ -126,98 +80,79 @@ public class UiParameter {
 
     }
 
-    private final Logger L = LoggerFactory.getLogger(UiParameter.class);
+    abstract boolean once();
 
-    private final boolean once;
+    abstract boolean frame();
 
-    /**
-     * An optional id. Replaces the id part in a title like: this is a title of {id}
-     * Default = null.
-     */
-    private Optional<String> id;
+    abstract Optional<String> title();
 
-    /**
-     * An optional title. If no title is given, the classname is used.
-     * Default = null
-     */
-    private final Optional<String> title;
+    abstract Optional<String> id();
 
-    /**
-     * Enables the Frame mode, makeing the created window a first class element.
-     * Default = false
-     */
-    private final boolean frame;
+    abstract Optional<Modality> modality();
 
-    /**
-     * Optional value for the modality.
-     * Default = null
-     */
-    private Optional<Modality> modality;
+    abstract Type type();
 
-    public Optional<Modality> modality() {
-        return modality;
-    }
+    abstract UiParent uiParent();
 
-    /**
-     * Type of the build process, never null.
-     */
-    @Getter
-    private final Type type;
+    abstract Optional<Object> preResult();
 
-    // --- Elements, which are constructed on the run, some may be null.
-    @Getter
-    private UiParent uiParent;
+    abstract Optional<Class<?>> rootClass();
 
-    @Wither
-    @Getter
-    private Class<?> rootClass = null;
+    abstract Optional<Pane> pane();
 
-    @Getter
-    private Object preResult;
+    abstract Optional<JComponent> jPanel();
 
-    @Wither
-    @Getter
-    private Pane pane;
+    abstract Optional<Window> window();
 
-    @Wither
-    @Getter
-    private JComponent jPanel;
+    abstract Optional<FxController> fxController();
 
-    @Wither
-    @Getter
-    private Window window;
+    abstract Optional<javafx.scene.control.Dialog> dialog();
 
-    @Wither
-    @Getter
-    private FxController controller;
+    abstract Builder toBuilder();
 
-    @Wither
-    @Getter
-    private javafx.scene.control.Dialog dialog;
+    static class Builder extends UiParameter_Builder {
 
-    UiParameter(UiParameter.Constants c, UiParent uip) {
-        this(c.once(), c.frame(), c.id().orElse(null), c.title().orElse(null), c.modality().orElse(null), uip, c.type());
-    }
-
-    @Builder
-    UiParameter(Boolean once, Boolean frame, String id, String title, Modality modality, UiParent uiParent, Type type) {
-        this.once = once == null ? false : once;
-        this.frame = frame == null ? false : frame;
-        this.id = Optional.ofNullable(id);
-        this.title = Optional.ofNullable(title);
-        this.modality = Optional.ofNullable(modality);
-        if ( uiParent != null ) {
-            this.uiParent = uiParent;
-        } else if ( UiCore.getMainFrame() != null ) {
-            this.uiParent = UiParent.of(UiCore.getMainFrame());
-        } else if ( UiCore.getMainStage() != null ) {
-            this.uiParent = null;
-            // TODO: Look into this Later
-            //  this.uiParent = UiParent.of(UiCore.getMainStage());
-        } else {
-            throw new IllegalStateException("No UiParent set and noe in core.");
+        @SuppressWarnings("OverridableMethodCallInConstructor")
+        public Builder() {
+            once(false);
+            frame(false);
         }
-        this.type = Objects.requireNonNull(type, "Type not set, not allowed");
+
+    }
+
+    @SuppressWarnings("NonPublicExported")
+    public static UiParameter.Builder builder() {
+        return new UiParameter.Builder();
+    }
+
+    @SuppressWarnings("NonPublicExported")
+    public static UiParameter.Builder fromPreBuilder(PreBuilder preBuilder) {
+        return new UiParameter.Builder()
+                .nullableId(preBuilder.id)
+                .nullableTitle(preBuilder.title)
+                .nullableModality(preBuilder.modality)
+                .frame(preBuilder.frame)
+                .once(preBuilder.once).uiParent(preBuilder.uiParent);
+    }
+
+    /**
+     * Returns a title, either set or via class annotation.
+     *
+     * @return a title, either set or via class annotation.
+     * @throws IllegalStateException if rootClass is not set.
+     */
+    public final String toTitle() throws IllegalStateException {
+        if ( !rootClass().isPresent() ) throw new IllegalStateException(("RootClass not set, toTitle() not allowed"));
+        return title().orElse(TitleUtil.title(rootClass().get(), id().orElse(null)));
+    }
+
+    /**
+     * Returns the reference class for icons and else.
+     *
+     * @return the reference class
+     */
+    public final Class<?> extractReferenceClass() {
+        return type().selectRelevantInstance(this).getClass();
     }
 
     /**
@@ -226,27 +161,28 @@ public class UiParameter {
      * @param preResult the pre result
      * @return a new UiParameter
      */
-    public UiParameter withPreResult(Object preResult) {
+    public final UiParameter withPreResult(Object preResult) {
         if ( preResult == null ) return this;
-        this.preResult = preResult;
-        if ( !id.isPresent() && preResult instanceof IdSupplier ) id = Optional.of(((IdSupplier)preResult).id());
-        return this;
+        Builder builder = toBuilder().preResult(preResult);
+        if ( !id().isPresent() && preResult instanceof IdSupplier ) builder.nullableId(((IdSupplier)preResult).id());
+        return builder.build();
+    }
+
+    public final UiParameter withRootClass(Class<?> clazz) {
+        return toBuilder().rootClass(clazz).build();
     }
 
     /**
      * Returns the once value, either set or inspected in the root class.
+     * The annotation has a higher priority over the set value.
      *
      * @return the once value, either set or inspected in the root class.
      */
-    public boolean isOnce() {
-        if ( rootClass != null ) {
-            Once onceAnnotation = rootClass.getAnnotation(Once.class);
-            if ( onceAnnotation != null ) {
-                L.debug("OnceAnnotation is set on {} with {}", rootClass, onceAnnotation.value());
-                return onceAnnotation.value();
-            }
-        }
-        return once;
+    public final boolean extractOnce() {
+        return rootClass().map(c -> c.getAnnotation(Once.class)).map(annotation -> {
+            L.debug("OnceAnnotation is set on {} with {}", rootClass().get(), annotation.value());
+            return annotation.value();
+        }).orElse(once());
     }
 
     /**
@@ -255,12 +191,8 @@ public class UiParameter {
      *
      * @return the frame value
      */
-    public boolean isFramed() {
-        if ( rootClass != null ) {
-            Frame frameAnnotaion = rootClass.getAnnotation(Frame.class);
-            if ( frameAnnotaion != null ) return true;
-        }
-        return frame;
+    public final boolean extractFrame() {
+        return rootClass().map(c -> c.getAnnotation(Frame.class)).map(a -> true).orElse(frame());
     }
 
     /**
@@ -268,9 +200,9 @@ public class UiParameter {
      *
      * @return the modality for swingOrMain
      */
-    public Dialog.ModalityType toSwingModality() {
-        if ( !modality.isPresent() ) return Dialog.ModalityType.MODELESS;
-        switch (modality.get()) {
+    public final Dialog.ModalityType asSwingModality() {
+        if ( !modality().isPresent() ) return Dialog.ModalityType.MODELESS;
+        switch (modality().get()) {
             case APPLICATION_MODAL:
                 return Dialog.ModalityType.APPLICATION_MODAL;
             case WINDOW_MODAL:
@@ -282,30 +214,12 @@ public class UiParameter {
     }
 
     /**
-     * Returns a title, either set or via class annotation.
-     *
-     * @return the title
-     */
-    public String toTitle() {
-        return title.orElse(TitleUtil.title(rootClass, id.orElse(null)));
-    }
-
-    /**
      * Returns a key string based on the root class and the id.
      *
      * @return a key string based on the root class and the id
      */
-    public String toKey() {
-        return rootClass.getName() + (id == null ? "" : ":" + id);
-    }
-
-    /**
-     * Returns the reference class for icons and else.
-     *
-     * @return the reference class
-     */
-    public Class<?> getRefernceClass() {
-        return type.selectRelevantInstance(this).getClass();
+    public final String toKey() {
+        return rootClass().get().getName() + id().map(i -> ":" + i).orElse("");
     }
 
     /**
@@ -313,17 +227,17 @@ public class UiParameter {
      *
      * @return the relevat implementation based on the type of a closedlistnener
      */
-    public Optional<ClosedListener> getClosedListenerImplemetation() {
-        if ( type.selectRelevantInstance(this) instanceof ClosedListener ) {
-            return Optional.of((ClosedListener)type.selectRelevantInstance(this));
+    public final Optional<ClosedListener> getClosedListenerImplemetation() {
+        if ( type().selectRelevantInstance(this) instanceof ClosedListener ) {
+            return Optional.of((ClosedListener)type().selectRelevantInstance(this));
         }
         return Optional.empty();
     }
 
-    public UiParameter optionalConsumePreResult() {
-        if ( preResult == null ) return this;
-        if ( !(type.selectRelevantInstance(this) instanceof Consumer) ) return this;
-        ((Consumer)type.selectRelevantInstance(this)).accept(preResult);
+    public final UiParameter optionalConsumePreResult() {
+        if ( !preResult().isPresent() ) return this;
+        if ( !(type().selectRelevantInstance(this) instanceof Consumer) ) return this;
+        ((Consumer)type().selectRelevantInstance(this)).accept(preResult().get());
         return this;
     }
 
@@ -333,7 +247,7 @@ public class UiParameter {
      * @return true if the StoreLocation annotation was set.
      */
     public boolean isStoreLocation() {
-        return (getRefernceClass().getAnnotation(StoreLocation.class) != null);
+        return (extractReferenceClass().getAnnotation(StoreLocation.class) != null);
     }
 
 }

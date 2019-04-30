@@ -34,9 +34,6 @@ import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
-import lombok.experimental.Accessors;
-
-
 /*
     I - 4 Fälle:
     a. nur zeigen. Ui consumiert nix und prodziert kein result
@@ -62,7 +59,6 @@ import lombok.experimental.Accessors;
  *
  * @author oliver.guenther
  */
-@Accessors(fluent = true)
 public class FxmlBuilder {
 
     private static final Logger L = LoggerFactory.getLogger(FxmlBuilder.class);
@@ -145,8 +141,7 @@ public class FxmlBuilder {
     private <T, P, V extends FxController> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Class<V> fxmlControllerClass) {
         Objects.requireNonNull(fxmlControllerClass, "The fxmlControllerClass is null, not allowed");
         // TODO: the parent handling must be optimized. And the javaFx
-        UiParameter parm = UiParameter.builder().type(Type.FXML).id(preBuilder.id).title(preBuilder.title).frame(preBuilder.frame)
-                .once(preBuilder.once).modality(preBuilder.modality).uiParent(preBuilder.uiParent).build();
+        UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.FXML).build();
 
         // Produce the ui instance
         CompletableFuture<UiParameter> uniChain = CompletableFuture

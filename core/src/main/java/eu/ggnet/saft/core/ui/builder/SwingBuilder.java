@@ -131,8 +131,7 @@ public class SwingBuilder {
     private <T, P, V extends JPanel> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> jpanelProducer) {
         Objects.requireNonNull(jpanelProducer, "The jpanelaneProducer is null, not allowed");
         // TODO: the parent handling must be optimized. And the javaFx
-        UiParameter parm = UiParameter.builder().type(Type.SWING).id(preBuilder.id).title(preBuilder.title).frame(preBuilder.frame)
-                .once(preBuilder.once).modality(preBuilder.modality).uiParent(preBuilder.uiParent).build();
+        UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.SWING).build();
 
         // Produce the ui instance
         CompletableFuture<UiParameter> uniChain = CompletableFuture

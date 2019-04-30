@@ -16,10 +16,6 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
-import eu.ggnet.saft.core.Dl;
-import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.Ui;
-
 import java.awt.Dialog.ModalityType;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -47,8 +43,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.ui.FxController;
-import eu.ggnet.saft.core.ui.ResultProducer;
+import eu.ggnet.saft.core.*;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;
 
@@ -196,7 +191,7 @@ public final class BuilderUtil {
         try {
             V panel = producer.call();
             L.debug("produceJPanel: {}", panel);
-            return parm.withRootClass(panel.getClass()).withJPanel(panel);
+            return parm.toBuilder().rootClass(panel.getClass()).jPanel(panel).build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
@@ -206,7 +201,7 @@ public final class BuilderUtil {
         try {
             V pane = producer.call();
             L.debug("producePane: {}", pane);
-            return parm.withRootClass(pane.getClass()).withPane(pane);
+            return parm.toBuilder().rootClass(pane.getClass()).pane(pane).build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
@@ -216,7 +211,7 @@ public final class BuilderUtil {
         try {
             V dialog = producer.call();
             L.debug("produceDialog: {}", dialog);
-            return parm.withRootClass(dialog.getClass()).withDialog(dialog).withPane(dialog.getDialogPane());
+            return parm.toBuilder().rootClass(dialog.getClass()).dialog(dialog).pane(dialog.getDialogPane()).build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
@@ -229,7 +224,7 @@ public final class BuilderUtil {
      * @return
      */
     static UiParameter modifyDialog(UiParameter in) {
-        Dialog dialog = in.getDialog();
+        Dialog dialog = in.dialog().get();
         dialog.getDialogPane().getScene().setRoot(new BorderPane()); // Remove the DialogPane form the Scene, otherwise an Exception is thrown
         dialog.getDialogPane().getButtonTypes().stream().map(t -> dialog.getDialogPane().lookupButton(t)).forEach(b -> { // Add Closing behavior on all buttons.
             ((Button)b).setOnAction(e -> {
@@ -242,7 +237,7 @@ public final class BuilderUtil {
 
     static UiParameter breakIfOnceAndActive(UiParameter in) {
         // Look into existing Instances, if in once mode and push up to the front if exist.
-        if ( !in.isOnce() ) return in;
+        if ( !in.extractOnce() ) return in;
         String key = in.toKey();
         if ( UiCore.isFx() && FxCore.ACTIVE_STAGES.containsKey(key) ) {
             Stage stage = FxCore.ACTIVE_STAGES.get(key).get();
@@ -282,7 +277,7 @@ public final class BuilderUtil {
     static UiParameter createSwingNode(UiParameter in) {
         SwingNode sn = new SwingNode();
         BorderPane p = new BorderPane(sn);
-        return in.withPane(p);
+        return in.toBuilder().pane(p).build();
     }
 
     /**
@@ -293,28 +288,27 @@ public final class BuilderUtil {
      * @return the uiparamter
      */
     static UiParameter wrapJPanel(UiParameter in) {
-        Objects.requireNonNull(in.getPane(), "Pane in UiParameter is null");
-        Objects.requireNonNull(in.getJPanel(), "JPanel in UiParameter is null");
-        if ( in.getPane().getChildren().isEmpty() ) throw new IllegalStateException("Supplied Pane has no children, but a SwingNode is expected");
-        SwingNode sn = in.getPane().getChildren().stream()
+        Pane pane = in.pane().orElseThrow(() -> new NoSuchElementException("Pane in UiParameter is null"));
+        JComponent jpanel = in.jPanel().orElseThrow(() -> new NoSuchElementException("JPanel in UiParameter is null"));
+        if ( pane.getChildren().isEmpty() ) throw new IllegalStateException("Supplied Pane has no children, but a SwingNode is expected");
+        SwingNode sn = pane.getChildren().stream()
                 .filter(n -> n instanceof SwingNode)
                 .map(n -> (SwingNode)n)
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("No Node of the supplied Pane is of type SwingNode"));
-        sn.setContent(in.getJPanel());
-        StaticParentMapperJavaFx.map(in.getJPanel(), sn);
+        sn.setContent(jpanel);
+        StaticParentMapperJavaFx.map(jpanel, sn);
 
-        Dimension preferredSize = in.getJPanel().getPreferredSize();
+        Dimension preferredSize = jpanel.getPreferredSize();
         L.debug("Setting Swing Size to JavaFx {}", preferredSize);
-        in.getPane().setPrefHeight(preferredSize.getHeight());
-        in.getPane().setPrefWidth(preferredSize.getWidth());
-
+        pane.setPrefHeight(preferredSize.getHeight());
+        pane.setPrefWidth(preferredSize.getWidth());
         return in;
     }
 
     // Call only from Swing EventQueue
     static UiParameter createJFXPanel(UiParameter in) {
-        return in.withJPanel(new JFXPanel());
+        return in.toBuilder().jPanel(new JFXPanel()).build();
     }
 
     /**
@@ -324,20 +318,22 @@ public final class BuilderUtil {
      * @return modified in.
      */
     static UiParameter wrapPane(UiParameter in) {
-        if ( !(in.getJPanel() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
-        JFXPanel fxp = (JFXPanel)in.getJPanel();
-        fxp.setScene(new Scene(in.getPane(), Color.TRANSPARENT));
+        if ( !(in.jPanel().get() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
+        JFXPanel fxp = (JFXPanel)in.jPanel().get();
+        fxp.setScene(new Scene(in.pane().get(), Color.TRANSPARENT));
         SwingCore.mapParent(fxp);
         return in;
     }
 
     static UiParameter produceFxml(UiParameter in) {
         try {
-            Class<FxController> controllerClazz = (Class<FxController>)in.getRootClass();  // Cast is a shortcut.
+            Class<FxController> controllerClazz = (Class<FxController>)in.rootClass().get();  // Cast is a shortcut.
             FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(loadView(controllerClazz), "No View for " + controllerClazz));
             loader.load();
             Objects.requireNonNull(loader.getController(), "No controller based on " + controllerClazz + ". Controller set in Fxml ?");
-            return in.withPane(loader.getRoot()).withController(loader.getController());
+            Pane pane = loader.getRoot();
+            FxController controller = loader.getController();
+            return in.toBuilder().pane(pane).fxController(controller).build();
         } catch (IOException ex) {
             throw new CompletionException(ex);
         }
@@ -360,14 +356,14 @@ public final class BuilderUtil {
     }
 
     static UiParameter constructJavaFx(UiParameter in) {
-        Pane pane = in.getPane();
+        Pane pane = in.pane().get();
         Stage stage = new Stage();
-        if ( !in.isFramed() ) stage.initOwner(in.getUiParent().fxOrMain());
+        if ( !in.extractFrame() ) stage.initOwner(in.uiParent().fxOrMain());
         in.modality().ifPresent(m -> stage.initModality(m));
         stage.setTitle(in.toTitle());
-        stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass()));
+        stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
         registerActiveWindows(in.toKey(), stage);
-        if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.getRefernceClass(), stage);
+        if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
         in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed()));
         stage.setScene(new Scene(pane));
         stage.showAndWait();
@@ -375,12 +371,12 @@ public final class BuilderUtil {
     }
 
     static UiParameter constructDialog(UiParameter in) {
-        Dialog<?> dialog = in.getDialog();
-        if ( !in.isFramed() ) dialog.initOwner(in.getUiParent().fxOrMain());
+        Dialog<?> dialog = in.dialog().get();
+        if ( !in.extractFrame() ) dialog.initOwner(in.uiParent().fxOrMain());
         in.modality().ifPresent(m -> dialog.initModality(m));
         dialog.setTitle(in.toTitle());
 //        stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); Not in dialog avialable.
-        if ( in.isOnce() ) throw new IllegalArgumentException("Dialog with once mode is not supported yet");
+        if ( in.extractOnce() ) throw new IllegalArgumentException("Dialog with once mode is not supported yet");
         if ( in.isStoreLocation() ) throw new IllegalArgumentException("Dialog with store location mode is not supported yet");
         in.getClosedListenerImplemetation().ifPresent(elem -> dialog.setOnCloseRequest(e -> elem.closed()));
         dialog.showAndWait();
@@ -390,11 +386,11 @@ public final class BuilderUtil {
     static UiParameter constructSwing(UiParameter in) {
         try {
             L.debug("constructSwing");
-            JComponent component = in.getJPanel(); // Must be set at this point.
-            final Window window = in.isFramed()
+            JComponent component = in.jPanel().get(); // Must be set at this point.
+            final Window window = in.extractFrame()
                     ? BuilderUtil.newJFrame(in.toTitle(), component)
-                    : BuilderUtil.newJDailog(in.getUiParent().swingOrMain(), in.toTitle(), component, in.toSwingModality());
-            BuilderUtil.setWindowProperties(in, window, in.getRefernceClass(), in.getUiParent().swingOrMain(), in.getRefernceClass(), in.toKey());
+                    : BuilderUtil.newJDailog(in.uiParent().swingOrMain(), in.toTitle(), component, in.asSwingModality());
+            BuilderUtil.setWindowProperties(in, window, in.extractReferenceClass(), in.uiParent().swingOrMain(), in.extractReferenceClass(), in.toKey());
             in.getClosedListenerImplemetation().ifPresent(elem -> window.addWindowListener(new WindowAdapter() {
 
                 @Override
@@ -405,27 +401,27 @@ public final class BuilderUtil {
             }));
             window.setVisible(true);
             L.debug("constructSwing.setVisible(true)");
-            return in.withWindow(window);
+            return in.toBuilder().window(window).build();
         } catch (IOException e) {
             throw new CompletionException(e);
         }
     }
 
     static <T> T waitAndProduceResult(UiParameter in) {
-        if ( !(in.getType().selectRelevantInstance(in) instanceof ResultProducer || in.getType().selectRelevantInstance(in) instanceof Dialog) ) {
+        if ( !(in.type().selectRelevantInstance(in) instanceof ResultProducer || in.type().selectRelevantInstance(in) instanceof Dialog) ) {
             throw new IllegalStateException("Calling Produce Result on a none ResultProducer. Try show instead of eval");
         }
         try {
-            if ( UiCore.isSwing() ) BuilderUtil.wait(in.getWindow()); // Only needed in Swing mode. In JavaFx the showAndWait() is allways used.
+            if ( UiCore.isSwing() ) BuilderUtil.wait(in.window().get()); // Only needed in Swing mode. In JavaFx the showAndWait() is allways used.
         } catch (InterruptedException | IllegalStateException | NullPointerException ex) {
             throw new CompletionException(ex);
         }
-        if ( in.getType().selectRelevantInstance(in) instanceof ResultProducer ) {
-            T result = ((ResultProducer<T>)in.getType().selectRelevantInstance(in)).getResult();
+        if ( in.type().selectRelevantInstance(in) instanceof ResultProducer ) {
+            T result = ((ResultProducer<T>)in.type().selectRelevantInstance(in)).getResult();
             if ( result == null ) throw new UiWorkflowBreak(Type.NULL_RESULT);
             return result;
         } else {
-            T result = ((Dialog<T>)in.getType().selectRelevantInstance(in)).getResult();
+            T result = ((Dialog<T>)in.type().selectRelevantInstance(in)).getResult();
             if ( result == null ) throw new UiWorkflowBreak(Type.NULL_RESULT);
             return result;
         }

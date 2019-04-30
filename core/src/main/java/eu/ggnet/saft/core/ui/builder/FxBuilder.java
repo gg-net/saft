@@ -142,8 +142,7 @@ public class FxBuilder {
     private <T, P, V extends Pane> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> javafxPaneProducer) {
         Objects.requireNonNull(javafxPaneProducer, "The javafxPaneProducer is null, not allowed");
         // TODO: the parent handling must be optimized. And the javaFx
-        UiParameter parm = UiParameter.builder().type(Type.FX).id(preBuilder.id).title(preBuilder.title).frame(preBuilder.frame)
-                .once(preBuilder.once).modality(preBuilder.modality).uiParent(preBuilder.uiParent).build();
+        UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.FX).build();
 
         // Produce the ui instance
         CompletableFuture<UiParameter> uniChain = CompletableFuture
