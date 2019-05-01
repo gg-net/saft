@@ -28,7 +28,7 @@ import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
 import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
 import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
 
-import com.sun.javafx.stage.StageHelper;
+import com.sun.javafx.stage.StageHelper;  // TODO: After upgrade to jdk9 or higher look into Window.getWindows(). This should exist there.
 
 /**
  * The Core of the Saft UI, containing methods for startup or registering things.

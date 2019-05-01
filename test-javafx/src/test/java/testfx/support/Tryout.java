@@ -14,24 +14,26 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package eu.ggnet.saft.test.javafx;
+package testfx.support;
 
-import javafx.scene.control.Label;
-import javafx.scene.layout.BorderPane;
+import javafx.application.Application;
+import javafx.stage.Stage;
 
-import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.core.UiCore;
 
 /**
  *
  * @author oliver.guenther
  */
-@Title("pane")
-public class APane extends BorderPane {
+public class Tryout extends Application {
 
-    public APane() {
-        Label label = new Label("A Text");
-        label.setId("label");
-        getChildren().add(label);
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        UiCore.startJavaFx(primaryStage, () -> new MainPane());
+    }
+
+    public static void main(String[] args) {
+        launch(args);
     }
 
 }

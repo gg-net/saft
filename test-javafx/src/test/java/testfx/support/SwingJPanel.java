@@ -14,20 +14,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package eu.ggnet.saft.test.javafx;
+package testfx.support;
 
+import eu.ggnet.saft.core.ui.ClosedListener;
 import eu.ggnet.saft.core.ui.Title;
 
 /**
  *
  * @author oliver.guenther
  */
-@Title("A JPanel")
-public class AJPanel extends javax.swing.JPanel {
-
+@Title(SwingJPanel.TITLE)
+public class SwingJPanel extends javax.swing.JPanel implements ClosedListener {
+    
+    public final static String TITLE = "swing-jpanel";
+    
+    /**
+     * As long as we cannot test the visibility of swing in javafx, we use a static boolean to do so.
+     */
+    private static boolean active = false;
+    
+    public static boolean active() {
+        return active;
+    }
+    
     /** Creates new form AJPanel */
-    public AJPanel() {
+    public SwingJPanel() {
         initComponents();
+        active = true;        
     }
 
     /** This method is called from within the constructor to
@@ -52,4 +65,9 @@ public class AJPanel extends javax.swing.JPanel {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel1;
     // End of variables declaration//GEN-END:variables
+
+    @Override
+    public void closed() {
+        active = false;
+    }
 }

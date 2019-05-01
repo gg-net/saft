@@ -14,28 +14,37 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package eu.ggnet.saft.test.javafx;
+package testfx.support;
 
 import javafx.scene.control.Button;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.control.Label;
+import javafx.scene.layout.BorderPane;
 
 import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.ui.Title;
+
 
 /**
  *
  * @author oliver.guenther
  */
-public class MainPane extends FlowPane {
+@Title(JavaFxPane.LABEL_ID)
+public class JavaFxPane extends BorderPane {
 
-    @SuppressWarnings("OverridableMethodCallInConstructor")
-    public MainPane() {
-        Button showPane = new Button("ShowPane");
-        showPane.setId("showPane");
-        showPane.setOnAction(e -> Ui.build(this).fx().show(() -> new APane()));
-        Button showJPanel = new Button("ShowJPanel");
-        showJPanel.setOnAction(e -> Ui.build(this).swing().show(() -> new AJPanel()));
-        showJPanel.setId("showJPanel");
-        getChildren().addAll(showPane, showJPanel);
+    public final static String LABEL_ID = "javafxpane-label";
+    
+    public final static String LABEL_TEXT = "This is a simple javafx pane with id: " + LABEL_ID;
+    
+    public final static String CLOSE_BUTTON_ID = "javafxpane-close";
+    
+    public JavaFxPane() {
+        Label label = new Label(LABEL_TEXT);
+        label.setId(LABEL_ID);
+        setCenter(label);
+        Button close = new Button("Close");
+        close.setId(CLOSE_BUTTON_ID);
+        close.setOnAction(e -> Ui.closeWindowOf(this));
+        setBottom(close);
     }
 
 }
