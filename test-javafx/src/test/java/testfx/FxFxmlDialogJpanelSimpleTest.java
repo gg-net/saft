@@ -56,7 +56,7 @@ public class FxFxmlDialogJpanelSimpleTest  {
     }
 
     @Test    
-    public void openingAndCloseOfAllTypes(FxRobot r) {       
+    public void openingAndCloseOfAllTypes(FxRobot r) throws InterruptedException {       
         /*
         +---------------------------------+
         | Open and Close of a JavaFx Pane.|
@@ -119,6 +119,7 @@ public class FxFxmlDialogJpanelSimpleTest  {
         assertThat(SwingJPanel.active()).isFalse();
         show = r.lookup("#" + MainPane.SHOW_SWING_JPANEL_ID).queryButton();
         r.clickOn(show);
+        Thread.sleep(500); // Have to wait for the open. Not perferkt
 
         // Workarround test, that the swing window is visible.
         assertThat(SwingJPanel.active()).isTrue();
