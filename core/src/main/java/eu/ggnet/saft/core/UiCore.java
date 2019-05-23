@@ -64,6 +64,8 @@ public class UiCore {
 
     private static Stage mainStage = null; // Frame in Fx Mode
 
+    private static boolean gluon = false; // Special FX Gloun mode. See https://gluonhq.com/products/mobile/
+
     private static AtomicBoolean shuttingDown = new AtomicBoolean(false); // Shut down handler.
 
     private static Consumer<Throwable> finalConsumer = (b) -> {
@@ -232,6 +234,32 @@ public class UiCore {
     }
 
     /**
+     * Contiunes the Ui in the Gloun mode with JavaFx.
+     * This metod is intended to be used in the MobileApplication.postInit(Scene)
+     *
+     * @param <T>   type restriction.
+     * @param scene the first and only scene of gluon.
+     */
+    public static <T extends Parent> void continueGluon(final Scene scene) {
+        if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
+        mainStage = ((Stage)scene.getWindow());
+        L.info("Starting SAFT in Gloun Mode, using MainStage {}", mainStage);
+        gluon = true;
+        mainStage.setOnCloseRequest((e) -> {
+            L.debug("Closing with {}", e);
+            if ( !shuttingDown.compareAndSet(false, true) ) return; // enure no loops.
+            ON_SHUTDOWN.forEach(Runnable::run);
+            // Theoretical there should not be any stages, see if it fails in gluon
+            FxCore.ACTIVE_STAGES.values().forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
+            EXECUTOR_SERVICE.shutdownNow();
+            // Theoretical there should not be any stages, see if it fails in gluon
+            new ArrayList<>(StageHelper.getStages()).forEach((Stage s) -> { // new List as close, changes the list.
+                if ( s != mainStage ) s.close(); // Close all free stages.
+            });
+        });
+    }
+
+    /**
      * Registers an extra renderer for an Exception in any stacktrace. HINT: There is no order or hierachy in the engine. So if you register duplicates or have
      * more than one match in a StackTrace, no one knows what might happen.
      *
@@ -260,6 +288,16 @@ public class UiCore {
 
     public static boolean isFx() {
         return (mainStage != null);
+    }
+
+    /**
+     * Returns true if Saft is running in a special fx mode, modified for gluon mobile. (https://gluonhq.com/products/mobile/)
+     * TODO: Was das alles bedeuted, finde ich gerade raus.
+     *
+     * @return true if in gluon mode.
+     */
+    public static boolean isGluon() {
+        return gluon;
     }
 
     public static boolean isSwing() {

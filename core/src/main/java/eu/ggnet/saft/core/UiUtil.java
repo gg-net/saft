@@ -21,6 +21,9 @@ import java.io.IOException;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.FxSaft;
 
@@ -33,8 +36,12 @@ import static eu.ggnet.saft.core.ui.FxSaft.loadView;
  */
 public class UiUtil {
 
+    private final static Logger L = LoggerFactory.getLogger(UiUtil.class);
+
     /**
-     * Constructs (loads) an FXML and controller pair.
+     * Constructs (loads) an FXML and controller pair, finding all elements base on the class and calling load, so direct calls to getRoot() or getController()
+     * are possible.
+     * Resources are discovered as described in {@link FxSaft#loadView(java.lang.Class) }.
      *
      * @param <T>             type parameter
      * @param <R>             type parameter
@@ -46,12 +53,14 @@ public class UiUtil {
      * @throws RuntimeException         wrapped IOException of {@link FXMLLoader#load() }.
      */
     public static <T, R extends FxController> FXMLLoader constructFxml(Class<R> controllerClazz) throws IllegalArgumentException, NullPointerException, IllegalStateException, RuntimeException {
-        if ( !Platform.isFxApplicationThread() ) throw new IllegalStateException("Method constructFxml is not called from the JavaFx Ui Thread, illegal");
+        if ( !Platform.isFxApplicationThread() )
+            throw new IllegalStateException("Method constructFxml is not called from the JavaFx Ui Thread, illegal (e.g. construct of WebView fails on other threads)");
         FXMLLoader loader = new FXMLLoader(loadView(controllerClazz));
         try {
             loader.load();
             return loader;
         } catch (IOException ex) {
+            L.error("Exeption while loading fxml", ex);
             throw new RuntimeException(ex);
         }
     }

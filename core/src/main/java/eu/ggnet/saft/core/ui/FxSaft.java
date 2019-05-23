@@ -1,13 +1,15 @@
 package eu.ggnet.saft.core.ui;
 
 import java.net.URL;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 
 import javafx.application.Platform;
 
 /**
- *
+ * Internal API class for fx specific task.
+ * Methods are public, cause I didn't clean it up yet.
+ * 
  * @author oliver.guenther
  */
 public class FxSaft {
@@ -15,7 +17,17 @@ public class FxSaft {
     // Internal Api
     /**
      * Returns a url of the FXML file based on the controllerClazz.
-     *
+     * Nameconvention:
+     * 
+     * A Controller class must end with Controller or Presenter and implement {@link FxController}.
+     * The FXML file must be in the same package and may end with View.fxml or only the name either in bump writing or everything lowercase.
+     * <p>
+     * Example: LoginHelper
+     * <ul>
+     * <li>Controller: LoginHelperController.java or LoginHelperPresenter.java</li>
+     * <li>FXMKL file: LoginHelperView.fxml or LoginHelper.fxml or loginhelper.fxml</li>
+     * </ul>
+     * 
      * @param <R>             the type of the contorller class
      * @param controllerClazz the controller class
      * @return a url of the FXML file, ready to be used in the FXMLLoader.
@@ -30,7 +42,13 @@ public class FxSaft {
             head = controllerClazz.getSimpleName().substring(0, controllerClazz.getSimpleName().length() - "Presenter".length());
         }
         if ( head == null ) throw new IllegalArgumentException(controllerClazz + " does not end with Controller or Presenter");
-        return Objects.requireNonNull(controllerClazz.getResource(head + "View.fxml"), "No View for " + controllerClazz);
+        
+        List<String> names = Arrays.asList(head + "View.fxml",head + ".fxml",head.toLowerCase() + ".fxml");
+        
+        return names.stream()
+                .map(n -> controllerClazz.getResource(n))        
+                .filter(Objects::nonNull)
+                .findFirst().orElseThrow(() -> new NullPointerException("No fxml found with any of the names " + names));        
     }
 
     // TODO: Move to UiUtil.
