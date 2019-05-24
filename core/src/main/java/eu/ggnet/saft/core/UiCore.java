@@ -44,7 +44,7 @@ public class UiCore {
     // Package private for Ui usage.
     final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool(new ThreadFactory() {
 
-        private final ThreadGroup group = new ThreadGroup("ui-pool");
+        private final ThreadGroup group = new ThreadGroup("saft-uicore-pool");
 
         private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -269,6 +269,10 @@ public class UiCore {
             new ArrayList<>(StageHelper.getStages()).forEach((Stage s) -> { // new List as close, changes the list.
                 if ( s != mainStage ) s.close(); // Close all free stages.
             });
+        });
+        Thread.setDefaultUncaughtExceptionHandler((Thread t, Throwable e) -> {
+            L.warn("Exception occured on {}",t,e);
+            Ui.handle(e);
         });
     }
 
