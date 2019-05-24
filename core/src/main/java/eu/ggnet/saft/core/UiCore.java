@@ -5,6 +5,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
 import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
 import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
@@ -242,6 +244,17 @@ public class UiCore {
      */
     public static <T extends Parent> void continueGluon(final Scene scene) {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
+
+        try {
+        Class<?> clazz = Class.forName("eu.ggnet.rasc.blaze.saft.Gi");
+        Method method = clazz.getMethod("startUp");
+            method.invoke(null);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
+        
+        if ( !Dl.local().optional(GluonSupport.class).isPresent() )
+            throw new IllegalStateException("Trying to active gluon mode, but no local Service implementation of GluonSupport found. Is the dependency saft-gluon available ?");
         mainStage = ((Stage)scene.getWindow());
         L.info("Starting SAFT in Gloun Mode, using MainStage {}", mainStage);
         gluon = true;
