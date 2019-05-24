@@ -18,7 +18,6 @@ package eu.ggnet.saft.core.dl;
 
 import java.util.*;
 
-import org.openide.util.Lookup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +45,8 @@ public class LocalDl {
         // The DIRECT_LOOKUP allows the usage of runtime injection direcly via the di light framework. This is normaly used ony for tryout and samples.
         // This could be done better with a injection framework, but through this implementation, we don't need any server at all.
         if ( DIRECT_LOOKUP.containsKey(clazz.getName()) ) return (T)DIRECT_LOOKUP.get(clazz.getName());
-        return Lookup.getDefault().lookup(clazz);
+        
+        return ServiceLoader.load(clazz).iterator().next();
     }
 
     public <T> Optional<T> optional(Class<T> clazz) {

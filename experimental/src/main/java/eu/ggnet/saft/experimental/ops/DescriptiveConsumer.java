@@ -16,15 +16,15 @@
  */
 package eu.ggnet.saft.experimental.ops;
 
-import eu.ggnet.saft.core.ui.TitleUtil;
-
 import java.util.function.Consumer;
+
+import eu.ggnet.saft.core.ui.TitleUtil;
 
 /**
  * A Wrapper for a consumer, which also holds a title.
  * <p>
  * @author oliver.guenther
- * @param <T>
+ * @param <T> the type
  */
 public class DescriptiveConsumer<T> {
 

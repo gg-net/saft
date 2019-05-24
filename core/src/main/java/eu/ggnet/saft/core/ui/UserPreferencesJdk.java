@@ -25,7 +25,6 @@ import javax.swing.UIManager;
 
 import javafx.stage.Window;
 
-import org.openide.util.lookup.ServiceProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,8 @@ import org.slf4j.LoggerFactory;
  * <p>
  * @author oliver.guenther
  */
-@ServiceProvider(service = UserPreferences.class)
+// TODO: May be reenable this as service. for now we just add it in UiCore.globlaStartUp();
+// @ServiceProvider(service = UserPreferences.class)
 public class UserPreferencesJdk implements UserPreferences {
 
     public final static String WINDOW_X = "window.x";

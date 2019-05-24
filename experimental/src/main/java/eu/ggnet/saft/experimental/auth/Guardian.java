@@ -104,30 +104,30 @@ public interface Guardian {
      * The {@link Accessable} get called the method {@link Accessable#setEnabled(boolean)} with true
      * when the Rights are setted and the method {@link Accessable#getNeededRight()} return a {@link java.util.Set} of type {@link Authorisation}
      * containing.
-     * <p>
+     * 
      * @param accessable which should be added in a intern List/Set.
      */
     public void add(Accessable accessable);
 
     /**
-     * * Add a object which has a setEnabled Method, like {@link Action#setEnabled(boolean)}.
+     * Add a object which has a setEnabled Method, like {@link Action#setEnabled(boolean)}.
      * It will wrap this in a AccessEnabler which then control it.
-     * <p>
-     * @param enableAble
-     * @param authorisation
+     * 
+     * @param enableAble the object, that has an setEnable method
+     * @param authorisation the Authorisation which is responsible for the enable
      */
     public void add(Object enableAble, Authorisation authorisation);
 
     /**
      * This method remove a {@link Accessable} from an internal list.
-     * <p>
+     * 
      * @param accessable the {@link Accessable} which should removed.
      */
     public void remove(Accessable accessable);
 
     /**
      * This method returns true if the current user have the given {@link Authorisation}.
-     * <p>
+     * 
      * @param authorisation the given {@link Authorisation} which will be checked.
      * @return true if the current user have the given {@link Authorisation}.
      */

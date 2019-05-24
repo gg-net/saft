@@ -16,12 +16,6 @@
  */
 package eu.ggnet.saft.experimental;
 
-import eu.ggnet.saft.experimental.ops.Selector;
-import eu.ggnet.saft.experimental.ops.DescriptiveConsumerFactory;
-import eu.ggnet.saft.experimental.ops.SelectionEnhancer;
-import eu.ggnet.saft.experimental.ops.DescriptiveConsumer;
-import eu.ggnet.saft.experimental.ops.DescriptiveConsumerRunner;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.*;
@@ -32,7 +26,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.experimental.ops.DefaultAction;
+import eu.ggnet.saft.experimental.ops.*;
 
 /**
  * Operation Central. The point there Actions and Factories are registered.
@@ -92,7 +86,7 @@ public class Ops {
      * Returns a selector used for the source, to start selections.
      * Any calls on the selector will go through the registered listeners.
      * <p>
-     * @param <T>
+     * @param <T> the type
      * @param clazz the clazz as key
      * @return a selector bound to Ops.
      */
@@ -104,7 +98,7 @@ public class Ops {
      * Returns a selector used for the source, to start selections.
      * Any calls on the selector will go through the registered listeners.
      * <p>
-     * @param <T>
+     * @param <T> the type
      * @param clazz    the clazz as key
      * @param enhancer optional enhancer.
      * @return a selector bound to Ops.
@@ -156,7 +150,7 @@ public class Ops {
     /**
      * Returns all registered dependent actions for this instance as runners, or an empty list never null.
      * <p>
-     * @param <T>
+     * @param <T> the type
      * @param t        this instance as dependent reference
      * @param enhancer an optional enhancer
      * @return all registered dependent actions for this instance as runners, or an empty list never null.

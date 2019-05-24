@@ -57,7 +57,7 @@ public class VirtualDataSource {
     /**
      * Returs simulated searchs. The double is a relevance value.
      * <p>
-     * @return
+     * @return data
      */
     public static List<SearchResult> search() {
         return SEARCH;

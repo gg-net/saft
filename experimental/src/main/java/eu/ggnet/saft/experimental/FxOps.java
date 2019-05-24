@@ -27,11 +27,11 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
 import eu.ggnet.saft.core.Dl;
+import eu.ggnet.saft.core.ui.FxSaft;
 import eu.ggnet.saft.experimental.auth.Accessable;
 import eu.ggnet.saft.experimental.auth.Guardian;
 import eu.ggnet.saft.experimental.ops.DescriptiveConsumerRunner;
 import eu.ggnet.saft.experimental.ops.SelectionEnhancer;
-import eu.ggnet.saft.core.ui.FxSaft;
 
 /**
  * Java Fx features of Ops.
@@ -43,7 +43,7 @@ public class FxOps {
     /**
      * Returns a EventHandler useful for Lists to active the global default handling.
      * <p>
-     * @param <T>
+     * @param <T> the type
      * @param selectionModel the selection model.
      * @return a event handler, which will call the default action on double click.
      */

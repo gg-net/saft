@@ -27,7 +27,7 @@ public interface UserChangeListener {
     /**
      * Called if a User is logged in.
      *
-     * @param name
+     * @param name the name
      */
     public void loggedIn(String name);
 

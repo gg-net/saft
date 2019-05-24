@@ -28,7 +28,7 @@ public interface SelectionEnhancer<T> {
     /**
      * Filters the the selected value and may return more than one other embedded selected value, must never return null.
      *
-     * @param selected
+     * @param selected the selected value to be enhanced
      * @return the the selected value and may return more than one other embedded selected value, must never return null.
      */
     List<?> enhance(T selected);

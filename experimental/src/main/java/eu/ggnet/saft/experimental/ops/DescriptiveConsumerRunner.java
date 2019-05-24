@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * Helper to bind Instance with action.
  * <p>
  * @author oliver.guenther
- * @param <T>
+ * @param <T> the type
  */
 public class DescriptiveConsumerRunner<T> implements Runnable {
 

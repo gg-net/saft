@@ -22,7 +22,7 @@ import java.util.List;
  * A way to create dependent actions on demand.
  * <p>
  * @author oliver.guenther
- * @param <T>
+ * @param <T> the type
  */
 public interface DescriptiveConsumerFactory<T> {
 

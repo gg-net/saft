@@ -162,6 +162,7 @@ public class UiCore {
             }
 
         });
+        postStartUp();
     }
 
     public static void addOnShutdown(Runnable runnable) {
@@ -233,6 +234,8 @@ public class UiCore {
             });
             return null;
         });
+        postStartUp();
+
     }
 
     /**
@@ -246,13 +249,13 @@ public class UiCore {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
 
         try {
-        Class<?> clazz = Class.forName("eu.ggnet.rasc.blaze.saft.Gi");
-        Method method = clazz.getMethod("startUp");
+            Class<?> clazz = Class.forName("eu.ggnet.rasc.blaze.saft.Gi");
+            Method method = clazz.getMethod("startUp");
             method.invoke(null);
-        } catch (Exception ex) {
+        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
         }
-        
+
         if ( !Dl.local().optional(GluonSupport.class).isPresent() )
             throw new IllegalStateException("Trying to active gluon mode, but no local Service implementation of GluonSupport found. Is the dependency saft-gluon available ?");
         mainStage = ((Stage)scene.getWindow());
@@ -271,9 +274,10 @@ public class UiCore {
             });
         });
         Thread.setDefaultUncaughtExceptionHandler((Thread t, Throwable e) -> {
-            L.warn("Exception occured on {}",t,e);
+            L.warn("Exception occured on {}", t, e);
             Ui.handle(e);
         });
+        postStartUp();
     }
 
     /**
@@ -335,6 +339,13 @@ public class UiCore {
             }
         }
         finalConsumer.accept(b);
+    }
+
+    /**
+     * This to be done after a contiue or start, but for every ui toolkit.
+     */
+    private static void postStartUp() {
+        Dl.local().add(UserPreferences.class, new UserPreferencesJdk()); // Hard added here.
     }
 
 }
