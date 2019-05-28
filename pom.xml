@@ -19,9 +19,8 @@
             <url>http://repo.cybertron.global/maven/</url>
         </repository>
         <repository>
-            <id>netbeans-api</id>
-            <name>Netbeans Api Repository</name>
-            <url>http://bits.netbeans.org/maven2/</url>
+            <id>gluon-release</id>
+            <url>http://nexus.gluonhq.com/nexus/content/repositories/releases</url>
         </repository>
     </repositories>
 
@@ -111,6 +110,7 @@
     <modules>
         <module>api</module>
         <module>core</module>
+	<module>gluon</module>
         <module>sample</module>
         <module>experimental</module>
         <module>test-javafx</module>

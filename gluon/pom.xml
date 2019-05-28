@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>eu.ggnet.saft</groupId>
+        <artifactId>saft</artifactId>
+        <version>1.1-SNAPSHOT</version>
+    </parent>
+    <artifactId>saft-gluon</artifactId>
+    <name>GG-Net Saft Gluon</name>
+    <description>Gluon Extension for Saft. Add this project to your gloun mobile project to use saft. 
+        This registers services specific to gluon.
+        Also see eu.ggnet.saft.gluon.Gi as extra starting point.</description>
+    <packaging>jar</packaging>
+
+
+    <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>saft-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.inferred</groupId>
+            <artifactId>freebuilder</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.gluonhq</groupId>
+            <artifactId>charm</artifactId>
+            <version>5.0.1</version>
+            <scope>provided</scope> <!-- a gluon application should provied this -->
+        </dependency>            
+    </dependencies>
+</project>

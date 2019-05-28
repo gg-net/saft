@@ -249,7 +249,7 @@ public class UiCore {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
 
         try {
-            Class<?> clazz = Class.forName("eu.ggnet.rasc.blaze.saft.Gi");
+            Class<?> clazz = Class.forName("eu.ggnet.saft.gluon.Gi");
             Method method = clazz.getMethod("startUp");
             method.invoke(null);
         } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
