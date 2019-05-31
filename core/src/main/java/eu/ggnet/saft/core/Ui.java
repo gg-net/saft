@@ -148,7 +148,7 @@ public class Ui {
      * @throws RuntimeException         wrapped IOException of {@link FXMLLoader#load() }.
      */
     public static <T, R extends FxController> FXMLLoader construct(Class<R> controllerClazz) throws IllegalArgumentException, NullPointerException, IllegalStateException, RuntimeException {
-        return FxSaft.constructFxml(controllerClazz);
+        return FxSaft.dispatch(() -> FxSaft.constructFxml(controllerClazz));
     }
 
     /**

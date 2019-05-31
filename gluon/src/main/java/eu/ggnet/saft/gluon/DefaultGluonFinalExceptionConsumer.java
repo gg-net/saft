@@ -5,18 +5,19 @@
  */
 package eu.ggnet.saft.gluon;
 
-import com.gluonhq.charm.glisten.control.Dialog;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+
 import javafx.application.Platform;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.gluonhq.charm.glisten.control.Dialog;
 
 /**
  * A simple but nice exception consumer for gluon, using a fullscreen Dialog.
@@ -39,7 +40,7 @@ public class DefaultGluonFinalExceptionConsumer implements Consumer<Throwable> {
 
             String stacktrace = "";
             try (StringWriter w = new StringWriter();
-                 PrintWriter p = new PrintWriter(w)) {
+                    PrintWriter p = new PrintWriter(w)) {
                 t.printStackTrace(p);
                 stacktrace = w.toString();
             } catch (IOException ex) {
@@ -51,7 +52,7 @@ public class DefaultGluonFinalExceptionConsumer implements Consumer<Throwable> {
 
             BorderPane pane = new BorderPane(stackTraceArea);
             pane.setTop(messageField);
-
+            L.error("Exception catched via {}, message: {}", this.getClass().getSimpleName(), t.getMessage(), t);
             d.setContent(pane);
             d.showAndWait();
 
