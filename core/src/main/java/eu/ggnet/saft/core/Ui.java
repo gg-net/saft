@@ -8,6 +8,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiFunction;
 
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 
@@ -133,6 +134,24 @@ public class Ui {
     }
 
     /**
+     * Constructs (loads) an FXML and controller pair, finding all elements base on the class and calling load, so direct calls to getRoot() or getController()
+     * are possible.
+     * Resources are discovered as described in {@link FxSaft#loadView(java.lang.Class) }.
+     *
+     * @param <T>             type parameter
+     * @param <R>             type parameter
+     * @param controllerClazz the controller class.
+     * @return a loaded loader.
+     * @throws IllegalArgumentException see {@link FxSaft#loadView(java.lang.Class) }
+     * @throws IllegalStateException    see {@link FxSaft#loadView(java.lang.Class) }
+     * @throws NullPointerException     see {@link FxSaft#loadView(java.lang.Class) }
+     * @throws RuntimeException         wrapped IOException of {@link FXMLLoader#load() }.
+     */
+    public static <T, R extends FxController> FXMLLoader construct(Class<R> controllerClazz) throws IllegalArgumentException, NullPointerException, IllegalStateException, RuntimeException {
+        return FxSaft.constructFxml(controllerClazz);
+    }
+
+    /**
      * Allows the wrapping of Exeptions into {@link java.util.concurrent.CompletionException}.
      *
      * @return the ExceptionWrapper.
@@ -158,6 +177,7 @@ public class Ui {
      * @param c the component which is the closest to the window.
      */
     public static void closeWindowOf(Component c) {
+        if ( UiCore.isGluon() ) throw new IllegalStateException("closeWindowOf call with a swing component, not allowed in gluon model");
         UiParent.of(c).ifPresent(
                 p -> SwingSaft.run(() -> {
                     p.setVisible(false);
@@ -166,13 +186,22 @@ public class Ui {
                 fx -> FxSaft.run(() -> fx.close()));
     }
 
+    /**
+     * Closes the wrapping Window (or equivalent) of the supplied node.
+     *
+     * @param n the node as refernece.
+     */
     public static void closeWindowOf(Node n) {
-        UiParent.of(n).ifPresent(
-                p -> SwingSaft.run(() -> {
-                    p.setVisible(false);
-                    p.dispose();
-                }),
-                fx -> FxSaft.run(() -> fx.close()));
+        if ( UiCore.isGluon() ) {
+            Dl.local().lookup(GluonSupport.class).closeViewOrDialogOf(n);
+        } else {
+            UiParent.of(n).ifPresent(
+                    p -> SwingSaft.run(() -> {
+                        p.setVisible(false);
+                        p.dispose();
+                    }),
+                    fx -> FxSaft.run(() -> fx.close()));
+        }
     }
 
     /**

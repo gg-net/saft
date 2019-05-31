@@ -130,7 +130,8 @@ public class SwingBuilder {
 
     private <T, P, V extends JPanel> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> jpanelProducer) {
         Objects.requireNonNull(jpanelProducer, "The jpanelaneProducer is null, not allowed");
-        // TODO: the parent handling must be optimized. And the javaFx
+        if (UiCore.isGluon()) throw new IllegalStateException("Swing Elements are not supported in gloun (Wont be visible in Android or iOs");
+        
         UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.SWING).build();
 
         // Produce the ui instance

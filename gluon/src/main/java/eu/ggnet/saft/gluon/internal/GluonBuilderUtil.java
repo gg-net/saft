@@ -3,13 +3,15 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.ggnet.saft.gluon;
+package eu.ggnet.saft.gluon.internal;
 
-import com.gluonhq.charm.glisten.control.Dialog;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.gluonhq.charm.glisten.control.Dialog;
 
 /**
  * Like Builder Util but on the Gluon Layer.
@@ -24,7 +26,7 @@ public class GluonBuilderUtil {
         try {
             V dialog = producer.call();
             L.debug("produceDialog: {}", dialog);
-            return GluonParameter.dialog(dialog);
+            return new GluonParameter.Builder().gluonDialog(dialog).build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
@@ -35,7 +37,7 @@ public class GluonBuilderUtil {
     }
 
     static GluonParameter constructGluonDialog(GluonParameter in) {
-        Dialog<?> gluonDialog = in.gluonDialog().get();
+        Dialog<?> gluonDialog = in.gluonDialog();
         // if (!in.extractFrame()) stage.initOwner(in.uiParent().fxOrMain()); // no stages
         // in.modality().ifPresent(m -> stage.initModality(m)); // no Modality
 

@@ -34,7 +34,7 @@
             <groupId>com.gluonhq</groupId>
             <artifactId>charm</artifactId>
             <version>5.0.1</version>
-            <scope>provided</scope> <!-- a gluon application should provied this -->
+            <scope>provided</scope> <!-- a gluon application should provied the version. -->
         </dependency>            
     </dependencies>
 </project>

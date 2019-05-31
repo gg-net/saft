@@ -3,22 +3,27 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.ggnet.saft.gluon;
+package eu.ggnet.saft.gluon.internal;
 
-import com.gluonhq.charm.glisten.control.Dialog;
-import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.ui.builder.Result;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+
 import javafx.application.Platform;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.ui.builder.Result;
+
+import com.gluonhq.charm.glisten.control.Dialog;
+
 /**
- *
+ * Compile-safe gluon dialog builder.
+ * 
  * @author oliver.guenther
  */
 public class GluonDialogBuilder {

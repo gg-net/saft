@@ -98,7 +98,7 @@ public abstract class UiParameter {
 
     abstract Optional<Class<?>> rootClass();
 
-    abstract Optional<Pane> pane();
+    public abstract Optional<Pane> pane();
 
     abstract Optional<JComponent> jPanel();
 

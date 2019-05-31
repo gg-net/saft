@@ -237,6 +237,7 @@ public final class BuilderUtil {
 
     static UiParameter breakIfOnceAndActive(UiParameter in) {
         // Look into existing Instances, if in once mode and push up to the front if exist.
+        if ( UiCore.isGluon() ) return in; // Not implemented for gluon.
         if ( !in.extractOnce() ) return in;
         String key = in.toKey();
         if ( UiCore.isFx() && FxCore.ACTIVE_STAGES.containsKey(key) ) {

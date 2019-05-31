@@ -13,9 +13,12 @@ import org.slf4j.LoggerFactory;
 import eu.ggnet.saft.core.Dl;
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
+import eu.ggnet.saft.gluon.internal.GluonPreBuilder;
+import eu.ggnet.saft.gluon.internal.GluonSupportService;
 
 /**
- *
+ * Single entry point for all compile-safe gluon specific activities.
+ * 
  * @author oliver.guenther
  */
 public class Gi {
@@ -24,6 +27,11 @@ public class Gi {
     
     private static final Logger L = LoggerFactory.getLogger(Gi.class);
     
+    /**
+     * Startup the gloun specific parts of saft.
+     * This method can be called multiple times, only the first is relevant.
+     * In the default implementation, this method is called reflective from saft-core UiCore.continueGluon().
+     */
     public static void startUp() {
         L.debug("startUp() called");
         if (!RUNNING.compareAndSet(false, true)) return;
@@ -32,6 +40,11 @@ public class Gi {
         UiCore.overwriteFinalExceptionConsumer(new DefaultGluonFinalExceptionConsumer());
     }
     
+    /**
+     * Allows to build gluon ui components.
+     * 
+     * @return returns the gluon pre builder.
+     */
     public static GluonPreBuilder build() {
         return new GluonPreBuilder();
     }

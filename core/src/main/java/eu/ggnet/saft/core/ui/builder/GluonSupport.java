@@ -5,6 +5,8 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
+import javafx.scene.Node;
+
 import eu.ggnet.saft.core.ui.AlertType;
 
 /**
@@ -21,6 +23,20 @@ public interface GluonSupport {
      * @param message the message, must not be null,
      * @param type the type, must not be null
      */
-    public void showAlert(String title, String message, AlertType type);
-
+    void showAlert(String title, String message, AlertType type);
+    
+    /**
+     * Contruct a javafx element (UiParameter.pane()) in a Gloun Dialog.
+     * 
+     * @param in the in parameter
+     * @return the dialog.
+     */
+    UiParameter constructJavaFx(UiParameter in);
+    
+    /**
+     * Implementation should close the wrapping ui element of gluon, either a view or a dialog.
+     * 
+     * @param n the node.
+     */
+    void closeViewOrDialogOf(Node n);
 }
