@@ -56,9 +56,7 @@ public class UiCore {
 
     private static final BooleanProperty BACKGROUND_ACTIVITY = new SimpleBooleanProperty();
 
-    // We need the raw type here. Otherwise we cannot get different typs of cosumers in and out.
-    @SuppressWarnings("unchecked")
-    private static final Map<Class, Consumer> EXCEPTION_CONSUMER = new HashMap<>();
+    private static final Map<Class<?>, Consumer> EXCEPTION_CONSUMER = new HashMap<>();
 
     private static final Set<Runnable> ON_SHUTDOWN = new HashSet<>();
 
@@ -123,6 +121,7 @@ public class UiCore {
      *
      * @return a property that represents background activity
      */
+    // TODO: This is a very simple solution for now.
     public static BooleanProperty backgroundActivityProperty() {
         return BACKGROUND_ACTIVITY;
     }
@@ -150,21 +149,18 @@ public class UiCore {
 
             @Override
             public void windowClosed(WindowEvent e) {
-                // Shutdownhandler
-                if ( !shuttingDown.compareAndSet(false, true) ) return; // enure no loops.
-                ON_SHUTDOWN.forEach(Runnable::run);
-                for (Window window : java.awt.Frame.getWindows()) {
-                    window.setVisible(false);
-                    window.dispose();
-                }
-                EXECUTOR_SERVICE.shutdownNow();
-                Platform.exit();
+                UiCore.shutdown();
             }
 
         });
         postStartUp();
     }
 
+    /**
+     * Adds a shutdown listener.
+     *
+     * @param runnable the runnable to called on shutdown
+     */
     public static void addOnShutdown(Runnable runnable) {
         if ( runnable == null ) return;
         L.info("Adding on Shutdown {}", runnable);
@@ -223,14 +219,7 @@ public class UiCore {
             primaryStage.sizeToScene();
             primaryStage.show();
             primaryStage.setOnCloseRequest((e) -> {
-                L.debug("Closing with {}", e);
-                if ( !shuttingDown.compareAndSet(false, true) ) return; // enure no loops.
-                ON_SHUTDOWN.forEach(Runnable::run);
-                FxCore.ACTIVE_STAGES.values().forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
-                EXECUTOR_SERVICE.shutdownNow();
-                new ArrayList<>(StageHelper.getStages()).forEach((Stage s) -> { // new List as close, changes the list.
-                    if ( s != primaryStage ) s.close(); // Close all free stages.
-                });
+                UiCore.shutdown();
             });
             return null;
         });
@@ -249,8 +238,11 @@ public class UiCore {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
 
         try {
-            Class<?> clazz = Class.forName("eu.ggnet.saft.gluon.Gi");
-            Method method = clazz.getMethod("startUp");
+            String clazzName = "eu.ggnet.saft.gluon.Gi";
+            String methodName = "startUp";
+            L.debug("continueGluon(): trying to start gluon specific code: reflective call to {}.{}", clazzName, methodName);
+            Class<?> clazz = Class.forName(clazzName);
+            Method method = clazz.getMethod(methodName);
             method.invoke(null);
         } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
             throw new RuntimeException(ex);
@@ -262,20 +254,7 @@ public class UiCore {
         L.info("Starting SAFT in Gloun Mode, using MainStage {}", mainStage);
         gluon = true;
         mainStage.setOnCloseRequest((e) -> {
-            L.debug("Closing with {}", e);
-            if ( !shuttingDown.compareAndSet(false, true) ) return; // enure no loops.
-            ON_SHUTDOWN.forEach(Runnable::run);
-            // Theoretical there should not be any stages, see if it fails in gluon
-            FxCore.ACTIVE_STAGES.values().forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
-            EXECUTOR_SERVICE.shutdownNow();
-            // Theoretical there should not be any stages, see if it fails in gluon
-            new ArrayList<>(StageHelper.getStages()).forEach((Stage s) -> { // new List as close, changes the list.
-                if ( s != mainStage ) s.close(); // Close all free stages.
-            });
-        });
-        Thread.setDefaultUncaughtExceptionHandler((Thread t, Throwable e) -> {
-            L.warn("Exception occured on {}", t, e);
-            Ui.handle(e);
+            UiCore.shutdown();
         });
         postStartUp();
     }
@@ -297,23 +276,32 @@ public class UiCore {
      * Make sure to ignore the {@link UiWorkflowBreak} wrapped into a {@link CompletionException}.
      *
      * @param <T>      type of consumer
-     * @param consumer the consumer
+     * @param consumer the consumer, must not be null
      */
     public static <T> void overwriteFinalExceptionConsumer(Consumer<Throwable> consumer) {
-        if ( consumer != null ) finalConsumer = consumer;
+        finalConsumer = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
     }
 
+    /**
+     * Running means, that one startXXX oder contiuneXXX method was called.
+     *
+     * @return true, if running.
+     */
     public static boolean isRunning() {
         return mainFrame != null || mainStage != null;
     }
 
+    /**
+     * Fx mode.
+     *
+     * @return true if in fx mode.
+     */
     public static boolean isFx() {
         return (mainStage != null);
     }
 
     /**
      * Returns true if Saft is running in a special fx mode, modified for gluon mobile. (https://gluonhq.com/products/mobile/)
-     * TODO: Was das alles bedeuted, finde ich gerade raus.
      *
      * @return true if in gluon mode.
      */
@@ -321,8 +309,46 @@ public class UiCore {
         return gluon;
     }
 
+    /**
+     * Returns true if in swing mode.
+     *
+     * @return true if in swing mode
+     */
     public static boolean isSwing() {
         return (mainFrame != null);
+    }
+
+    /**
+     * Shutdown the core, cleaning up every thing.
+     * This should be called via listerners on the mainview or mainframe, but at least in gluon it dosn't work.
+     * Tries to close all windows. Stops the executor. Other tasks.
+     * Thread safe, may be called multiple times, will only excute once.
+     */
+    public static void shutdown() {
+        if ( !shuttingDown.compareAndSet(false, true) ) {
+            L.debug("shutdown() called after shutdown. Ignored");
+            return;
+        }
+        L.info("shutdown() of UiCore");
+        L.debug("shutdown() running shutdown listeners");
+        ON_SHUTDOWN.forEach(Runnable::run);
+        L.debug("shutdown() shutdownNow the executor service");
+        EXECUTOR_SERVICE.shutdownNow();
+        if ( isFx() && !isGluon() ) {
+            L.debug("shutdown() closing all open fx stages.");
+            FxCore.ACTIVE_STAGES.values().forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
+            new ArrayList<>(StageHelper.getStages()).forEach((Stage s) -> { // new List as close, changes the list.
+                if ( s != mainStage ) s.close(); // Close all free stages.
+            });
+        } else if ( isSwing() ) {
+            L.debug("shutdown() closing all open swing dialogs and frames.");
+            for (Window window : java.awt.Frame.getWindows()) {
+                window.setVisible(false);
+                window.dispose();
+            }
+            L.debug("shutdown() forcing the Platform.exit()");
+            Platform.exit();
+        }
     }
 
     /**
@@ -345,6 +371,10 @@ public class UiCore {
      * This to be done after a contiue or start, but for every ui toolkit.
      */
     private static void postStartUp() {
+        Thread.setDefaultUncaughtExceptionHandler((Thread t, Throwable e) -> {
+            L.warn("Exception occured on {}", t, e);
+            Ui.handle(e);
+        });
         Dl.local().add(UserPreferences.class, new UserPreferencesJdk()); // Hard added here.
     }
 

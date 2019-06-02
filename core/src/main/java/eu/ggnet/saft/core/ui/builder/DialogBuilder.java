@@ -80,8 +80,10 @@ public class DialogBuilder {
 
     private <T, P, V extends Dialog<T>> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> dialogProducer) {
         Objects.requireNonNull(dialogProducer, "The javafxPaneProducer is null, not allowed");
-        // TODO: the parent handling must be optimized. And the javaFx
+        if ( UiCore.isGluon() )
+            throw new IllegalStateException("Javafx Dialog is not supported in gloun yet. If you really need this, call Olli. It's possible");
 
+        // TODO: the parent handling must be optimized. And the javaFx
         UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.DIALOG).build();
 
         // Produce the ui instance

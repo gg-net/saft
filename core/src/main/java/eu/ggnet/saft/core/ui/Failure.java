@@ -21,18 +21,19 @@ import java.awt.Window;
 
 import javafx.scene.Parent;
 
-import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.api.Reply;
+import eu.ggnet.saft.core.Ui;
 
 import static eu.ggnet.saft.core.ui.AlertType.ERROR;
 
 /**
+ * Failure Handler, usefull in an Optional {@link Reply} chain.
  *
  * @author oliver.guenther
  */
+// TODO: Consider removal of Reply Pattern, move to experimental or to builder.
 public class Failure {
 
-    // maybe a panel could also happen
     /**
      * Represents the parent of the ui element, optional.
      */

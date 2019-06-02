@@ -15,6 +15,7 @@ import javafx.scene.Parent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.api.Reply;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.*;
 
@@ -77,10 +78,11 @@ public class Ui {
     }
 
     /**
-     * Returns a new failure Handler.
+     * Returns a new failure Handler, usefull in an Optional {@link Reply} chain.
      *
      * @return a new failure Handler.
      */
+    // TODO: Consider removal or move to experimental.
     public static Failure failure() {
         return new Failure();
     }
@@ -96,23 +98,10 @@ public class Ui {
 
     /**
      * Wrapper around {@link ForkJoinPool#commonPool() } with Ui Exception handling.
-     * This is the default way to build a ui chain/stream with some background activity
-     * <pre>
-     * {@code
-     * Ui.exec(Ui
-     *   .call(() -> HardWorker.work2s("per", "Eine leere Adresse"))
-     *   .choiceSwing(DocumentAdressUpdateView.class)
-     *   .onOk((t) -> HardWorker.work2s("middle", t.getAddress()))
-     *   .choiceSwing(DocumentAdressUpdateView.class)
-     *   .onOk((t) -> HardWorker.work2s("post", t.getAddress()))
-     *   );
-     * }
-     * </pre>
      *
      * @param <V>      type parameter
      * @param callable a callable for the background.
      */
-    // TODO: Runable version
     public static <V> void exec(Callable<V> callable) {
         UiCore.EXECUTOR_SERVICE.execute(() -> {
             try {
@@ -210,7 +199,9 @@ public class Ui {
      * @param file a file to open via ui.
      * @return true if operation was successful, otherwise false. Can be used if the following operations should happen.
      */
+    // TODO: implement for all Modes. Or remove and put back to the developer.
     public static boolean osOpen(File file) {
+        if ( UiCore.isGluon() ) throw new IllegalStateException("Not yet implemented in gluon");
         try {
             Desktop.getDesktop().open(file);
             return true;
@@ -221,8 +212,8 @@ public class Ui {
     }
 
     /**
-     * Handles an Exception in the Ui, using the registered ExceptionCosumers form {@link UiCore#registerExceptionConsumer(java.lang.Class, java.util.function.Consumer)
-     * }.
+     * Handles an Exception in the Ui, using the registered ExceptionCosumers form
+     * {@link UiCore#registerExceptionConsumer(java.lang.Class, java.util.function.Consumer)}.
      *
      * @param b the throwable to be handled.
      */

@@ -42,7 +42,9 @@ public class FileChooserBuilder {
      * @return the selected file or empty.
      */
     // TODO: This is the only time we us a javafx component in all modes. It should be considered, that in the swing mode, the JFileChoser should be used.
+    // Fixme: Not implemented n Gluon yet.
     public Result<File> open() {
+        if ( UiCore.isGluon() ) throw new IllegalStateException("Not yet implemented in gluon");
         SwingCore.ensurePlatformIsRunning();
         return new Result<>(CompletableFuture.supplyAsync(() -> {
             FileChooser fileChooser = new FileChooser();

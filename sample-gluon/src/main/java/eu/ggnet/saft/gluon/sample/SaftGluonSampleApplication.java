@@ -11,6 +11,7 @@ import com.gluonhq.charm.glisten.visual.MaterialDesignIcon;
 import com.gluonhq.charm.glisten.visual.Swatch;
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.gluon.Gi;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -42,16 +43,22 @@ public class SaftGluonSampleApplication extends MobileApplication {
     public static void buildDrawer(MobileApplication app) {
         NavigationDrawer drawer = app.getDrawer();
 
-        NavigationDrawer.Header header = new NavigationDrawer.Header("Gluon Mobile",
-                "Multi View Project",
+        NavigationDrawer.Header header = new NavigationDrawer.Header("Saft Gluon Mobile",
+                "Saft Gluon Samples",
                 new Avatar(21, new Image(MobileApplication.class.getResourceAsStream("/icon.png"))));
         drawer.setHeader(header);
 
         final NavigationDrawer.Item primaryItem = new NavigationDrawer.ViewItem("Primary", MaterialDesignIcon.HOME.graphic(), PRIMARY_VIEW, ViewStackPolicy.SKIP);
         final NavigationDrawer.Item secondaryItem = new NavigationDrawer.ViewItem("Secondary", MaterialDesignIcon.DASHBOARD.graphic(), SECONDARY_VIEW);
 
-        final NavigationDrawer.Item alertItem = new NavigationDrawer.Item("Saft - Alert", MaterialDesignIcon.ACCESSIBLE.graphic());
-        alertItem.setOnMouseClicked(e -> Ui.build().alert("This is a Saft alert"));
+        final NavigationDrawer.Item infoAlertItem = new NavigationDrawer.Item("Saft - Info Alert", MaterialDesignIcon.INFO.graphic());
+        infoAlertItem.setOnMouseClicked(e -> Ui.build().alert("This is an Info Saft alert"));
+
+        final NavigationDrawer.Item warningAlertItem = new NavigationDrawer.Item("Saft - Warning Alert", MaterialDesignIcon.WARNING.graphic());
+        warningAlertItem.setOnMouseClicked(e -> Ui.build().alert().title("Warning").message("This is a Waring Saft alert").show(AlertType.WARNING));
+
+        final NavigationDrawer.Item errorAlertItem = new NavigationDrawer.Item("Saft - Error Alert", MaterialDesignIcon.ERROR.graphic());
+        errorAlertItem.setOnMouseClicked(e -> Ui.build().alert().title("Error").message("This is a Error Saft alert").show(AlertType.ERROR));
 
         final NavigationDrawer.Item infoViewItem = new NavigationDrawer.Item("Saft - show info.fx (code)", MaterialDesignIcon.BOOK.graphic());
         infoViewItem.setOnMouseClicked(e -> Ui.build().fx().show(() -> new InfoView()));
@@ -69,7 +76,7 @@ public class SaftGluonSampleApplication extends MobileApplication {
                 .thenAcceptAsync(a -> new Toast("Lift of " + a).show(), Platform::runLater)
                 .handle(Ui.handler()));
 
-        drawer.getItems().addAll(primaryItem, secondaryItem, alertItem, infoViewItem, infoItem, personItem, airplaneItem);
+        drawer.getItems().addAll(primaryItem, secondaryItem, infoAlertItem, warningAlertItem, errorAlertItem, infoViewItem, infoItem, personItem, airplaneItem);
 
         if (com.gluonhq.charm.down.Platform.isDesktop()) {
             final NavigationDrawer.Item quitItem = new NavigationDrawer.Item("Quit", MaterialDesignIcon.EXIT_TO_APP.graphic());
@@ -81,4 +88,10 @@ public class SaftGluonSampleApplication extends MobileApplication {
             drawer.getItems().add(quitItem);
         }
     }
+
+    @Override
+    public void stop() throws Exception {
+        UiCore.shutdown();
+    }
+
 }

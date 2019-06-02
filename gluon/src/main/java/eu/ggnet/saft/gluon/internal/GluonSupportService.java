@@ -26,6 +26,7 @@ import eu.ggnet.saft.core.ui.builder.UiParameter;
 import com.gluonhq.charm.glisten.application.MobileApplication;
 import com.gluonhq.charm.glisten.control.Dialog;
 import com.gluonhq.charm.glisten.mvc.View;
+import com.gluonhq.charm.glisten.visual.MaterialDesignIcon;
 
 /**
  * Implementation fo the Support Service.
@@ -68,7 +69,16 @@ public class GluonSupportService implements GluonSupport {
     public void showAlert(String title, String message, AlertType type) {
         FxSaft.dispatch(() -> {
             Dialog<Void> d = new Dialog<>(title, message);
-            // TODO: Make an Icon for the type.
+            switch (type) {
+                case ERROR:
+                    d.setGraphic(MaterialDesignIcon.ERROR.graphic());
+                    break;
+                case WARNING:
+                    d.setGraphic(MaterialDesignIcon.WARNING.graphic());
+                    break;
+                case INFO: // Nothing
+                default:
+            }
             Button close = new Button("Schließen");
             close.setOnAction(e -> d.hide());
             d.getButtons().add(close);
