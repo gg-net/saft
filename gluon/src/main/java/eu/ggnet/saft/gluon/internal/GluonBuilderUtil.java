@@ -5,11 +5,14 @@
  */
 package eu.ggnet.saft.gluon.internal;
 
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
 
 import com.gluonhq.charm.glisten.control.Dialog;
 
@@ -38,40 +41,13 @@ public class GluonBuilderUtil {
 
     static GluonParameter constructGluonDialog(GluonParameter in) {
         Dialog<?> gluonDialog = in.gluonDialog();
-        // if (!in.extractFrame()) stage.initOwner(in.uiParent().fxOrMain()); // no stages
-        // in.modality().ifPresent(m -> stage.initModality(m)); // no Modality
-
-        // stage.setTitle(in.toTitle());  // May be later
-        // stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass())); // may be later
-        
-        // registerActiveWindows(in.toKey(), stage); // only one active window in gluon
-        // if (in.isStoreLocation()) registerAndSetStoreLocation(in.extractReferenceClass(), stage); // not in gluon
-        
-        // in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed())); // may be later
-        
         return in.toBuilder().result(gluonDialog.showAndWait()).build();
     }
-    
-        static <T> T waitAndProduceResult(GluonParameter in) {
-            // INFO: for now we only have Gluon Dialogs, so there is no validation needed.
-//        if ( !(in.type().selectRelevantInstance(in) instanceof ResultProducer || in.type().selectRelevantInstance(in) instanceof javafx.scene.control.Dialog) ) {
-//            throw new IllegalStateException("Calling Produce Result on a none ResultProducer. Try show instead of eval");
-//        }
-//        try {
-//            if ( UiCore.isSwing() ) BuilderUtil.wait(in.window().get()); // Only needed in Swing mode. In JavaFx the showAndWait() is allways used.
-//        } catch (InterruptedException | IllegalStateException | NullPointerException ex) {
-//            throw new CompletionException(ex);
-//        }
-//        if ( in.type().selectRelevantInstance(in) instanceof ResultProducer ) {
-//            T result = ((ResultProducer<T>)in.type().selectRelevantInstance(in)).getResult();
-//            if ( result == null ) throw new UiWorkflowBreak(UiWorkflowBreak.Type.NULL_RESULT);
-//            return result;
-//        } else {
-//            T result = ((javafx.scene.control.Dialog<T>)in.type().selectRelevantInstance(in)).getResult();
-//            if ( result == null ) throw new UiWorkflowBreak(UiWorkflowBreak.Type.NULL_RESULT);
-//            return result;
-//        }
-            return (T)in.result();
+
+    static <T> T waitAndProduceResult(GluonParameter in) {
+        Optional<T> result = (Optional<T>)in.result();
+        if ( !result.isPresent() ) throw new UiWorkflowBreak(UiWorkflowBreak.Type.NULL_RESULT);
+        return result.get();
 
     }
 }

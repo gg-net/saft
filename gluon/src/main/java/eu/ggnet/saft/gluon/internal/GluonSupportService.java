@@ -90,6 +90,7 @@ public class GluonSupportService implements GluonSupport {
 
     @Override
     public void closeViewOrDialogOf(Node n) {
+        L.debug("closeViewOrDialogOf({}) entering", n);
         deepSearchForCloseOf(n, "init")
                 .ifDialog(Dialog::hide)
                 .ifView(v -> {

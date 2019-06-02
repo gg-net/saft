@@ -21,7 +21,6 @@ package eu.ggnet.saft.core.ui.builder;
  *
  * @author oliver.guenther
  */
-// TODO: Don't know if this is ever used @EqualsAndHashCode(callSuper = false)
 public class UiWorkflowBreak extends RuntimeException {
 
     public static enum Type {
@@ -30,7 +29,7 @@ public class UiWorkflowBreak extends RuntimeException {
 
     private final Type type;
 
-    UiWorkflowBreak(Type type) {
+    public UiWorkflowBreak(Type type) {
         this.type = type;
     }
 
@@ -42,5 +41,5 @@ public class UiWorkflowBreak extends RuntimeException {
     public String toString() {
         return "UiWorkflowBreak{" + "type=" + type + '}';
     }
-    
+
 }
