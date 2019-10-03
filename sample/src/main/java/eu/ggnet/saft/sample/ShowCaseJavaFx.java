@@ -29,8 +29,8 @@ import eu.ggnet.saft.core.UiCore;
  *
  * @author oliver.guenther
  */
-public class ShowCaseJavaFx extends Application {
-
+public class ShowCaseJavaFx {
+    
     private static class UiBuilder extends ShowCaseUniversal {
 
     public Pane build() {
@@ -55,6 +55,9 @@ public class ShowCaseJavaFx extends Application {
         }
     }
 
+    public static class Internal extends Application {
+
+    
     @Override
     public void start(Stage primaryStage) throws Exception {
         UiCore.startJavaFx(primaryStage, () -> new UiBuilder().build());
@@ -62,12 +65,18 @@ public class ShowCaseJavaFx extends Application {
 
     @Override
     public void stop() throws Exception {
-        System.out.println("Stop called");
+        System.out.println("Stop called: Showing open threads");
         Thread.getAllStackTraces().keySet().stream().forEach(System.out::println);
     }
+        
+        public static void main(String[] args) {
+            launch(args);
+        }
+    }
+    
 
     public static void main(String[] args) {
-        launch(args);
+        Internal.main(args);
     }
 
 }

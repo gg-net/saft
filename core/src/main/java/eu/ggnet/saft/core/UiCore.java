@@ -30,8 +30,6 @@ import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
 import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
 import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
 
-import com.sun.javafx.stage.StageHelper;  // TODO: After upgrade to jdk9 or higher look into Window.getWindows(). This should exist there.
-
 /**
  * The Core of the Saft UI, containing methods for startup or registering things.
  *
@@ -67,6 +65,7 @@ public class UiCore {
     private static boolean gluon = false; // Special FX Gloun mode. See https://gluonhq.com/products/mobile/
 
     private static AtomicBoolean shuttingDown = new AtomicBoolean(false); // Shut down handler.
+
 
     private static Consumer<Throwable> finalConsumer = (b) -> {
         if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
@@ -337,9 +336,7 @@ public class UiCore {
         if ( isFx() && !isGluon() ) {
             L.debug("shutdown() closing all open fx stages.");
             FxCore.ACTIVE_STAGES.values().forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
-            new ArrayList<>(StageHelper.getStages()).forEach((Stage s) -> { // new List as close, changes the list.
-                if ( s != mainStage ) s.close(); // Close all free stages.
-            });
+            FxCore.getWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
         } else if ( isSwing() ) {
             L.debug("shutdown() closing all open swing dialogs and frames.");
             for (Window window : java.awt.Frame.getWindows()) {
@@ -377,5 +374,7 @@ public class UiCore {
         });
         Dl.local().add(UserPreferences.class, new UserPreferencesJdk()); // Hard added here.
     }
+
+
 
 }

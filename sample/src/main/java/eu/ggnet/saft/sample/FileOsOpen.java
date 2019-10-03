@@ -20,11 +20,6 @@ public class FileOsOpen {
                     .ifPresent(file -> Ui.osOpen(file));
         });
 
-        // Old style
-//        Ui.exec(Ui.openFileChooser("Bitte Datei auswählen, die das Betriebsystem öffnen kann")
-//                .onOk(f -> f) // Push value though.
-//                .osOpen()
-//        );
     }
 
 }

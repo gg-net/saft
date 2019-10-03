@@ -28,11 +28,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
+                <version>3.8.1</version>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
@@ -48,7 +44,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.10.4</version>
+                <version>3.1.1</version>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -70,6 +66,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.compilerArgument>-Xlint:unchecked</maven.compiler.compilerArgument>
         <netbeans.hint.jdkPlatform>JDK_1.8</netbeans.hint.jdkPlatform>
+        <project.source.encoding>UTF-8</project.source.encoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencyManagement>
@@ -116,4 +114,38 @@
         <module>test-javafx</module>
         <module>test-swing</module>
     </modules>
+    
+    <profiles>
+        <profile>
+            <id>jdk11</id>
+            <properties>
+                <maven.compiler.release>11</maven.compiler.release>
+                <netbeans.hint.jdkPlatform>JDK_11</netbeans.hint.jdkPlatform>
+            </properties>
+            <dependencies>
+                <!-- We use javafx in tryouts in the lower layers. An in some weird idea we added javafx properties to entity classes -->
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-controls</artifactId>
+                    <version>11.0.2</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-fxml</artifactId>
+                    <version>11.0.2</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-web</artifactId>
+                    <version>11.0.2</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-swing</artifactId>
+                    <version>11.0.2</version>
+                </dependency>       
+            </dependencies>
+        </profile>
+    </profiles>
+    
 </project>
