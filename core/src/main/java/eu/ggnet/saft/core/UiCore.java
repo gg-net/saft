@@ -66,7 +66,6 @@ public class UiCore {
 
     private static AtomicBoolean shuttingDown = new AtomicBoolean(false); // Shut down handler.
 
-
     private static Consumer<Throwable> finalConsumer = (b) -> {
         if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
             L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
@@ -223,7 +222,6 @@ public class UiCore {
             return null;
         });
         postStartUp();
-
     }
 
     /**
@@ -374,7 +372,5 @@ public class UiCore {
         });
         Dl.local().add(UserPreferences.class, new UserPreferencesJdk()); // Hard added here.
     }
-
-
 
 }

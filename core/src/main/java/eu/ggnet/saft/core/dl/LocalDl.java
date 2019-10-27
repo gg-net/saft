@@ -39,23 +39,48 @@ public class LocalDl {
         return instance;
     }
 
+    /**
+     * Tries a local service lookup based on the clazz as identifier.
+     * If u don't want null as results us the optional variant below.
+     * <ul>
+     * <li>try the internal repository, filled with add frontup</li>
+     * <li>use {@link  ServiceLoader#load(java.lang.Class) }</li>
+     * </ul>
+     *
+     * @param <T>
+     * @param clazz the class as identifier
+     * @return the service or null if none found.
+     */
     public <T> T lookup(Class<T> clazz) {
         Objects.requireNonNull(clazz, "clazz is null");
         L.debug("Looking Up {}", clazz.getName());
         // The DIRECT_LOOKUP allows the usage of runtime injection direcly via the di light framework. This is normaly used ony for tryout and samples.
         // This could be done better with a injection framework, but through this implementation, we don't need any server at all.
         if ( DIRECT_LOOKUP.containsKey(clazz.getName()) ) return (T)DIRECT_LOOKUP.get(clazz.getName());
-        
-        return ServiceLoader.load(clazz).iterator().next();
+
+        Iterator<T> serviceIterator = ServiceLoader.load(clazz).iterator();
+        if ( !serviceIterator.hasNext() ) return null;
+        return serviceIterator.next();
     }
 
     public <T> Optional<T> optional(Class<T> clazz) {
         return Optional.ofNullable(lookup(clazz));
     }
 
-    public <T> void add(Class<T> clazz, T t) {
-        DIRECT_LOOKUP.put(clazz.getName(), t);
-        L.info("Remote dierct lookup filled with {}.", clazz.getName());
+    /**
+     * Add a service direct to the lookup, no overwrites are possible
+     *
+     * @param <T>
+     * @param clazz   the class as identifierer.
+     * @param service the service
+     */
+    public <T> void add(Class<T> clazz, T service) {
+        if ( DIRECT_LOOKUP.containsKey(clazz.getName()) ) {
+            L.warn("add({}): there is allready a service with that key, doing nothing", clazz.getName());
+            return;
+        }
+        DIRECT_LOOKUP.put(clazz.getName(), service);
+        L.info("add({}):Direct lookup filled.", clazz.getName());
     }
 
 }

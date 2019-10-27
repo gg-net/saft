@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * @author oliver.guenther
  */
-// TODO: May be reenable this as service. for now we just add it in UiCore.globlaStartUp();
+// TODO: May be reenable this as service. for now we just add it in UiCore.globalStartUp();
 // @ServiceProvider(service = UserPreferences.class)
 public class UserPreferencesJdk implements UserPreferences {
 

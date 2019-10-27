@@ -39,8 +39,9 @@ public class ProgressBuilder {
         return title;
     }
 
-    public void title(String title) {
+    public ProgressBuilder title(String title) {
         this.title = title;
+        return this;
     }
     
     /**
