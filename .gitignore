@@ -26,3 +26,9 @@ hs_err_pid*
 /sample-gluon/build/
 /sample-gluon/.nb-gradle/
 /sample-gluon/.gradle/
+/api/target/
+/core/target/
+/experimental/target/
+/sample/target/
+/test-javafx/target/
+/test-swing/target/

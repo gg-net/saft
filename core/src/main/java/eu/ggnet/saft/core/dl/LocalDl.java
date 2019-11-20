@@ -53,14 +53,19 @@ public class LocalDl {
      */
     public <T> T lookup(Class<T> clazz) {
         Objects.requireNonNull(clazz, "clazz is null");
-        L.debug("Looking Up {}", clazz.getName());
+        L.debug("lookup({}) in {}, containing DIRECT_LOOKUP {}", clazz.getName(), this, DIRECT_LOOKUP.keySet());
         // The DIRECT_LOOKUP allows the usage of runtime injection direcly via the di light framework. This is normaly used ony for tryout and samples.
         // This could be done better with a injection framework, but through this implementation, we don't need any server at all.
         if ( DIRECT_LOOKUP.containsKey(clazz.getName()) ) return (T)DIRECT_LOOKUP.get(clazz.getName());
 
         Iterator<T> serviceIterator = ServiceLoader.load(clazz).iterator();
         if ( !serviceIterator.hasNext() ) return null;
-        return serviceIterator.next();
+        T result = serviceIterator.next();
+        if (result instanceof LocalSingleton) {
+            L.info("lookup({}), LocalSingelton tag detected, adding to DIRECT_LOOKUP",clazz.getName());
+            DIRECT_LOOKUP.put(clazz.getName(), result);
+        }
+        return result;
     }
 
     public <T> Optional<T> optional(Class<T> clazz) {
