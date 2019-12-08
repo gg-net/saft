@@ -151,7 +151,7 @@ public class FxBuilder {
                 .thenApply(BuilderUtil::breakIfOnceAndActive) // Siwng specific
                 .thenApplyAsync(BuilderUtil::consumePreResult, Platform::runLater);
 
-        if (UiCore.isGluon())  {
+        if ( UiCore.isGluon() ) {
             return uniChain
                     .thenApply(Dl.local().lookup(GluonSupport.class)::constructJavaFx); // Allready on JavaFx Thread.
         } else if ( UiCore.isSwing() ) {

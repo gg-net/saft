@@ -137,7 +137,6 @@
                 <netbeans.hint.jdkPlatform>JDK_11</netbeans.hint.jdkPlatform>
             </properties>
             <dependencies>
-                <!-- We use javafx in tryouts in the lower layers. An in some weird idea we added javafx properties to entity classes -->
                 <dependency>
                     <groupId>org.openjfx</groupId>
                     <artifactId>javafx-controls</artifactId>
