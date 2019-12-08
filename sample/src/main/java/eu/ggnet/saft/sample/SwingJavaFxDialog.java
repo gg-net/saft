@@ -8,6 +8,7 @@ import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.sample.support.MainPanel;
 
+import static javafx.scene.control.ButtonBar.ButtonData.OK_DONE;
 import static javafx.scene.control.ButtonType.CANCEL;
 import static javafx.scene.control.ButtonType.OK;
 
@@ -45,8 +46,23 @@ public class SwingJavaFxDialog {
                 dialog.getDialogPane().getButtonTypes().addAll(OK, CANCEL);
                 return dialog;
             }).opt().ifPresent(System.out::println);
-        });
 
+            Ui.build().dialog().eval(() -> {
+
+                Dialog<String> dialog = new Dialog<>();
+
+                dialog.setHeaderText("Report erstellen ?");
+                dialog.getDialogPane().getButtonTypes().addAll(ButtonType.CANCEL, ButtonType.OK);
+                dialog.setResizable(true);
+
+                final String infoLine = "Name: Verkaufsreport"
+                        + "\nStart: 2019-01-23"
+                        + "\nEnde: 2020-12-11";
+                dialog.setContentText(infoLine);
+                dialog.setResultConverter((type) -> type.getButtonData() == OK_DONE ? infoLine : null);
+                return dialog;
+            }).opt().ifPresent(System.out::println);
+        });
     }
 
 }

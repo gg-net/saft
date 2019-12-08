@@ -32,12 +32,10 @@ import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
 import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
@@ -225,13 +223,13 @@ public final class BuilderUtil {
      */
     static UiParameter modifyDialog(UiParameter in) {
         Dialog dialog = in.dialog().get();
-        dialog.getDialogPane().getScene().setRoot(new BorderPane()); // Remove the DialogPane form the Scene, otherwise an Exception is thrown
-        dialog.getDialogPane().getButtonTypes().stream().map(t -> dialog.getDialogPane().lookupButton(t)).forEach(b -> { // Add Closing behavior on all buttons.
-            ((Button)b).setOnAction(e -> {
-                L.debug("Close on Dialog called");
-                Ui.closeWindowOf(dialog.getDialogPane());
-            });
+
+        // Activates the closing of any surounding swing element.
+        dialog.setOnCloseRequest((event) -> {
+            L.debug("handle(event.getSource()={}) dialog.getScene() is set ? {}", event.getSource(), dialog.getDialogPane().getScene() != null);
+            Ui.closeWindowOf(((Dialog)event.getSource()).getDialogPane());
         });
+
         return in;
     }
 
@@ -321,7 +319,8 @@ public final class BuilderUtil {
     static UiParameter wrapPane(UiParameter in) {
         if ( !(in.jPanel().get() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
         JFXPanel fxp = (JFXPanel)in.jPanel().get();
-        fxp.setScene(new Scene(in.pane().get(), Color.TRANSPARENT));
+        // fxp.setScene(new Scene(in.pane().get(), Color.TRANSPARENT));
+        fxp.setScene(in.pane().get().getScene());
         SwingCore.mapParent(fxp);
         return in;
     }

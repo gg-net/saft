@@ -182,8 +182,10 @@ public class Ui {
      */
     public static void closeWindowOf(Node n) {
         if ( UiCore.isGluon() ) {
+            L.debug("closeWindowOf({}) gluon mode", n);
             Dl.local().lookup(GluonSupport.class).closeViewOrDialogOf(n);
         } else {
+            L.debug("closeWindowOf({}) desktop mode", n);
             UiParent.of(n).ifPresent(
                     p -> SwingSaft.run(() -> {
                         p.setVisible(false);

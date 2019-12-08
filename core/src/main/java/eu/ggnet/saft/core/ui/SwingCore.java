@@ -17,6 +17,8 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
+import org.slf4j.LoggerFactory;
+
 import eu.ggnet.saft.core.UiCore;
 
 /**
@@ -111,6 +113,7 @@ public class SwingCore {
      * @return a window.
      */
     public static Optional<Window> windowAncestor(Component c) {
+        LoggerFactory.getLogger(SwingCore.class).debug("windowAncestor({})", c);
         if ( c == null ) return Optional.empty();
         if ( c instanceof Window ) return Optional.of((Window)c);
         return Optional.ofNullable(SwingUtilities.getWindowAncestor(c));
@@ -124,6 +127,7 @@ public class SwingCore {
      */
     public static Optional<Window> windowAncestor(Node p) {
         if ( p == null ) return Optional.empty();
+        LoggerFactory.getLogger(SwingCore.class).debug("windowAncestor(node) node.getScene()={}, SWING_PARENT_HELPER.keySet()={}", p.getScene(), SWING_PARENT_HELPER.keySet());
         return windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
     }
 }

@@ -27,6 +27,9 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.builder.StaticParentMapperJavaFx;
 
@@ -234,8 +237,16 @@ public abstract class UiParent {
      * @param javaFxConsumer consuer, called only in fx mode and if a fx parent is not null.
      */
     public void ifPresent(Consumer<Window> swingConsumer, Consumer<Stage> javaFxConsumer) {
-        if ( UiCore.isSwing() && swing() != null ) swingConsumer.accept(swing());
-        if ( UiCore.isFx() && fx() != null ) javaFxConsumer.accept(fx());
+        final Logger L = LoggerFactory.getLogger(UiParent.class);
+        if ( UiCore.isSwing() && swing() != null ) {
+            L.debug("ifPresent() UiCore.isSwing()=true and swing() is set with {}", swing());
+            swingConsumer.accept(swing());
+        } else if ( UiCore.isFx() && fx() != null ) {
+            L.debug("ifPresent() UiCore.isFx()=true and fx() is set with {}", fx());
+            javaFxConsumer.accept(fx());
+        } else {
+            L.debug("ifPresent() UiCore.isSwing()={}, UiCore.isFx()={}, neither fx() nor swing() is set", UiCore.isSwing(), UiCore.isFx());
+        }
     }
 
 }

@@ -47,7 +47,7 @@ public class LocalDl {
      * <li>use {@link  ServiceLoader#load(java.lang.Class) }</li>
      * </ul>
      *
-     * @param <T>
+     * @param <T>   the type
      * @param clazz the class as identifier
      * @return the service or null if none found.
      */
@@ -61,8 +61,8 @@ public class LocalDl {
         Iterator<T> serviceIterator = ServiceLoader.load(clazz).iterator();
         if ( !serviceIterator.hasNext() ) return null;
         T result = serviceIterator.next();
-        if (result instanceof LocalSingleton) {
-            L.info("lookup({}), LocalSingelton tag detected, adding to DIRECT_LOOKUP",clazz.getName());
+        if ( result instanceof LocalSingleton ) {
+            L.info("lookup({}), LocalSingelton tag detected, adding to DIRECT_LOOKUP", clazz.getName());
             DIRECT_LOOKUP.put(clazz.getName(), result);
         }
         return result;
@@ -75,7 +75,7 @@ public class LocalDl {
     /**
      * Add a service direct to the lookup, no overwrites are possible
      *
-     * @param <T>
+     * @param <T>     the type
      * @param clazz   the class as identifierer.
      * @param service the service
      */
