@@ -36,6 +36,7 @@ import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
@@ -299,7 +300,7 @@ public final class BuilderUtil {
         StaticParentMapperJavaFx.map(jpanel, sn);
 
         Dimension preferredSize = jpanel.getPreferredSize();
-        L.debug("Setting Swing Size to JavaFx {}", preferredSize);
+        L.debug("wrapJPanel(in): setting in.pane().prefSize from in.jPanel().preferredSize={}", preferredSize);
         pane.setPrefHeight(preferredSize.getHeight());
         pane.setPrefWidth(preferredSize.getWidth());
         return in;
@@ -319,8 +320,13 @@ public final class BuilderUtil {
     static UiParameter wrapPane(UiParameter in) {
         if ( !(in.jPanel().get() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
         JFXPanel fxp = (JFXPanel)in.jPanel().get();
-        // fxp.setScene(new Scene(in.pane().get(), Color.TRANSPARENT));
-        fxp.setScene(in.pane().get().getScene());
+        if ( in.pane().get().getScene() != null ) {
+            L.debug("wrapPane(in): in.pane().getScene() is not null, probally a javafx dialog to wrap, reusing");
+            fxp.setScene(in.pane().get().getScene());
+        } else {
+            L.debug("wrapPane(in): in.pane().getScene() is null, creating");
+            fxp.setScene(new Scene(in.pane().get(), Color.TRANSPARENT));
+        }
         SwingCore.mapParent(fxp);
         return in;
     }
