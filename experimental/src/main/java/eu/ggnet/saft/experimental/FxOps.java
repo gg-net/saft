@@ -26,7 +26,6 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 
-import eu.ggnet.saft.core.Dl;
 import eu.ggnet.saft.core.ui.FxSaft;
 import eu.ggnet.saft.experimental.auth.Accessable;
 import eu.ggnet.saft.experimental.auth.Guardian;
@@ -43,27 +42,24 @@ public class FxOps {
     /**
      * Returns a EventHandler useful for Lists to active the global default handling.
      * <p>
-     * @param <T> the type
+     * @param <T>            the type
      * @param selectionModel the selection model.
+     * @param guardian       an guardian implementation, may be null.
      * @return a event handler, which will call the default action on double click.
      */
-    public static <T> EventHandler<MouseEvent> defaultMouseEventOf(SelectionModel<T> selectionModel) {
+    public static <T> EventHandler<MouseEvent> defaultMouseEventOf(SelectionModel<T> selectionModel, Guardian guardian) {
         return (mouseEvent) -> {
             if ( !selectionModel.isEmpty()
                     && mouseEvent.getButton().equals(MouseButton.PRIMARY)
                     && mouseEvent.getClickCount() == 2 ) {
                 T item = selectionModel.getSelectedItem();
                 Optional<DescriptiveConsumerRunner<T>> optionalRunner = Ops.defaultOf(item);
-                if ( optionalRunner.isPresent() && authorised(optionalRunner.get()) ) optionalRunner.get().run();
+                if ( optionalRunner.isPresent() && authorised(optionalRunner.get(), guardian) ) optionalRunner.get().run();
             }
         };
     }
 
-    public static <T> ContextMenu contextMenuOf(SelectionModel<T> selectionModel) {
-        return contextMenuOf(selectionModel, null);
-    }
-
-    public static <T> ContextMenu contextMenuOf(SelectionModel<T> selectionModel, SelectionEnhancer<T> filter) {
+    public static <T> ContextMenu contextMenuOf(SelectionModel<T> selectionModel, SelectionEnhancer<T> filter, Guardian guardian) {
         ContextMenu menu = FxSaft.dispatch(() -> new ContextMenu());
         final MenuItem noAction = new MenuItem("No Context Action");
         noAction.setDisable(true);
@@ -83,7 +79,7 @@ public class FxOps {
 
             List<MenuItem> menuItems = actions
                     .stream()
-                    .filter(a -> authorised(a.consumer()))
+                    .filter(a -> authorised(a.consumer(), guardian))
                     .map(FxOps::toMenuItem)
                     .collect(Collectors.toList());
 
@@ -100,7 +96,7 @@ public class FxOps {
                 List<MenuItem> dynamicItems = Ops
                         .dynamicOf(t, filter)
                         .stream()
-                        .filter(a -> authorised(a.consumer()))
+                        .filter(a -> authorised(a.consumer(), guardian))
                         .map(FxOps::toMenuItem)
                         .collect(Collectors.toList());
                 Platform.runLater(() -> {
@@ -124,10 +120,10 @@ public class FxOps {
         return item;
     }
 
-    private static boolean authorised(Object o) {
+    private static boolean authorised(Object o, Guardian g) {
         if ( !(o instanceof Accessable) ) return true; // Not even something with rights.
-        if ( !Dl.local().optional(Guardian.class).isPresent() ) return true; // No guardian, rights are ignored.
-        return Dl.local().lookup(Guardian.class).getRights().contains(((Accessable)o).getNeededRight());
+        if ( g == null ) return true; // No guardian, rights are ignored.
+        return g.getRights().contains(((Accessable)o).getNeededRight());
     }
 
 }

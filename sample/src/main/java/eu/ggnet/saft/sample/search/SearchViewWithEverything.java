@@ -16,20 +16,22 @@
  */
 package eu.ggnet.saft.sample.search;
 
-import eu.ggnet.saft.experimental.ops.Selector;
-import eu.ggnet.saft.experimental.FxOps;
-import eu.ggnet.saft.experimental.Ops;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 
+import eu.ggnet.saft.core.Dl;
 import eu.ggnet.saft.core.ui.ClosedListener;
 import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.experimental.FxOps;
+import eu.ggnet.saft.experimental.Ops;
+import eu.ggnet.saft.experimental.auth.Guardian;
 import eu.ggnet.saft.experimental.ops.SelectionEnhancer;
+import eu.ggnet.saft.experimental.ops.Selector;
 
 /**
  *
@@ -58,9 +60,9 @@ public class SearchViewWithEverything extends BorderPane implements ClosedListen
             selector.selected(n);
         });
 
-        searchResults.setOnMouseClicked(FxOps.defaultMouseEventOf(selectionModel));
+        searchResults.setOnMouseClicked(FxOps.defaultMouseEventOf(selectionModel, Dl.local().lookup(Guardian.class)));
 
-        ContextMenu toFxContextMenu = FxOps.contextMenuOf(selectionModel, enhancer);
+        ContextMenu toFxContextMenu = FxOps.contextMenuOf(selectionModel, enhancer, Dl.local().lookup(Guardian.class));
 
         searchResults.setContextMenu(toFxContextMenu);
 

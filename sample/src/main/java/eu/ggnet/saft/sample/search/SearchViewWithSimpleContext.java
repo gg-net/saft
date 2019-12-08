@@ -18,11 +18,14 @@ package eu.ggnet.saft.sample.search;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ListView;
 import javafx.scene.layout.BorderPane;
 
+import eu.ggnet.saft.core.Dl;
 import eu.ggnet.saft.core.ui.Title;
 import eu.ggnet.saft.experimental.FxOps;
+import eu.ggnet.saft.experimental.auth.Guardian;
 
 /**
  *
@@ -35,7 +38,7 @@ public class SearchViewWithSimpleContext extends BorderPane {
         final ListView<SearchResult> searchResults = new ListView<>();
         final ObservableList<SearchResult> searchModel = FXCollections.observableArrayList();
         searchResults.setItems(searchModel);
-        searchResults.setContextMenu(FxOps.contextMenuOf(searchResults.getSelectionModel()));
+        searchResults.setContextMenu(FxOps.contextMenuOf(searchResults.getSelectionModel(), null, Dl.local().lookup(Guardian.class)));
 
         setCenter(searchResults);
 
