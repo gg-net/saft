@@ -9,7 +9,7 @@
     <artifactId>saft-test-javafx</artifactId>
     <name>GG-Net Saft Test-JavaFx</name>
     <description>The Ui Tests have been put here for two reasons. First, they conflict if they are run in the same environment, than the swing test. And second
-    they are a little unstable. There have been differtent situation, there the tests started to fail. Causes so far where: Outdated Graficdrivers, Bug in the JDK</description>
+        they are a little unstable. There have been differtent situation, there the tests started to fail. Causes so far where: Outdated Graficdrivers, Bug in the JDK</description>
     <packaging>jar</packaging>
     <dependencies>
         <dependency>

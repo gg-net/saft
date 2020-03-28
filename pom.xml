@@ -124,7 +124,6 @@
         <module>core</module>
         <module>gluon</module>
         <module>sample</module>
-        <module>experimental</module>
         <module>test-javafx</module>
         <module>test-swing</module>
     </modules>
