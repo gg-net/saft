@@ -66,6 +66,8 @@ public class UiCore {
 
     private static AtomicBoolean shuttingDown = new AtomicBoolean(false); // Shut down handler.
 
+    private static Saft saft;
+
     private static Consumer<Throwable> finalConsumer = (b) -> {
         if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
             L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
@@ -86,6 +88,25 @@ public class UiCore {
         }
 
     };
+
+    public static void initGlobal(Saft newSaft) {
+        if ( saft != null ) throw new IllegalStateException("UiCore.global() already inited, call to initGlobal(Saft) not allowed.");
+        saft = Objects.requireNonNull(newSaft, "Saft must not be null");
+    }
+
+    /**
+     * Returns the one instance, if running in the classic way.
+     *
+     *
+     * @return
+     */
+    public static Saft global() {
+        if ( saft == null ) {
+            // init defaults.
+            saft = new Saft(new LocationStorage());
+        }
+        return saft;
+    }
 
     /**
      * Returns the mainFrame in swing mode, otherwise null.

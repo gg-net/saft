@@ -17,7 +17,8 @@
 package eu.ggnet.saft.core.ui.builder;
 
 import java.awt.Dialog.ModalityType;
-import java.awt.*;
+import java.awt.Dimension;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
@@ -42,7 +43,8 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;
 
@@ -151,7 +153,7 @@ public final class BuilderUtil {
         window.setIconImages(loadAwtImages(iconReferenzClass));
         window.pack();
         window.setLocationRelativeTo(relativeLocationAnker);
-        if ( in.isStoreLocation() ) Dl.local().lookup(UserPreferences.class).loadLocation(storeLocationClass, window);
+        if ( in.isStoreLocation() ) UiCore.global().locationStorage().loadLocation(storeLocationClass, window);
         SwingCore.ACTIVE_WINDOWS.put(windowKey, new WeakReference<>(window));
         // Removes on close.
         window.addWindowListener(new WindowAdapter() {
@@ -160,7 +162,7 @@ public final class BuilderUtil {
                 // Clean us up.
                 SwingCore.ACTIVE_WINDOWS.remove(windowKey);
                 // Store location.
-                if ( in.isStoreLocation() ) Dl.local().lookup(UserPreferences.class).storeLocation(storeLocationClass, window);
+                if ( in.isStoreLocation() ) UiCore.global().locationStorage().storeLocation(storeLocationClass, window);
             }
         });
         return window;
@@ -354,11 +356,8 @@ public final class BuilderUtil {
     }
 
     private static void registerAndSetStoreLocation(Class<?> key, javafx.stage.Stage window) {
-        Dl.local().optional(UserPreferences.class).ifPresent(u -> u.loadLocation(key, window));
-        window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-            Dl.local().optional(UserPreferences.class).ifPresent(u -> u.storeLocation(key, window));
-        });
-
+        UiCore.global().locationStorage().loadLocation(key, window);
+        window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> UiCore.global().locationStorage().storeLocation(key, window));
     }
 
     static UiParameter constructJavaFx(UiParameter in) {
@@ -435,7 +434,7 @@ public final class BuilderUtil {
     }
 
     private static java.util.List<java.awt.Image> loadAwtImages(Class<?> reference) throws IOException {
-        Toolkit toolkit = Toolkit.getDefaultToolkit();
+        java.awt.Toolkit toolkit = java.awt.Toolkit.getDefaultToolkit();
         return IconConfig.possibleIcons(reference).stream()
                 .map(n -> reference.getResource(n))
                 .filter(u -> u != null)
