@@ -24,7 +24,9 @@ import javafx.stage.Window;
  * Service for UserPreferences.
  *
  * @author oliver.guenther
+ * @deprecated Use {@link eu.ggnet.saft.core.Saft#locationStorage }, in classic mode {@link eu.ggnet.saft.core.UiCore#global()} .
  */
+@Deprecated
 public interface UserPreferences {
 
     /**

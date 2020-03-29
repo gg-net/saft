@@ -12,7 +12,7 @@
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
-            <artifactId>saft-experimental</artifactId>
+            <artifactId>saft-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

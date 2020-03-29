@@ -396,7 +396,6 @@ public class UiCore {
             L.warn("Exception occured on {}", t, e);
             Ui.handle(e);
         });
-        Dl.local().add(UserPreferences.class, new UserPreferencesJdk()); // Hard added here.
     }
 
 }

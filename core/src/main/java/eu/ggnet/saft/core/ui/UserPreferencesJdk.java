@@ -32,9 +32,11 @@ import org.slf4j.LoggerFactory;
  * Util Class for storing and retrieving complex information in the Preferences.
  * <p>
  * @author oliver.guenther
+ * @deprecated Use {@link eu.ggnet.saft.core.Saft#locationStorage }, in classic mode {@link eu.ggnet.saft.core.UiCore#global()} .
  */
 // TODO: May be reenable this as service. for now we just add it in UiCore.globalStartUp();
 // @ServiceProvider(service = UserPreferences.class)
+@Deprecated
 public class UserPreferencesJdk implements UserPreferences {
 
     public final static String WINDOW_X = "window.x";
