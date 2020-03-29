@@ -28,7 +28,8 @@ import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
@@ -152,7 +153,7 @@ public class FxmlBuilder {
 
         if ( UiCore.isGluon() ) {
             return uniChain
-                    .thenApply(Dl.local().lookup(GluonSupport.class)::constructJavaFx); // Allready on JavaFx Thread.
+                    .thenApply(UiCore.global().gluonSupport().get()::constructJavaFx); // Allready on JavaFx Thread.
         } else if ( UiCore.isSwing() ) {
             return uniChain
                     .thenApplyAsync(in -> in, UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.

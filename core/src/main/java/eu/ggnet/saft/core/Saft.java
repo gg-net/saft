@@ -6,8 +6,10 @@
 package eu.ggnet.saft.core;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import eu.ggnet.saft.core.ui.LocationStorage;
+import eu.ggnet.saft.core.ui.builder.GluonSupport;
 
 /**
  * The core of saft, everything that is keept in a singleton way, is registered or held here.
@@ -18,6 +20,8 @@ import eu.ggnet.saft.core.ui.LocationStorage;
 public class Saft {
 
     private final LocationStorage locationStorage;
+
+    private Optional<GluonSupport> gluonSupport = Optional.empty();
 
     /**
      * Default Constructor, ready for own implementations.
@@ -39,6 +43,25 @@ public class Saft {
      */
     public LocationStorage locationStorage() {
         return locationStorage;
+    }
+
+    /**
+     * Returns a gluon support if gluon is enabled.
+     *
+     * @return a gluon support if gluon is enabled.
+     */
+    public Optional<GluonSupport> gluonSupport() {
+        return gluonSupport;
+    }
+
+    /**
+     * Setting the gluon support.
+     * By setting the gluon support, gluon is enabled in saft.
+     *
+     * @param gluonSupport the gluon support.
+     */
+    public void gluonSupport(GluonSupport gluonSupport) {
+        this.gluonSupport = Optional.ofNullable(gluonSupport);
     }
 
 }

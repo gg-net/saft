@@ -10,23 +10,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.Dl;
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.gluon.internal.GluonPreBuilder;
 import eu.ggnet.saft.gluon.internal.GluonSupportService;
 
 /**
  * Single entry point for all compile-safe gluon specific activities.
- * 
+ *
  * @author oliver.guenther
  */
 public class Gi {
-    
+
     private static final AtomicBoolean RUNNING = new AtomicBoolean(false);
-    
+
     private static final Logger L = LoggerFactory.getLogger(Gi.class);
-    
+
     /**
      * Startup the gloun specific parts of saft.
      * This method can be called multiple times, only the first is relevant.
@@ -34,15 +32,15 @@ public class Gi {
      */
     public static void startUp() {
         L.debug("startUp() called");
-        if (!RUNNING.compareAndSet(false, true)) return;
+        if ( !RUNNING.compareAndSet(false, true) ) return;
         L.info("startUp(): First call, registering saft-gluon services in Dl");
-        Dl.local().add(GluonSupport.class, new GluonSupportService());
+        UiCore.global().gluonSupport(new GluonSupportService());
         UiCore.overwriteFinalExceptionConsumer(new DefaultGluonFinalExceptionConsumer());
     }
-    
+
     /**
      * Allows to build gluon ui components.
-     * 
+     *
      * @return returns the gluon pre builder.
      */
     public static GluonPreBuilder build() {

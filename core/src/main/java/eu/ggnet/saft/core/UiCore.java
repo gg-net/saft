@@ -25,7 +25,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.ui.*;
-import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
 import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
 import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
@@ -89,6 +88,12 @@ public class UiCore {
 
     };
 
+    /**
+     * Initialise the global with the supplied saft.
+     * Transition method. If Saft is created by someone else, e.g. CDI, but there exists only one, it can be used to initialise the UiCore.
+     *
+     * @param newSaft the saft.
+     */
     public static void initGlobal(Saft newSaft) {
         if ( saft != null ) throw new IllegalStateException("UiCore.global() already inited, call to initGlobal(Saft) not allowed.");
         saft = Objects.requireNonNull(newSaft, "Saft must not be null");
@@ -97,8 +102,7 @@ public class UiCore {
     /**
      * Returns the one instance, if running in the classic way.
      *
-     *
-     * @return
+     * @return the global saft.
      */
     public static Saft global() {
         if ( saft == null ) {
@@ -252,6 +256,7 @@ public class UiCore {
      * @param <T>   type restriction.
      * @param scene the first and only scene of gluon.
      */
+    // Todo: das kann eingentlich nach gloun. Wenn jemand gluon benutzt, dann hat er beim start auch die dependencie. Das muss ich gar nicht reflexif machen.
     public static <T extends Parent> void continueGluon(final Scene scene) {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
 
@@ -266,7 +271,7 @@ public class UiCore {
             throw new RuntimeException(ex);
         }
 
-        if ( !Dl.local().optional(GluonSupport.class).isPresent() )
+        if ( !UiCore.global().gluonSupport().isPresent() )
             throw new IllegalStateException("Trying to active gluon mode, but no local Service implementation of GluonSupport found. Is the dependency saft-gluon available ?");
         mainStage = ((Stage)scene.getWindow());
         L.info("Starting SAFT in Gloun Mode, using MainStage {}", mainStage);

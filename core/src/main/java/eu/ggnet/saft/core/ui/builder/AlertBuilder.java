@@ -10,7 +10,8 @@ import javafx.scene.control.Alert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.*;
 
 import static eu.ggnet.saft.core.ui.AlertType.INFO;
@@ -95,8 +96,8 @@ public class AlertBuilder {
      */
     public void show(AlertType type) {
         try {
-            if (UiCore.isGluon()) {
-                Dl.local().lookup(GluonSupport.class).showAlert(title, message, type);
+            if ( UiCore.isGluon() ) {
+                UiCore.global().gluonSupport().get().showAlert(title, message, type);
             } else if ( UiCore.isFx() ) {
                 FxSaft.dispatch(() -> {
                     Alert alert = new Alert(type.getJavaFxType());
@@ -121,5 +122,5 @@ public class AlertBuilder {
     public String toString() {
         return "AlertBuilder{" + "title=" + title + ", message=" + message + ", parent=" + parent + '}';
     }
-    
+
 }
