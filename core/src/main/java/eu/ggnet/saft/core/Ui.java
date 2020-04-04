@@ -15,7 +15,6 @@ import javafx.scene.Parent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.api.Reply;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.*;
 
@@ -75,16 +74,6 @@ public class Ui {
      */
     public static FileChooserBuilder fileChooser() {
         return new FileChooserBuilder();
-    }
-
-    /**
-     * Returns a new failure Handler, usefull in an Optional {@link Reply} chain.
-     *
-     * @return a new failure Handler.
-     */
-    // TODO: Consider removal or move to experimental.
-    public static Failure failure() {
-        return new Failure();
     }
 
     /**
