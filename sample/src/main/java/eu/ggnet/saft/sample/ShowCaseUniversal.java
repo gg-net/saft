@@ -33,13 +33,13 @@ import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
  *
  * @author oliver.guenther
  */
-public abstract class ShowCaseUniversal {
+public class ShowCaseUniversal {
 
     private final static String[] NAMES = {"Hans", "Klaus", "Horst", "Charlotte", "Caroline", "Ivet"};
 
     private final static Random R = new Random();
 
-    protected static class Sitem {
+    public static class Sitem {
 
         public Sitem(String key, Runnable value) {
             this.key = key;
@@ -52,7 +52,7 @@ public abstract class ShowCaseUniversal {
 
     }
 
-    protected static class Smenu {
+    public static class Smenu {
 
         public Smenu(String name, List<Sitem> items) {
             this.name = name;
@@ -139,6 +139,10 @@ public abstract class ShowCaseUniversal {
                 .filter(s -> s != null)
                 .flatMap((Stage t) -> t.getIcons().stream().map(i -> t.toString() + "|" + i.toString()))
                 .forEach(System.out::println);
+    }
+
+    public List<Smenu> menu() {
+        return MENUS;
     }
 
 }

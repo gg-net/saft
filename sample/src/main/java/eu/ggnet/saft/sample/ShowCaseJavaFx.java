@@ -19,64 +19,62 @@ package eu.ggnet.saft.sample;
 import javafx.application.Application;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
 
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.sample.ShowCaseUniversal.Sitem;
+import eu.ggnet.saft.sample.ShowCaseUniversal.Smenu;
 
 /**
  *
  * @author oliver.guenther
  */
 public class ShowCaseJavaFx {
-    
-    private static class UiBuilder extends ShowCaseUniversal {
 
-    public Pane build() {
-        MenuBar mb = new MenuBar();
-        for (Smenu smenu : MENUS) {
-            Menu submenu = new Menu(smenu.name);
-            for (Sitem item : smenu.items) {
-                MenuItem menuItem = new MenuItem(item.key);
-                menuItem.setOnAction((e) -> item.value.run());
-                submenu.getItems().add(menuItem);
+    @Title("JavaFx Showcase")
+    public static class FxPane extends BorderPane {
+
+        public FxPane() {
+            ShowCaseUniversal u = new ShowCaseUniversal();
+
+            MenuBar mb = new MenuBar();
+            for (Smenu smenu : u.menu()) {
+                Menu submenu = new Menu(smenu.name);
+                for (Sitem item : smenu.items) {
+                    MenuItem menuItem = new MenuItem(item.key);
+                    menuItem.setOnAction((e) -> item.value.run());
+                    submenu.getItems().add(menuItem);
+                }
+                mb.getMenus().add(submenu);
             }
-            mb.getMenus().add(submenu);
-        }
 
-        Label mainLabel = new Label("Main Applikation");
-        mainLabel.setFont(new Font("Arial", 48));
+            Label mainLabel = new Label("Main Applikation");
+            mainLabel.setFont(new Font("Arial", 48));
 
-        BorderPane bp = new BorderPane();
-        bp.setTop(mb);
-        bp.setCenter(mainLabel);
-        return bp;
+            setTop(mb);
+            setCenter(mainLabel);
         }
     }
 
-    public static class Internal extends Application {
+    public static class ShowCaseJavaFxApplication extends Application {
 
-    
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        UiCore.startJavaFx(primaryStage, () -> new UiBuilder().build());
-    }
-
-    @Override
-    public void stop() throws Exception {
-        System.out.println("Stop called: Showing open threads");
-        Thread.getAllStackTraces().keySet().stream().forEach(System.out::println);
-    }
-        
-        public static void main(String[] args) {
-            launch(args);
+        @Override
+        public void start(Stage primaryStage) throws Exception {
+            UiCore.startJavaFx(primaryStage, () -> new FxPane());
         }
+
+        @Override
+        public void stop() throws Exception {
+            System.out.println("Stop called: Showing open threads");
+            Thread.getAllStackTraces().keySet().stream().forEach(System.out::println);
+        }
+
     }
-    
 
     public static void main(String[] args) {
-        Internal.main(args);
+        Application.launch(ShowCaseJavaFxApplication.class, args);
     }
 
 }

@@ -16,33 +16,43 @@
  */
 package eu.ggnet.saft.sample;
 
+import java.awt.BorderLayout;
+
 import javax.swing.*;
 
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.sample.ShowCaseUniversal.Sitem;
+import eu.ggnet.saft.sample.ShowCaseUniversal.Smenu;
 import eu.ggnet.saft.sample.support.MainPanelAddButtons;
 
 /**
  *
  * @author oliver.guenther
  */
-public class ShowCaseSwing extends ShowCaseUniversal {
+public class ShowCaseSwing {
 
-    public JPanel build() {
-        MainPanelAddButtons main = new MainPanelAddButtons();
-        for (Smenu smenu : MENUS) {
-            JMenu submenu = new JMenu(smenu.name);
-            for (Sitem item : smenu.items) {
-                JMenuItem menuItem = new JMenuItem(item.key);
-                menuItem.addActionListener((e) -> item.value.run());
-                submenu.add(menuItem);
+    @Title("ShowCase Swing")
+    public static class SwingPanel extends JPanel {
+
+        public SwingPanel() {
+            MainPanelAddButtons main = new MainPanelAddButtons();
+            for (Smenu smenu : new ShowCaseUniversal().menu()) {
+                JMenu submenu = new JMenu(smenu.name);
+                for (Sitem item : smenu.items) {
+                    JMenuItem menuItem = new JMenuItem(item.key);
+                    menuItem.addActionListener((e) -> item.value.run());
+                    submenu.add(menuItem);
+                }
+                main.getMenuBar().add(submenu);
             }
-            main.getMenuBar().add(submenu);
+            setLayout(new BorderLayout());
+            add(main);
         }
-        return main;
     }
 
     public static void main(String[] args) {
-        UiCore.startSwing(() -> new ShowCaseSwing().build());
+        UiCore.startSwing(() -> new SwingPanel());
     }
 
 }

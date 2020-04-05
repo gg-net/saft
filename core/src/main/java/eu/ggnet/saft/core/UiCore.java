@@ -200,26 +200,25 @@ public class UiCore {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
         SwingCore.ensurePlatformIsRunning();
         try {
-            JFrame panel = SwingSaft.dispatch(() -> {
-                T node = builder.call();
-                JFrame p = new JFrame();
+            continueSwing(SwingSaft.dispatch(() -> {
+                T p = builder.call();
+                JFrame frame = new JFrame();
                 if ( p instanceof TitleSupplier ) {
                     ((TitleSupplier)p).titleProperty().addListener((ob, o, n) -> {
-                        p.setTitle(n);
-                        p.setName(n);
+                        frame.setTitle(n);
+                        frame.setName(n);
                     });
                 } else if ( p.getClass().getAnnotation(Title.class) != null ) {
-                    p.setTitle(p.getClass().getAnnotation(Title.class).value());
-                    p.setName(p.getClass().getAnnotation(Title.class).value());
+                    frame.setTitle(p.getClass().getAnnotation(Title.class).value());
+                    frame.setName(p.getClass().getAnnotation(Title.class).value());
                 }
-                p.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                p.getContentPane().add(builder.call());
-                p.pack();
-                p.setLocationByPlatform(true);
-                p.setVisible(true);
-                return p;
-            });
-            continueSwing(panel);
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                frame.getContentPane().add(p);
+                frame.pack();
+                frame.setLocationByPlatform(true);
+                frame.setVisible(true);
+                return frame;
+            }));
         } catch (InterruptedException | InvocationTargetException | ExecutionException ex) {
             handle(ex);
         }
