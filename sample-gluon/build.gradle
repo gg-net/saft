@@ -22,7 +22,7 @@ mainClassName = 'eu.ggnet.saft.gluon.sample.SaftGluonSampleApplication'
 
 dependencies {
     compile 'com.gluonhq:charm:5.0.1',
-            'eu.ggnet.saft:saft-gluon:1.1-SNAPSHOT',
+            'eu.ggnet.saft:saft-gluon:2.0-SNAPSHOT',
             'org.slf4j:slf4j-api:1.7.25'
 
     desktopRuntime  'ch.qos.logback:logback-classic:1.0.9',

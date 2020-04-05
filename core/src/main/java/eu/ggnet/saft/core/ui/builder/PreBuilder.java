@@ -44,12 +44,6 @@ public class PreBuilder {
     boolean once = false;
 
     /**
-     * An optional id. Replaces the id part in a title like: this is a title of {id}
-     * Default = null.
-     */
-    String id = null;
-
-    /**
      * An optional title. If no title is given, the classname is used.
      * Default = null
      */
@@ -77,17 +71,6 @@ public class PreBuilder {
      */
     public PreBuilder once(boolean once) {
         this.once = once;
-        return this;
-    }
-
-    /**
-     * An optional id. Replaces the id part in a title like: this is a title of {id}
-     *
-     * @param id the optional id.
-     * @return this as fluent usage
-     */
-    public PreBuilder id(String id) {
-        this.id = id;
         return this;
     }
 

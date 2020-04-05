@@ -92,7 +92,7 @@ public class GluonSupportService implements GluonSupport {
         if ( !Platform.isFxApplicationThread() ) throw new IllegalStateException("construnctJavaFx called, but not from the ui thread, disallowed");
         Pane pane = in.pane().get();
         Dialog<Void> d = new Dialog<>();
-        d.setTitleText(in.toTitle());
+        d.titleTextProperty().bind(in.toTitleProperty());
         d.setContent(pane);
         d.showAndWait();
         return in;

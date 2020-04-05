@@ -10,13 +10,11 @@ import java.util.function.Consumer;
 
 import org.inferred.freebuilder.FreeBuilder;
 
-import eu.ggnet.saft.api.IdSupplier;
-
 import com.gluonhq.charm.glisten.control.Dialog;
 
 /**
  * Internal builder parameter.
- * 
+ *
  * @author oliver.guenther
  */
 @FreeBuilder
@@ -24,29 +22,29 @@ public abstract class GluonParameter {
 
     /**
      * Id.
-     * 
+     *
      * @return optional id.
      */
     abstract Optional<String> id();
 
     /**
      * PreResult.
-     * 
+     *
      * @return optional pre result.
      */
     abstract Optional<Object> preResult();
 
     /**
      * Gloun Dialog.
-     * 
+     *
      * @return optional gluon dialog.
      */
     abstract Dialog<?> gluonDialog();
 
     /**
      * Result.
-     * 
-     * @return optional result. 
+     *
+     * @return optional result.
      */
     abstract Optional<?> result();
 
@@ -57,9 +55,7 @@ public abstract class GluonParameter {
 
     public final GluonParameter withPreResult(Object preResult) {
         if ( preResult == null ) return this;
-        GluonParameter.Builder builder = toBuilder().preResult(preResult);
-        if ( !id().isPresent() && preResult instanceof IdSupplier ) builder.nullableId(((IdSupplier)preResult).id());
-        return builder.build();
+        else return toBuilder().preResult(preResult).build();
     }
 
     public final GluonParameter optionalConsumePreResult() {

@@ -203,8 +203,15 @@ public class UiCore {
             JFrame panel = SwingSaft.dispatch(() -> {
                 T node = builder.call();
                 JFrame p = new JFrame();
-                p.setTitle(TitleUtil.title(node.getClass()));
-                p.setName(TitleUtil.title(node.getClass()));
+                if ( p instanceof TitleSupplier ) {
+                    ((TitleSupplier)p).titleProperty().addListener((ob, o, n) -> {
+                        p.setTitle(n);
+                        p.setName(n);
+                    });
+                } else if ( p.getClass().getAnnotation(Title.class) != null ) {
+                    p.setTitle(p.getClass().getAnnotation(Title.class).value());
+                    p.setName(p.getClass().getAnnotation(Title.class).value());
+                }
                 p.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 p.getContentPane().add(builder.call());
                 p.pack();
@@ -235,9 +242,13 @@ public class UiCore {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
         mainStage = primaryStage;
         FxSaft.dispatch(() -> {
-            T node = builder.call();
-            primaryStage.setTitle(TitleUtil.title(node.getClass()));
-            primaryStage.setScene(new Scene(node));
+            Parent p = builder.call();
+            if ( p instanceof TitleSupplier ) {
+                primaryStage.titleProperty().bind(((TitleSupplier)p).titleProperty());
+            } else if ( p.getClass().getAnnotation(Title.class) != null ) {
+                primaryStage.setTitle(p.getClass().getAnnotation(Title.class).value());
+            }
+            primaryStage.setScene(new Scene(p));
             primaryStage.centerOnScreen();
             primaryStage.sizeToScene();
             primaryStage.show();
@@ -245,6 +256,26 @@ public class UiCore {
                 UiCore.shutdown();
             });
             return null;
+        });
+        postStartUp();
+    }
+
+    /**
+     * Contiues the Ui in JavaFx variant.
+     * <p>
+     * This also assumes two things:
+     * <ul>
+     * <li>The JavaFX Platform is already running (as a Stage already exists), most likely created through default lifecycle of javaFx</li>
+     * <li>This Stage will always be open or the final to be closed, so implicitExit is ok</li>
+     * </ul>
+     *
+     * @param primaryStage the primaryStage for the application, not yet visible.
+     */
+    public static void contiuneJavaFx(final Stage primaryStage) {
+        if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
+        mainStage = primaryStage;
+        primaryStage.setOnCloseRequest((e) -> {
+            UiCore.shutdown();
         });
         postStartUp();
     }

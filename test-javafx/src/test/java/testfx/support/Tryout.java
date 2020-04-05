@@ -25,15 +25,19 @@ import eu.ggnet.saft.core.UiCore;
  *
  * @author oliver.guenther
  */
-public class Tryout extends Application {
+public class Tryout {
 
-    @Override
-    public void start(Stage primaryStage) throws Exception {
-        UiCore.startJavaFx(primaryStage, () -> new MainPane());
+    public static class TryoutApplication extends Application {
+
+        @Override
+        public void start(Stage primaryStage) throws Exception {
+            UiCore.startJavaFx(primaryStage, () -> new MainPane());
+        }
+
     }
 
     public static void main(String[] args) {
-        launch(args);
+        Application.launch(TryoutApplication.class, args);
     }
 
 }

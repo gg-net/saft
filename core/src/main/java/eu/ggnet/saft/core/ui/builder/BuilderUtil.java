@@ -29,6 +29,8 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
+import javafx.beans.property.StringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXMLLoader;
@@ -46,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.ui.builder.UiParameter.Builder;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;
 
 import static eu.ggnet.saft.core.ui.FxSaft.loadView;
@@ -104,14 +107,18 @@ public final class BuilderUtil {
     /**
      * New jframe based on parameters.
      *
-     * @param title
+     * @param titleProperty
      * @param component
      * @return
      */
-    static JFrame newJFrame(String title, JComponent component) {
+    static JFrame newJFrame(StringProperty titleProperty, JComponent component) {
         JFrame jframe = new JFrame();
-        jframe.setName(title);
-        jframe.setTitle(title);
+        jframe.setName(titleProperty.get());
+        jframe.setTitle(titleProperty.get());
+        titleProperty.addListener((ObservableValue<? extends String> ob, String o, String n) -> {
+            jframe.setName(n);
+            jframe.setTitle(n);
+        });
         jframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         jframe.getContentPane().add(component);
         return jframe;
@@ -121,18 +128,22 @@ public final class BuilderUtil {
      * New JDialog based on parameters.
      *
      * @param swingParent
-     * @param title
+     * @param titleProperty
      * @param component
      * @param modalityType
      * @return
      */
-    static JDialog newJDailog(Window swingParent, String title, JComponent component, ModalityType modalityType) {
+    static JDialog newJDailog(Window swingParent, StringProperty titleProperty, JComponent component, ModalityType modalityType) {
         JDialog dialog = new JDialog(swingParent);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setModalityType(modalityType);
         // Parse the Title somehow usefull.
-        dialog.setTitle(title);
-        dialog.setName(title);
+        dialog.setName(titleProperty.get());
+        dialog.setTitle(titleProperty.get());
+        titleProperty.addListener((ObservableValue<? extends String> ob, String o, String n) -> {
+            dialog.setName(n);
+            dialog.setTitle(n);
+        });
         dialog.getContentPane().add(component);
         return dialog;
     }
@@ -192,7 +203,10 @@ public final class BuilderUtil {
         try {
             V panel = producer.call();
             L.debug("produceJPanel: {}", panel);
-            return parm.toBuilder().rootClass(panel.getClass()).jPanel(panel).build();
+            Builder b = parm.toBuilder().rootClass(panel.getClass()).jPanel(panel);
+            if ( panel instanceof TitleSupplier ) b.titleProperty(((TitleSupplier)panel).titleProperty());
+            return b.build();
+
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
@@ -202,7 +216,9 @@ public final class BuilderUtil {
         try {
             V pane = producer.call();
             L.debug("producePane: {}", pane);
-            return parm.toBuilder().rootClass(pane.getClass()).pane(pane).build();
+            Builder b = parm.toBuilder().rootClass(pane.getClass()).pane(pane);
+            if ( pane instanceof TitleSupplier ) b.titleProperty(((TitleSupplier)pane).titleProperty());
+            return b.build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
@@ -212,7 +228,8 @@ public final class BuilderUtil {
         try {
             V dialog = producer.call();
             L.debug("produceDialog: {}", dialog);
-            return parm.toBuilder().rootClass(dialog.getClass()).dialog(dialog).pane(dialog.getDialogPane()).build();
+            // Dialog is special, allways use the title property.
+            return parm.toBuilder().rootClass(dialog.getClass()).titleProperty(dialog.titleProperty()).dialog(dialog).pane(dialog.getDialogPane()).build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
@@ -226,7 +243,6 @@ public final class BuilderUtil {
      */
     static UiParameter modifyDialog(UiParameter in) {
         Dialog dialog = in.dialog().get();
-
         // Activates the closing of any surounding swing element.
         dialog.setOnCloseRequest((event) -> {
             L.debug("handle(event.getSource()={}) dialog.getScene() is set ? {}", event.getSource(), dialog.getDialogPane().getScene() != null);
@@ -341,7 +357,9 @@ public final class BuilderUtil {
             Objects.requireNonNull(loader.getController(), "No controller based on " + controllerClazz + ". Controller set in Fxml ?");
             Pane pane = loader.getRoot();
             FxController controller = loader.getController();
-            return in.toBuilder().pane(pane).fxController(controller).build();
+            Builder b = in.toBuilder().pane(pane).fxController(controller);
+            if ( controller instanceof TitleSupplier ) b.titleProperty(((TitleSupplier)controller).titleProperty());
+            return b.build();
         } catch (IOException ex) {
             throw new CompletionException(ex);
         }
@@ -365,7 +383,7 @@ public final class BuilderUtil {
         Stage stage = new Stage();
         if ( !in.extractFrame() ) stage.initOwner(in.uiParent().fxOrMain());
         in.modality().ifPresent(m -> stage.initModality(m));
-        stage.setTitle(in.toTitle());
+        stage.titleProperty().bind(in.toTitleProperty());
         stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
         registerActiveWindows(in.toKey(), stage);
         if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
@@ -379,7 +397,8 @@ public final class BuilderUtil {
         Dialog<?> dialog = in.dialog().get();
         if ( !in.extractFrame() ) dialog.initOwner(in.uiParent().fxOrMain());
         in.modality().ifPresent(m -> dialog.initModality(m));
-        dialog.setTitle(in.toTitle());
+        // binding results in stack overflow in javafx mode and alert usage.
+        in.toTitleProperty().addListener((ob, o, n) -> dialog.setTitle(n));
 //        stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); Not in dialog avialable.
         if ( in.extractOnce() ) throw new IllegalArgumentException("Dialog with once mode is not supported yet");
         if ( in.isStoreLocation() ) throw new IllegalArgumentException("Dialog with store location mode is not supported yet");
@@ -393,8 +412,8 @@ public final class BuilderUtil {
             L.debug("constructSwing");
             JComponent component = in.jPanel().get(); // Must be set at this point.
             final Window window = in.extractFrame()
-                    ? BuilderUtil.newJFrame(in.toTitle(), component)
-                    : BuilderUtil.newJDailog(in.uiParent().swingOrMain(), in.toTitle(), component, in.asSwingModality());
+                    ? BuilderUtil.newJFrame(in.toTitleProperty(), component)
+                    : BuilderUtil.newJDailog(in.uiParent().swingOrMain(), in.toTitleProperty(), component, in.asSwingModality());
             BuilderUtil.setWindowProperties(in, window, in.extractReferenceClass(), in.uiParent().swingOrMain(), in.extractReferenceClass(), in.toKey());
             in.getClosedListenerImplemetation().ifPresent(elem -> window.addWindowListener(new WindowAdapter() {
 
@@ -449,4 +468,5 @@ public final class BuilderUtil {
                 .map(r -> new Image(r))
                 .collect(Collectors.toList());
     }
+
 }

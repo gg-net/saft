@@ -24,8 +24,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.api.IdSupplier;
-import eu.ggnet.saft.core.ui.StoreLocation;
 import eu.ggnet.saft.core.ui.FxCore;
 import eu.ggnet.saft.sample.support.*;
 
@@ -41,28 +39,13 @@ public abstract class ShowCaseUniversal {
 
     private final static Random R = new Random();
 
-    public final static class S implements IdSupplier {
-
-        public S(String id) {
-            this.id = id;
-        }
-
-        private final String id;
-
-        @Override
-        public String id() {
-            return id;
-        }
-
-    }
-
     protected static class Sitem {
 
         public Sitem(String key, Runnable value) {
             this.key = key;
             this.value = value;
         }
-        
+
         public final String key;
 
         public final Runnable value;
@@ -92,8 +75,8 @@ public abstract class ShowCaseUniversal {
         MENUS = Arrays.asList(
                 menu("SwingDialogs",
                         item("Once", () -> Ui.build().swing().show(() -> new PanelOnceDialog())),
-                        item("Multiple : 1", () -> Ui.build().once(true).id("1").swing().show(() -> new UnitViewer())),
-                        item("Multiple : 2", () -> Ui.build().once(true).id("2").swing().show(() -> new UnitViewer())),
+                        item("Multiple : 1", () -> Ui.build().once(true).title("UnitViewer: 1").swing().show(() -> new UnitViewer())),
+                        item("Multiple : 2", () -> Ui.build().once(true).title("UnitViewer: 2").swing().show(() -> new UnitViewer())),
                         item("Multiple : 3 , with precall", () -> Ui.build().swing().show(() -> "Das ist der Riesentext für Unit 3", () -> new UnitViewer())),
                         item("SelfCloser", () -> Ui.build().swing().show(() -> new PanelWithSelfCloser()))
                 ),
@@ -102,14 +85,8 @@ public abstract class ShowCaseUniversal {
                 ),
                 menu("JavaFxDialogs",
                         item("Once + Store Location", () -> Ui.build().fx().show(() -> new SimplePane())),
-                        item("Mutiple 1 with Title + Store Location", () -> Ui.build().id("1").fx().show(() -> new SimplePane())),
-                        item("Mutiple 2 with Title + Store Location", () -> {
-
-                            SimplePane pane = new SimplePane();
-                            System.out.println("test2 = " + pane.getClass().getAnnotation(StoreLocation.class) != null);
-
-                            Ui.build().id("2").fx().show(() -> pane);
-                        }),
+                        item("Mutiple 1 with Title + Store Location", () -> Ui.build().title("SimplePane: 1").fx().show(() -> new SimplePane())),
+                        item("Mutiple 2 with Title + Store Location", () -> Ui.build().title("SimplePane: 2").fx().show(() -> new SimplePane())),
                         item("HtmlPane", () -> Ui.build().fx().show(() -> "<h1>Ueberschrift</h1>", () -> new HtmlPane())),
                         item("Once InputPane via Fxml",
                                 () -> Ui.exec(() -> {
@@ -126,7 +103,7 @@ public abstract class ShowCaseUniversal {
                                     Ui.build().modality(Modality.WINDOW_MODAL).dialog().eval(() -> new Alert(CONFIRMATION, "Bitte eine Knopf drücken")).opt().ifPresent(t -> Ui.build().alert().message("Ok pressed with Input: " + t).show());
                                 })
                         ),
-                        item("Consumer with Random Id Supplier", () -> Ui.build().fx().show(() -> new S(NAMES[R.nextInt(NAMES.length)]), () -> new PaneConsumesIdSupplier())),
+                        item("TitlePropertyChange and Random Consumer", () -> Ui.build().fx().show(() -> NAMES[R.nextInt(NAMES.length)], () -> new TitlePropertyPane())),
                         item("OnceInput with Optional Result handling",
                                 () -> Ui.exec(() -> {
                                     Ui.build().fx().eval(() -> "Preload", () -> new OnceInputPane()).opt().ifPresent(r -> Ui.build().alert("Eingabe war:" + r));

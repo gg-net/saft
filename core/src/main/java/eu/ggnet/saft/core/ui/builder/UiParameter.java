@@ -23,6 +23,8 @@ import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 
@@ -30,7 +32,6 @@ import org.inferred.freebuilder.FreeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.api.IdSupplier;
 import eu.ggnet.saft.core.ui.*;
 
 /**
@@ -86,7 +87,7 @@ public abstract class UiParameter {
 
     abstract Optional<String> title();
 
-    abstract Optional<String> id();
+    abstract Optional<StringProperty> titleProperty();
 
     abstract Optional<Modality> modality();
 
@@ -128,22 +129,10 @@ public abstract class UiParameter {
     @SuppressWarnings("NonPublicExported")
     public static UiParameter.Builder fromPreBuilder(PreBuilder preBuilder) {
         return new UiParameter.Builder()
-                .nullableId(preBuilder.id)
                 .nullableTitle(preBuilder.title)
                 .nullableModality(preBuilder.modality)
                 .frame(preBuilder.frame)
                 .once(preBuilder.once).uiParent(preBuilder.uiParent);
-    }
-
-    /**
-     * Returns a title, either set or via class annotation.
-     *
-     * @return a title, either set or via class annotation.
-     * @throws IllegalStateException if rootClass is not set.
-     */
-    public final String toTitle() throws IllegalStateException {
-        if ( !rootClass().isPresent() ) throw new IllegalStateException(("RootClass not set, toTitle() not allowed"));
-        return title().orElse(TitleUtil.title(rootClass().get(), id().orElse(null)));
     }
 
     /**
@@ -164,7 +153,6 @@ public abstract class UiParameter {
     public final UiParameter withPreResult(Object preResult) {
         if ( preResult == null ) return this;
         Builder builder = toBuilder().preResult(preResult);
-        if ( !id().isPresent() && preResult instanceof IdSupplier ) builder.nullableId(((IdSupplier)preResult).id());
         return builder.build();
     }
 
@@ -214,12 +202,12 @@ public abstract class UiParameter {
     }
 
     /**
-     * Returns a key string based on the root class and the id.
+     * Returns a key string based on the root class.
      *
-     * @return a key string based on the root class and the id
+     * @return a key string based on the root class.
      */
     public final String toKey() {
-        return rootClass().get().getName() + id().map(i -> ":" + i).orElse("");
+        return rootClass().get().getName();
     }
 
     /**
@@ -250,4 +238,21 @@ public abstract class UiParameter {
         return (extractReferenceClass().getAnnotation(StoreLocation.class) != null);
     }
 
+    /**
+     * Returns a titleProperty bound or set by the following rules.
+     * <ol>
+     * <li>If the supplied Controller, Pane, JPanel implements {@link TitleSupplier}, the titleProperty of that implementation</li>
+     * <li>If the supplied Controller, Pane, JPanel has the {@link Title} annotation set, a new property with the supplied value set</li>
+     * <li>If the title method was called on the builder, a new property with the supplied value set</li>
+     * <li>The simple class name of the supplied Controller, Pane, JPanel</li>
+     * </ol>
+     *
+     * @return a titleProperty.
+     */
+    public StringProperty toTitleProperty() {
+        if ( !rootClass().isPresent() ) throw new IllegalStateException(("RootClass not set yet, toTitleProperty() not allowed"));
+        if ( titleProperty().isPresent() ) return titleProperty().get();
+        if ( rootClass().get().getAnnotation(Title.class) != null ) return new SimpleStringProperty(rootClass().get().getAnnotation(Title.class).value());
+        return new SimpleStringProperty(rootClass().get().getSimpleName());
+    }
 }

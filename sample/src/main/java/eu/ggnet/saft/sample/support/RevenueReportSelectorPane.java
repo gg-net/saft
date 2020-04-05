@@ -3,22 +3,17 @@ package eu.ggnet.saft.sample.support;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
-import java.util.concurrent.CountDownLatch;
 
-import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.embed.swing.JFXPanel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.stage.Stage;
 
+import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.Title;
-import eu.ggnet.saft.core.Ui;
 
 /**
  * Shows a selector pane for the Revenue Report.
@@ -99,21 +94,6 @@ public class RevenueReportSelectorPane extends GridPane implements ResultProduce
     @Override
     public String toString() {
         return "RevenueReportSelectorPane{" + "step=" + step.get() + ", category=" + category.get() + ", start=" + start.get() + ", end=" + end.get() + '}';
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        final JFXPanel p = new JFXPanel();
-        final CountDownLatch block = new CountDownLatch(1);
-
-        Platform.runLater(() -> {
-            RevenueReportSelectorPane pane = new RevenueReportSelectorPane();
-            Stage stage = new Stage();
-            stage.setScene(new Scene(pane));
-            stage.showAndWait();
-            block.countDown();
-        });
-
-        block.await();
     }
 
     @Override
