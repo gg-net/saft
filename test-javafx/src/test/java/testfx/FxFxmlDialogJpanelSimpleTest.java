@@ -16,7 +16,6 @@
  */
 package testfx;
 
-
 import java.util.Optional;
 
 import javafx.scene.control.*;
@@ -38,15 +37,16 @@ import eu.ggnet.saft.core.UiCore;
 
 import testfx.support.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.testfx.assertions.api.Assertions.assertThat;
 
 /**
  * Testing the opening of each type once.
- * 
+ *
  * @author oliver.guenther
  */
 @ExtendWith(ApplicationExtension.class)
-public class FxFxmlDialogJpanelSimpleTest  {    
+public class FxFxmlDialogJpanelSimpleTest {
 
     private static Logger L = LoggerFactory.getLogger(FxFxmlDialogJpanelSimpleTest.class);
 
@@ -55,14 +55,14 @@ public class FxFxmlDialogJpanelSimpleTest  {
         UiCore.startJavaFx(stage, () -> new MainPane());
     }
 
-    @Test    
-    public void openingAndCloseOfAllTypes(FxRobot r) throws InterruptedException {       
+    @Test
+    public void openingAndCloseOfAllTypes(FxRobot r) throws InterruptedException {
         /*
         +---------------------------------+
         | Open and Close of a JavaFx Pane.|
         | Created via source code.        |
         +---------------------------------+
-        */        
+         */
         Button show = r.lookup("#" + MainPane.SHOW_JAVAFX_PANE_ID).queryButton();
         r.clickOn(show);
 
@@ -79,7 +79,7 @@ public class FxFxmlDialogJpanelSimpleTest  {
         | Open and Close of a JavaFx Pane.|
         | Created via fxml.               |
         +---------------------------------+
-        */        
+         */
         show = r.lookup("#" + MainPane.SHOW_JAVAFX_FXML_ID).queryButton();
         r.clickOn(show);
 
@@ -95,27 +95,25 @@ public class FxFxmlDialogJpanelSimpleTest  {
         +-----------------------------------+
         | Open and Close of a JavaFx Dialog.|
         +-----------------------------------+
-        */        
+         */
         show = r.lookup("#" + MainPane.SHOW_JAVAFX_DIALOG_ID).queryButton();
         r.clickOn(show);
 
         // Finding the dialogpane in the opened window and the Text in it. If it exists, it implies, that the dialog is visible.
         DialogPane dialogPane = r.lookup("#" + DialogMaker.DIALOG_PANE_ID).queryAs(DialogPane.class);
-        
+
         assertThat(dialogPane.getContentText()).isNotNull().isNotEmpty().isEqualTo(DialogMaker.CONTENT_TEXT);
 
         // Closeing the Window. The Buttonfinder looks a little bit complecated, but works for now. Please optimize.
         Optional<Button> shoudBeClose = r.lookup(".button").queryAllAs(Button.class).stream().filter(b -> b.getText().equals("OK")).findFirst();
-        assertThat(shoudBeClose.isPresent()).as("Ok Button finder").isTrue();        
+        assertThat(shoudBeClose.isPresent()).as("Ok Button finder").isTrue();
         r.clickOn(shoudBeClose.get());
 
-        
         /*
         +---------------------------------+
         | Open and find of a Swing JPanel.|
         +---------------------------------+
-        */        
- 
+         */
         assertThat(SwingJPanel.active()).isFalse();
         show = r.lookup("#" + MainPane.SHOW_SWING_JPANEL_ID).queryButton();
         r.clickOn(show);
@@ -123,7 +121,7 @@ public class FxFxmlDialogJpanelSimpleTest  {
 
         // Workarround test, that the swing window is visible.
         assertThat(SwingJPanel.active()).isTrue();
-        
+
     }
 
     @AfterEach

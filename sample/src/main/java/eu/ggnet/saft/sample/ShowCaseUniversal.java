@@ -24,6 +24,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 
 import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.FxCore;
 import eu.ggnet.saft.sample.support.*;
 
@@ -34,6 +35,12 @@ import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
  * @author oliver.guenther
  */
 public class ShowCaseUniversal {
+
+    public final static String ONCE = "Once";
+
+    public final static String ONCE_WITH_SELF_CLOSER = "Once with SeflCloser";
+
+    public final static String ONCE_FXML = "Once Fxml";
 
     private final static String[] NAMES = {"Hans", "Klaus", "Horst", "Charlotte", "Caroline", "Ivet"};
 
@@ -72,6 +79,10 @@ public class ShowCaseUniversal {
     protected final List<Smenu> MENUS;
 
     public ShowCaseUniversal() {
+        UiCore.global().addFx(ONCE, () -> new PaneAsFrame());
+        UiCore.global().addFx(ONCE_WITH_SELF_CLOSER, () -> new PaneAsFrameWithSelfCloser());
+        UiCore.global().addFxml(ONCE_FXML, BasicApplicationController.class);
+
         MENUS = Arrays.asList(
                 menu("SwingDialogs",
                         item("Once", () -> Ui.build().swing().show(() -> new PanelOnceDialog())),
@@ -115,9 +126,9 @@ public class ShowCaseUniversal {
                         item("Dialog of Dialogs", () -> Ui.build().fx().show(() -> new DialogOfDialogs()))
                 ),
                 menu("JavaFxFrames",
-                        item("Once", () -> Ui.build().fx().show(() -> new PaneAsFrame())),
-                        item("Once With Self Closer", () -> Ui.build().fx().show(() -> new PaneAsFrameWithSelfCloser())),
-                        item("Once Fxml", () -> Ui.build().fxml().show(BasicApplicationController.class))
+                        item("Once", () -> UiCore.global().show(ONCE)),
+                        item("Once With Self Closer", () -> UiCore.global().show(ONCE_WITH_SELF_CLOSER)),
+                        item("Once Fxml", () -> UiCore.global().show(ONCE_FXML))
                 ),
                 menu("Extras",
                         item("List JavaFx Icons", () -> listAllIcons(FxCore.ACTIVE_STAGES.values()))

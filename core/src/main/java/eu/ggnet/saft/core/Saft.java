@@ -7,7 +7,13 @@ package eu.ggnet.saft.core;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 
+import javax.swing.JPanel;
+
+import javafx.scene.layout.Pane;
+
+import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.LocationStorage;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
 
@@ -18,6 +24,8 @@ import eu.ggnet.saft.core.ui.builder.GluonSupport;
  * @author oliver.guenther
  */
 public class Saft {
+
+    public final static String HOME = "Home";
 
     private final LocationStorage locationStorage;
 
@@ -62,6 +70,22 @@ public class Saft {
      */
     public void gluonSupport(GluonSupport gluonSupport) {
         this.gluonSupport = Optional.ofNullable(gluonSupport);
+    }
+
+    public void addFx(String name, Supplier<? extends Pane> pane) {
+
+    }
+
+    public void addSwing(String name, Supplier<? extends JPanel> pane) {
+
+    }
+
+    public void addFxml(String name, Class<? extends FxController> controllerClass) {
+
+    }
+
+    public void show(String name) {
+
     }
 
 }

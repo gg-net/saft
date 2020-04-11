@@ -25,6 +25,8 @@ public class SaftGluonSampleApplication extends MobileApplication {
 
     @Override
     public void init() {
+        UiCore.global().addFxml(HOME_VIEW, PrimaryPresenter.class);
+
         addViewFactory(PRIMARY_VIEW, () -> Ui.construct(PrimaryPresenter.class).getRoot());
         addViewFactory(SECONDARY_VIEW, () -> Ui.construct(SecondaryPresenter.class).getRoot());
 

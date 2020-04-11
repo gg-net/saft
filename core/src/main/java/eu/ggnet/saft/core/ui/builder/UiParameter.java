@@ -253,6 +253,7 @@ public abstract class UiParameter {
         if ( !rootClass().isPresent() ) throw new IllegalStateException(("RootClass not set yet, toTitleProperty() not allowed"));
         if ( titleProperty().isPresent() ) return titleProperty().get();
         if ( rootClass().get().getAnnotation(Title.class) != null ) return new SimpleStringProperty(rootClass().get().getAnnotation(Title.class).value());
+        if ( title().isPresent() ) return new SimpleStringProperty(title().get());
         return new SimpleStringProperty(rootClass().get().getSimpleName());
     }
 }
