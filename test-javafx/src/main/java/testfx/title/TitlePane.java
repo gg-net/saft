@@ -3,14 +3,14 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.ggnet.saft.sample.testing;
+package testfx.title;
 
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.FlowPane;
 
-import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.ui.Bind;
 
 import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
@@ -19,17 +19,17 @@ import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
  *
  * @author oliver.guenther
  */
-public class ButtonMain extends FlowPane {
+public class TitlePane extends FlowPane {
 
     @Bind(TITLE)
-    private final StringProperty titleProperty = new SimpleStringProperty("Button Main");
+    private final StringProperty titleProperty;
 
-    public ButtonMain() {
-        Button fxmlButton = new Button("Fxml");
-        fxmlButton.setOnAction(e -> {
-            Ui.build(fxmlButton).fxml().show(ButtonController.class);
-        });
-        getChildren().add(fxmlButton);
+    public TitlePane() {
+        titleProperty = new SimpleStringProperty();
+        TextField titleField = new TextField("The Title Pane");
+        titleProperty.bind(titleField.textProperty());
+        Label l = new Label("Title: ");
+        getChildren().addAll(l, titleField);
     }
 
 }

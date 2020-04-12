@@ -15,8 +15,7 @@ import java.util.function.Consumer;
 import javax.swing.JFrame;
 
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.*;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -25,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.ui.builder.BuilderUtil;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
 import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
 import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
@@ -203,8 +203,9 @@ public class UiCore {
             continueSwing(SwingSaft.dispatch(() -> {
                 T p = builder.call();
                 JFrame frame = new JFrame();
-                if ( p instanceof TitleSupplier ) {
-                    ((TitleSupplier)p).titleProperty().addListener((ob, o, n) -> {
+                Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
+                if ( optionalTitleProperty.isPresent() ) {
+                    optionalTitleProperty.get().addListener((ob, o, n) -> {
                         frame.setTitle(n);
                         frame.setName(n);
                     });
@@ -242,8 +243,9 @@ public class UiCore {
         mainStage = primaryStage;
         FxSaft.dispatch(() -> {
             Parent p = builder.call();
-            if ( p instanceof TitleSupplier ) {
-                primaryStage.titleProperty().bind(((TitleSupplier)p).titleProperty());
+            Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
+            if ( optionalTitleProperty.isPresent() ) {
+                primaryStage.titleProperty().bind(optionalTitleProperty.get());
             } else if ( p.getClass().getAnnotation(Title.class) != null ) {
                 primaryStage.setTitle(p.getClass().getAnnotation(Title.class).value());
             }

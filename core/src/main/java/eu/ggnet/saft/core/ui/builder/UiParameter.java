@@ -239,9 +239,11 @@ public abstract class UiParameter {
     }
 
     /**
-     * Returns a titleProperty bound or set by the following rules.
+     * Returns a titleProperty.
+     * It is bound or set by the following rules.
      * <ol>
-     * <li>If the supplied Controller, Pane, JPanel implements {@link TitleSupplier}, the titleProperty of that implementation</li>
+     * <li>If the supplied Controller, Pane, JPanel annotates a StringProperty with {@link eu.ggnet.saft.core.ui.Bind} and
+     * {@link eu.ggnet.saft.core.ui.Bind.Type#TITLE}</li>
      * <li>If the supplied Controller, Pane, JPanel has the {@link Title} annotation set, a new property with the supplied value set</li>
      * <li>If the title method was called on the builder, a new property with the supplied value set</li>
      * <li>The simple class name of the supplied Controller, Pane, JPanel</li>

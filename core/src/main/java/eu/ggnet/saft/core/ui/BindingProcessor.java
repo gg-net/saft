@@ -40,7 +40,7 @@ public class BindingProcessor extends AbstractProcessor {
                     Bind bindAnnotation = annotatedElement.getAnnotation(Bind.class);
                     // Converting Type to TypeMirror. No Better way found yet.
                     TypeMirror classType = processingEnv.getElementUtils().getTypeElement(bindAnnotation.value().allowedClassName()).asType();
-                    if ( !processingEnv.getTypeUtils().isSameType(annotatedElement.asType(), classType) ) {
+                    if ( !processingEnv.getTypeUtils().isSubtype(annotatedElement.asType(), classType) ) {
                         processingEnv.getMessager().printMessage(Kind.ERROR, getClass().getSimpleName()
                                 + " allowed fieldClass is " + bindAnnotation.value().allowedClassName()
                                 + " but is " + annotatedElement.asType(), annotatedElement);

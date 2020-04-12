@@ -8,8 +8,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
-import eu.ggnet.saft.core.ui.TitleSupplier;
+import eu.ggnet.saft.core.ui.Bind;
 
+import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
 import static javafx.scene.text.Font.font;
 
 /**
@@ -17,10 +18,11 @@ import static javafx.scene.text.Font.font;
  *
  * @author oliver.guenther
  */
-public class TitlePropertyPane extends BorderPane implements Consumer<String>, TitleSupplier {
+public class TitlePropertyPane extends BorderPane implements Consumer<String> {
 
     private Label z;
 
+    @Bind(TITLE)
     private final StringProperty titleProperty = new SimpleStringProperty();
 
     private int counter = 0;
@@ -41,11 +43,6 @@ public class TitlePropertyPane extends BorderPane implements Consumer<String>, T
     public void accept(String t) {
         z.setText("Consumed: " + t);
         titleProperty.set(this.getClass().getSimpleName() + " | Cosumed " + t);
-    }
-
-    @Override
-    public StringProperty titleProperty() {
-        return titleProperty;
     }
 
 }

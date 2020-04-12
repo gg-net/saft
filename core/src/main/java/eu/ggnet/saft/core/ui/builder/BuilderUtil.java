@@ -23,12 +23,14 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 import javax.swing.*;
 
+import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.JFXPanel;
@@ -51,6 +53,7 @@ import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Builder;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;
 
+import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
 import static eu.ggnet.saft.core.ui.FxSaft.loadView;
 
 /**
@@ -204,7 +207,7 @@ public final class BuilderUtil {
             V panel = producer.call();
             L.debug("produceJPanel: {}", panel);
             Builder b = parm.toBuilder().rootClass(panel.getClass()).jPanel(panel);
-            if ( panel instanceof TitleSupplier ) b.titleProperty(((TitleSupplier)panel).titleProperty());
+            b.titleProperty(findTitleProperty(panel));
             return b.build();
 
         } catch (Exception ex) {
@@ -215,13 +218,38 @@ public final class BuilderUtil {
     static <V extends Pane> UiParameter producePane(Callable<V> producer, UiParameter parm) {
         try {
             V pane = producer.call();
-            L.debug("producePane: {}", pane);
+            L.debug("producePane() created instance of {}", pane.getClass().getName());
             Builder b = parm.toBuilder().rootClass(pane.getClass()).pane(pane);
-            if ( pane instanceof TitleSupplier ) b.titleProperty(((TitleSupplier)pane).titleProperty());
+            b.titleProperty(findTitleProperty(pane));
             return b.build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
+    }
+
+    public static Optional<StringProperty> findTitleProperty(Object o) {
+        try {
+            List<Field> fields = allDeclaredFields(o.getClass());
+            L.debug("findTitleProperty() inspecting fields for Bind(TITLE): {}", fields);
+            for (Field field : fields) {
+                Bind bind = field.getAnnotation(Bind.class);
+                if ( bind != null && bind.value() == TITLE ) {
+                    L.debug("findTitleProperty() found Bind(TITLE), extrating property");
+                    field.setAccessible(true);
+                    return Optional.ofNullable((StringProperty)field.get(o)); // Cast is safe, Look at the BindingProcessor.
+                }
+            }
+        } catch (IllegalAccessException e) {
+            L.error("findTitleProperty() Exception on field.get()", e);
+        }
+        return Optional.empty();
+    }
+
+    private static List<Field> allDeclaredFields(Class<?> clazz) {
+        if ( clazz == null ) return Collections.emptyList();
+        List<Field> as = new ArrayList<>(Arrays.asList(clazz.getDeclaredFields()));
+        as.addAll(allDeclaredFields(clazz.getSuperclass()));
+        return as;
     }
 
     static <T, V extends Dialog<T>> UiParameter produceDialog(Callable<V> producer, UiParameter parm) {
@@ -358,7 +386,7 @@ public final class BuilderUtil {
             Pane pane = loader.getRoot();
             FxController controller = loader.getController();
             Builder b = in.toBuilder().pane(pane).fxController(controller);
-            if ( controller instanceof TitleSupplier ) b.titleProperty(((TitleSupplier)controller).titleProperty());
+            b.titleProperty(findTitleProperty(controller));
             return b.build();
         } catch (IOException ex) {
             throw new CompletionException(ex);
@@ -383,7 +411,11 @@ public final class BuilderUtil {
         Stage stage = new Stage();
         if ( !in.extractFrame() ) stage.initOwner(in.uiParent().fxOrMain());
         in.modality().ifPresent(m -> stage.initModality(m));
-        stage.titleProperty().bind(in.toTitleProperty());
+
+        StringProperty titleProperty = in.toTitleProperty();
+        stage.titleProperty().set(titleProperty.get());
+        in.toTitleProperty().addListener((ob, o, n) -> Platform.runLater(() -> stage.titleProperty().set(n)));
+
         stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
         registerActiveWindows(in.toKey(), stage);
         if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
@@ -397,9 +429,8 @@ public final class BuilderUtil {
         Dialog<?> dialog = in.dialog().get();
         if ( !in.extractFrame() ) dialog.initOwner(in.uiParent().fxOrMain());
         in.modality().ifPresent(m -> dialog.initModality(m));
-        // binding results in stack overflow in javafx mode and alert usage.
-        in.toTitleProperty().addListener((ob, o, n) -> dialog.setTitle(n));
-//        stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); Not in dialog avialable.
+        // in.toTitleProperty().addListener((ob, o, n) -> dialog.setTitle(n)); // In Dialog, we use the nativ implementation
+        // stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); // Not in dialog avialable.
         if ( in.extractOnce() ) throw new IllegalArgumentException("Dialog with once mode is not supported yet");
         if ( in.isStoreLocation() ) throw new IllegalArgumentException("Dialog with store location mode is not supported yet");
         in.getClosedListenerImplemetation().ifPresent(elem -> dialog.setOnCloseRequest(e -> elem.closed()));
@@ -449,7 +480,6 @@ public final class BuilderUtil {
             if ( result == null ) throw new UiWorkflowBreak(Type.NULL_RESULT);
             return result;
         }
-
     }
 
     private static java.util.List<java.awt.Image> loadAwtImages(Class<?> reference) throws IOException {

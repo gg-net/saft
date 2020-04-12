@@ -16,8 +16,8 @@
                 <artifactId>maven-resources-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- Using the extra copy, because the annotation processe must not be available in the compile phase. Otherwise, freebuilder fails. -->
                         <id>copy-resources</id>
-                        <!-- here the phase you need -->
                         <phase>prepare-package</phase>
                         <goals>
                             <goal>copy-resources</goal>

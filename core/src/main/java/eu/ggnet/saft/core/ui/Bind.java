@@ -20,11 +20,11 @@ public @interface Bind {
          * Binding to the title of the container, must be of type {@link javafx.beans.property.StringProperty}.
          * <p>
          * Binds to or registers a {@link javafx.beans.value.ChangeListener} :
+         * </p>
          * <ul>
          * <li>JavaFx: {@link javafx.stage.Stage#titleProperty() }</li>
          * <li>Swing: {@link javax.swing.JFrame#setTitle(java.lang.String) } or {@link javax.swing.JDialog#setTitle(java.lang.String) }</li>
          * </ul>
-         * </p>
          */
         TITLE("javafx.beans.property.StringProperty"),
         /**
@@ -32,11 +32,11 @@ public @interface Bind {
          * The showing binding is special, cause it combines the showing status, but also allows the closing of the surounding container.
          * <p>
          * Binds to or registers a {@link javafx.beans.value.ChangeListener} :
+         * </p>
          * <ul>
          * <li>JavaFx: {@link javafx.stage.Stage#close() } and {@link javafx.stage.Stage#showingProperty() }</li>
          * <li>Swing: {@link javax.swing.JFrame#setVisible(boolean) } or {@link javax.swing.JDialog#setVisible(boolean) }</li>
          * </ul>
-         * </p>
          */
         SHOWING("javafx.beans.property.BooleanProperty");
 
