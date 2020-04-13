@@ -16,31 +16,42 @@
  */
 package testfx.support;
 
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.core.ui.Bind;
 
+import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
 
 /**
  *
  * @author oliver.guenther
  */
-@Title(JavaFxPane.LABEL_ID)
 public class JavaFxPane extends BorderPane {
 
     public final static String LABEL_ID = "javafxpane-label";
-    
+
     public final static String LABEL_TEXT = "This is a simple javafx pane with id: " + LABEL_ID;
-    
+
+    public final static String TITLE_TEXT_FIELD_ID = "javafxpane-title-textfield";
+
     public final static String CLOSE_BUTTON_ID = "javafxpane-close";
-    
+
+    @Bind(TITLE)
+    public final StringProperty titleProperty = new SimpleStringProperty();
+
     public JavaFxPane() {
         Label label = new Label(LABEL_TEXT);
         label.setId(LABEL_ID);
-        setCenter(label);
+        setTop(label);
+        setLeft(new Label("Title"));
+        TextField titleTextField = new TextField("Der Title");
+        titleTextField.setId(TITLE_TEXT_FIELD_ID);
+        titleProperty.bind(titleTextField.textProperty());
+        setCenter(titleTextField);
         Button close = new Button("Close");
         close.setId(CLOSE_BUTTON_ID);
         close.setOnAction(e -> Ui.closeWindowOf(this));

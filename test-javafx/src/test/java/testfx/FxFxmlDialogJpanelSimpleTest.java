@@ -55,6 +55,14 @@ public class FxFxmlDialogJpanelSimpleTest {
         UiCore.startJavaFx(stage, () -> new MainPane());
     }
 
+    private void writeSlow(TextInputControl control, String text) throws InterruptedException {
+        control.clear();
+        for (char c : text.toCharArray()) {
+            control.appendText(Character.toString(c));
+            Thread.sleep(250);
+        }
+    }
+
     @Test
     public void openingAndCloseOfAllTypes(FxRobot r) throws InterruptedException {
         /*
@@ -69,6 +77,10 @@ public class FxFxmlDialogJpanelSimpleTest {
         // Finding the label in the opened window. If it exists, it implies, that the dialog is visible.
         Labeled label = r.lookup("#" + JavaFxPane.LABEL_ID).queryLabeled();
         assertThat(label).isNotNull().hasText(JavaFxPane.LABEL_TEXT);
+
+        TextInputControl inputControl = r.lookup("#" + JavaFxPane.TITLE_TEXT_FIELD_ID).queryTextInputControl();
+        assertThat(inputControl).isNotNull();
+        writeSlow(inputControl, "Hallo Welt");
 
         // Closeing the Window
         Button close = r.lookup("#" + JavaFxPane.CLOSE_BUTTON_ID).queryButton();
@@ -87,14 +99,18 @@ public class FxFxmlDialogJpanelSimpleTest {
         label = r.lookup("#" + BasicApplicationController.LABEL_ID).queryLabeled();
         assertThat(label).isNotNull().hasText(BasicApplicationController.LABEL_TEXT);
 
+        inputControl = r.lookup("#" + BasicApplicationController.TITLE_TEXT_FIELD_ID).queryTextInputControl();
+        assertThat(inputControl).isNotNull();
+        writeSlow(inputControl, "Hallo Welt");
+
         // Closeing the Window
         close = r.lookup("#" + BasicApplicationController.CLOSE_ID).queryButton();
         r.clickOn(close);
 
         /*
-        +-----------------------------------+
-        | Open and Close of a JavaFx Dialog.|
-        +-----------------------------------+
+        +-------------------------------------------+
+        | Open and Close of a JavaFx Alert (Dialog).|
+        +-------------------------------------------+
          */
         show = r.lookup("#" + MainPane.SHOW_JAVAFX_DIALOG_ID).queryButton();
         r.clickOn(show);

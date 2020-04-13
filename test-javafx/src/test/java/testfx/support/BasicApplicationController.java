@@ -1,15 +1,14 @@
 package testfx.support;
 
-import java.net.URL;
-import java.util.ResourceBundle;
-
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
 
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.ui.FxController;
-import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.core.ui.*;
+
+import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
 
 /**
  * FXML Controller class
@@ -20,24 +19,32 @@ import eu.ggnet.saft.core.ui.Title;
 public class BasicApplicationController implements FxController {
 
     public final static String LABEL_TEXT = "Ein ganz toller Text";
+
     public final static String LABEL_ID = "fxmlOutput";
+
+    public final static String TITLE_TEXT_FIELD_ID = "titleTextField";
+
     public final static String CLOSE_ID = "fxmlClose";
-    
-    
+
     @FXML
     private Label fxmlOutput;
 
     @FXML
     private Button fxmlClose;
-    
-    @FXML
-    private URL location;
 
     @FXML
-    private ResourceBundle resources;
-    
+    private TextField titleTextField;
+
+    @Bind(TITLE)
+    private final StringProperty titleProperty = new SimpleStringProperty();
+
     @FXML
     public void initialize() {
+//        titleTextField.setId(TITLE_TEXT_FIELD_ID);
+
+        titleProperty.bind(titleTextField.textProperty());
+        titleTextField.setText("Der Title");
+
         fxmlClose.setOnAction(e -> Ui.closeWindowOf(fxmlClose));
         fxmlOutput.setText(LABEL_TEXT);
     }

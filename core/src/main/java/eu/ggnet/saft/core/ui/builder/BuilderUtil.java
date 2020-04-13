@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import javax.swing.*;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.JFXPanel;
@@ -53,6 +54,7 @@ import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Builder;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;
 
+import static eu.ggnet.saft.core.ui.Bind.Type.SHOWING;
 import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
 import static eu.ggnet.saft.core.ui.FxSaft.loadView;
 
@@ -208,6 +210,7 @@ public final class BuilderUtil {
             L.debug("produceJPanel: {}", panel);
             Builder b = parm.toBuilder().rootClass(panel.getClass()).jPanel(panel);
             b.titleProperty(findTitleProperty(panel));
+            b.showingProperty(findShowingProperty(panel));
             return b.build();
 
         } catch (Exception ex) {
@@ -221,10 +224,29 @@ public final class BuilderUtil {
             L.debug("producePane() created instance of {}", pane.getClass().getName());
             Builder b = parm.toBuilder().rootClass(pane.getClass()).pane(pane);
             b.titleProperty(findTitleProperty(pane));
+            b.showingProperty(findShowingProperty(pane));
             return b.build();
         } catch (Exception ex) {
             throw new CompletionException(ex);
         }
+    }
+
+    public static Optional<BooleanProperty> findShowingProperty(Object o) {
+        try {
+            List<Field> fields = allDeclaredFields(o.getClass());
+            L.debug("findShowingProperty() inspecting fields for Bind(SHOWING): {}", fields);
+            for (Field field : fields) {
+                Bind bind = field.getAnnotation(Bind.class);
+                if ( bind != null && bind.value() == SHOWING ) {
+                    L.debug("findShowingProperty() found Bind(SHOWING), extrating property");
+                    field.setAccessible(true);
+                    return Optional.ofNullable((BooleanProperty)field.get(o)); // Cast is safe, Look at the BindingProcessor.
+                }
+            }
+        } catch (IllegalAccessException e) {
+            L.error("findShowingProperty() Exception on field.get()", e);
+        }
+        return Optional.empty();
     }
 
     public static Optional<StringProperty> findTitleProperty(Object o) {
@@ -386,6 +408,7 @@ public final class BuilderUtil {
             Pane pane = loader.getRoot();
             FxController controller = loader.getController();
             Builder b = in.toBuilder().pane(pane).fxController(controller);
+            b.showingProperty(findShowingProperty(controller));
             b.titleProperty(findTitleProperty(controller));
             return b.build();
         } catch (IOException ex) {
@@ -415,6 +438,14 @@ public final class BuilderUtil {
         StringProperty titleProperty = in.toTitleProperty();
         stage.titleProperty().set(titleProperty.get());
         in.toTitleProperty().addListener((ob, o, n) -> Platform.runLater(() -> stage.titleProperty().set(n)));
+
+        in.showingProperty().ifPresent(s -> {
+            s.set(false);
+            stage.showingProperty().addListener((ob, o, n) -> s.set(n));
+            s.addListener((ob, o, n) -> {
+                if ( !n ) stage.close();
+            });
+        });
 
         stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
         registerActiveWindows(in.toKey(), stage);

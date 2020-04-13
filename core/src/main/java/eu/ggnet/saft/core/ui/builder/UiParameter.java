@@ -23,8 +23,7 @@ import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
+import javafx.beans.property.*;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 
@@ -88,6 +87,13 @@ public abstract class UiParameter {
     abstract Optional<String> title();
 
     abstract Optional<StringProperty> titleProperty();
+
+    /**
+     * Optional property for the showing status.
+     *
+     * @return an optional property.
+     */
+    abstract Optional<BooleanProperty> showingProperty();
 
     abstract Optional<Modality> modality();
 

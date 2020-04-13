@@ -5,31 +5,43 @@
  */
 package testfx.title;
 
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
+import java.util.function.Consumer;
+
+import javafx.beans.property.*;
+import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 
 import eu.ggnet.saft.core.ui.Bind;
 
+import static eu.ggnet.saft.core.ui.Bind.Type.SHOWING;
 import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
 
 /**
  *
  * @author oliver.guenther
  */
-public class TitlePane extends FlowPane {
+public class TitlePane extends FlowPane implements Consumer<BooleanProperty> {
 
     @Bind(TITLE)
     private final StringProperty titleProperty;
 
+    @Bind(SHOWING)
+    private final BooleanProperty showingProperty;
+
     public TitlePane() {
         titleProperty = new SimpleStringProperty();
+        showingProperty = new SimpleBooleanProperty();
         TextField titleField = new TextField("The Title Pane");
         titleProperty.bind(titleField.textProperty());
         Label l = new Label("Title: ");
-        getChildren().addAll(l, titleField);
+        Button close = new Button("Extra Close");
+        close.setOnAction(e -> showingProperty.set(false));
+        getChildren().addAll(l, titleField, close);
+    }
+
+    @Override
+    public void accept(BooleanProperty showing) {
+        showing.bindBidirectional(showingProperty);
     }
 
 }

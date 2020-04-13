@@ -23,7 +23,11 @@ public class TitlesSwing {
             JPanel p = new JPanel();
             p.add(button("Java Fx Pane with Title Binding", () -> Ui.build().fx().show(() -> new TitlePane())));
             p.add(button("Java Fxml with Title Binding", () -> Ui.build().fxml().show(TitleController.class)));
-            p.add(button("Java Fx Dialog with Title Binding", () -> Ui.build().dialog().eval(() -> new TitleDialog()).cf().handle(Ui.handler())));
+            p.add(button("Java Fx Dialog with Title Binding", () -> Ui.build().dialog().eval(() -> {
+                TitleDialog titleDialog = new TitleDialog();
+                System.out.println("PostConstruct: Dialog.showingProperty().get()=" + titleDialog.showingProperty().get());
+                return titleDialog;
+            }).cf().thenAccept(s -> System.out.println("PostRun: Dialog.showingProperty().get()=" + s.get())).handle(Ui.handler())));
 
             p.add(button("Swing Pane with TitlePoperty", () -> Ui.build().swing().show(() -> new TitleJPanel())));
             return p;

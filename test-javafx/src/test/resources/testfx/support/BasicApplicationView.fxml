@@ -7,6 +7,7 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.VBox?>
 
@@ -53,8 +54,9 @@
         </MenuBar>
         <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
             <children>
-            <Label fx:id="fxmlOutput" layoutX="591.0" layoutY="260.0" text="Label" AnchorPane.bottomAnchor="87.0" AnchorPane.rightAnchor="14.0" />
+            <Label fx:id="fxmlOutput" layoutX="14.0" layoutY="269.0" text="Label" AnchorPane.bottomAnchor="78.0" AnchorPane.rightAnchor="591.0" />
             <Button fx:id="fxmlClose" layoutX="570.0" layoutY="323.0" mnemonicParsing="false" text="Close" AnchorPane.bottomAnchor="14.0" AnchorPane.rightAnchor="14.0" />
+            <TextField fx:id="titleTextField" layoutX="60.0" layoutY="264.0" prefHeight="31.0" prefWidth="567.0" />
             </children>
         </AnchorPane>
     </children>
