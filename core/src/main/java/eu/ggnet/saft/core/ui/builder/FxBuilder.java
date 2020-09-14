@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javafx.application.Platform;
 import javafx.scene.layout.Pane;
@@ -96,6 +97,16 @@ public class FxBuilder {
      */
     public <P, V extends Pane & Consumer<P>> void show(Callable<P> preProducer, Callable<V> javafxPaneProducer) {
         internalShow(preProducer, javafxPaneProducer).handle(Ui.handler());
+    }
+
+    // TODO: Zusatzvariante um eine Managementinstance über cdi zu erzeugen, das fx elemente final sind und damit keinen @Scope bekommen können.
+    // Supplier wird via cdi erzeugt und get liefert dann die ui komponente. Der entwickler kann überlegen, wie er den Supplier mit ui bei erzeugen füllt
+    // Außerdem: Defaultsupplier um nur eine Fx Element zu erzeugen, class MyPane. inner class MySupplier extends DefaultSupplier<MyPane> und im constructor
+    // super(MyPane.class)
+    // und das ganze auf construct und eval vertreilen.
+    // ggf auch nur im CDI mode laufen lassen, sonst exception.
+    public <P, V extends Pane & Consumer<P>> void show(Callable<P> preProducer, Class<Supplier<V>> javafxPaneClass) {
+
     }
 
     /**

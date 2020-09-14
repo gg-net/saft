@@ -18,7 +18,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Storage for Location of windows and frames.
- * Default implementation uses the Preferences.userNode().
+ * Default implementation uses the Preferences.userNode(). May be extended for different usage scenarios.
  *
  * @author oliver.guenther
  */

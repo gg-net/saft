@@ -22,7 +22,6 @@ import static javax.lang.model.element.ElementKind.FIELD;
  *
  * @author oliver.guenther
  */
-// @SupportedAnnotationTypes("eu.ggnet.saft.core.ui.Bind")
 @SupportedAnnotationTypes("eu.ggnet.saft.core.ui.Bind")
 @SupportedSourceVersion(RELEASE_8)
 public class BindingProcessor extends AbstractProcessor {

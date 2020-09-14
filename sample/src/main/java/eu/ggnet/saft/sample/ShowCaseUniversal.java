@@ -18,8 +18,10 @@ package eu.ggnet.saft.sample;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.function.Supplier;
 
 import javafx.scene.control.Alert;
+import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
@@ -83,6 +85,34 @@ public class ShowCaseUniversal {
         UiCore.global().addFx(ONCE_WITH_SELF_CLOSER, () -> new PaneAsFrameWithSelfCloser());
         UiCore.global().addFxml(ONCE_FXML, BasicApplicationController.class);
 
+        // @RequestScoped, e.g. to observer events
+        class PaneSupplier implements Supplier<BorderPane> {
+
+            /*
+            @Inject
+            Remoteconnector mc
+             */
+            @Override
+            public BorderPane get() {
+                return null;
+            }
+
+        }
+
+        /*
+        Some Ideas
+        - button ist eine referenz zum parent
+        - Im injectfall muss eine Referenz zu Instance<Object> mit dazu. Damit am Ende Dinge in eval und show auf Cdi Features zurückgreifen können.
+
+
+        @Inject
+        UiBuilder ui;   oder   UiBuilder ui = Ui.build();
+
+        ui.title("Blub").fxml(button).show(() -> new MyPane());
+
+        ui.fx(button).show(MyPane.CdiSupplier.class);
+
+         */
         MENUS = Arrays.asList(
                 menu("SwingDialogs",
                         item("Once", () -> Ui.build().swing().show(() -> new PanelOnceDialog())),

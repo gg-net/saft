@@ -13,13 +13,12 @@ import javax.swing.JPanel;
 
 import javafx.scene.layout.Pane;
 
-import eu.ggnet.saft.core.ui.FxController;
-import eu.ggnet.saft.core.ui.LocationStorage;
+import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
 
 /**
  * The core of saft, everything that is keept in a singleton way, is registered or held here.
- * No other statics should exist.
+ * One Instance of Saft per Ui/Client. No static values. See the jpro.one runtime restrictions.
  *
  * @author oliver.guenther
  */
