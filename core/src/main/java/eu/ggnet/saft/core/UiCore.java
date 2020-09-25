@@ -15,7 +15,7 @@ import java.util.function.Consumer;
 import javax.swing.JFrame;
 
 import javafx.application.Platform;
-import javafx.beans.property.*;
+import javafx.beans.property.StringProperty;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -50,8 +50,6 @@ public class UiCore {
             return new Thread(group, r, "Thread-" + counter.incrementAndGet() + "-" + r.toString());
         }
     });
-
-    private static final BooleanProperty BACKGROUND_ACTIVITY = new SimpleBooleanProperty();
 
     private static final Map<Class<?>, Consumer> EXCEPTION_CONSUMER = new HashMap<>();
 
@@ -137,16 +135,6 @@ public class UiCore {
      */
     public static Executor getExecutor() {
         return EXECUTOR_SERVICE;
-    }
-
-    /**
-     * Returns a property that represents background activity.
-     *
-     * @return a property that represents background activity
-     */
-    // TODO: This is a very simple solution for now.
-    public static BooleanProperty backgroundActivityProperty() {
-        return BACKGROUND_ACTIVITY;
     }
 
     /**
@@ -410,7 +398,6 @@ public class UiCore {
      * @param b
      */
     static void handle(Throwable b) {
-        BACKGROUND_ACTIVITY.set(false); // Cleanup
         for (Class<?> clazz : EXCEPTION_CONSUMER.keySet()) {
             if ( ExceptionUtil.containsInStacktrace(clazz, b) ) {
                 EXCEPTION_CONSUMER.get(clazz).accept(ExceptionUtil.extractFromStraktrace(clazz, b));

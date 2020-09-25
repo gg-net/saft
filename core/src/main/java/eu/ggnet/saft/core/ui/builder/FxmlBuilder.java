@@ -34,6 +34,9 @@ import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
+import static eu.ggnet.saft.core.UiUtil.exceptionRun;
+
+
 /*
     I - 4 Fälle:
     a. nur zeigen. Ui consumiert nix und prodziert kein result
@@ -146,7 +149,7 @@ public class FxmlBuilder {
         // Produce the ui instance
         CompletableFuture<UiParameter> uniChain = CompletableFuture
                 .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
-                .thenApplyAsync((v) -> parm.withRootClass(fxmlControllerClass).withPreResult(Optional.ofNullable(preProducer).map(pp -> Ui.progress().call(pp)).orElse(null)), UiCore.getExecutor())
+                .thenApplyAsync((v) -> parm.withRootClass(fxmlControllerClass).withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
                 .thenApply(BuilderUtil::breakIfOnceAndActive)
                 .thenApplyAsync(BuilderUtil::produceFxml, Platform::runLater)
                 .thenApply(BuilderUtil::consumePreResult);

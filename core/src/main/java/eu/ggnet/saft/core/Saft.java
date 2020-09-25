@@ -5,13 +5,19 @@
  */
 package eu.ggnet.saft.core;
 
+import java.awt.Component;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import javax.swing.JPanel;
 
+import javafx.scene.Node;
 import javafx.scene.layout.Pane;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
@@ -23,6 +29,8 @@ import eu.ggnet.saft.core.ui.builder.GluonSupport;
  * @author oliver.guenther
  */
 public class Saft {
+
+    private final static Logger L = LoggerFactory.getLogger(Saft.class);
 
     public final static String HOME = "Home";
 
@@ -85,6 +93,94 @@ public class Saft {
 
     public void show(String name) {
 
+    }
+
+    /**
+     * Allows the closing of a window from within a Pane or Panel
+     * <pre>
+     * {@code
+     * JFrame f = new JFrame();
+     * JPanel p = new JPanel();
+     * JButton b = new Button("Close");
+     * p.add(b);
+     * f.getContentPane().get(p);
+     * b.addActionListener(() -> Ui.cloesWindowOf(p);
+     * f.setVisible(true);
+     * }
+     * </pre>.
+     *
+     * @param c the component which is the closest to the window.
+     */
+    public void closeWindowOf(Component c) {
+        if ( UiCore.isGluon() ) throw new IllegalStateException("closeWindowOf call with a swing component, not allowed in gluon model");
+        UiParent.of(c).ifPresent(
+                p -> SwingSaft.run(() -> {
+                    p.setVisible(false);
+                    p.dispose();
+                }),
+                fx -> FxSaft.run(() -> fx.close()));
+    }
+
+    /**
+     * Closes the wrapping Window (or equivalent) of the supplied node.
+     *
+     * @param n the node as refernece.
+     */
+    public void closeWindowOf(Node n) {
+        if ( UiCore.isGluon() ) {
+            L.debug("closeWindowOf({}) gluon mode", n);
+            UiCore.global().gluonSupport().ifPresent(g -> g.closeViewOrDialogOf(n));
+        } else {
+            L.debug("closeWindowOf({}) desktop mode", n);
+            UiParent.of(n).ifPresent(
+                    p -> SwingSaft.run(() -> {
+                        p.setVisible(false);
+                        p.dispose();
+                    }),
+                    fx -> FxSaft.run(() -> fx.close()));
+        }
+    }
+
+    /**
+     * Handles an Exception in the Ui, using the registered ExceptionCosumers form
+     * {@link UiCore#registerExceptionConsumer(java.lang.Class, java.util.function.Consumer)}.
+     *
+     * @param b the throwable to be handled.
+     */
+    public void handle(Throwable b) {
+        UiCore.handle(b);
+    }
+
+    /**
+     * Retruns a handler, to be used in a CompletableFuture.handle().
+     *
+     * @param <Z> type parameter
+     * @return a handler.
+     */
+    public <Z> BiFunction<Z, Throwable, Z> handler() {
+        return (Z t, Throwable u) -> {
+            if ( u != null ) Ui.handle(u);
+            return null;
+        };
+    }
+
+    /**
+     * Retruns a handler, to be used in a CompletableFuture.handle(), with an and block, also to be executed.
+     *
+     * @param <Z>      type parameter
+     * @param runnable to be run before the final handle.
+     * @return a handler.
+     */
+    public <Z> BiFunction<Z, Throwable, Z> handlerAnd(Runnable runnable) {
+        Objects.requireNonNull(runnable, "Runnable must not be null");
+        return (Z t, Throwable u) -> {
+            try {
+                runnable.run();
+            } finally {
+                if ( u != null ) Ui.handle(u);
+            }
+            return null;
+        };
     }
 
 }

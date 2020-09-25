@@ -19,11 +19,15 @@ package eu.ggnet.saft.core.ui;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletionException;
 
+import eu.ggnet.saft.core.UiUtil;
+
 /**
  * Helper class to wrap exeption into in a {@link CompletionException}.
  *
  * @author oliver.guenther
+ * @deprecated use {@link UiUtil}
  */
+@Deprecated
 public class ExceptionWrapper {
 
     /**
@@ -31,6 +35,7 @@ public class ExceptionWrapper {
      *
      * @author oliver.guenther
      */
+    @Deprecated
     public static interface RunableWithException {
 
         /**
@@ -50,6 +55,7 @@ public class ExceptionWrapper {
      *
      * @return the single instance of this class.
      */
+    @Deprecated
     public static ExceptionWrapper getInstance() {
         if ( instance == null ) instance = new ExceptionWrapper();
         return instance;
@@ -62,7 +68,9 @@ public class ExceptionWrapper {
      * @param callable the callable
      * @return the result of the callable
      * @throws CompletionException the exception thrown by the callable wrapped.
+     * @deprecated use {@link UiUtil#exceptionRun(java.util.concurrent.Callable) }
      */
+    @Deprecated
     public <T> T wrap(Callable<T> callable) throws CompletionException {
         try {
             return callable.call();
@@ -71,6 +79,13 @@ public class ExceptionWrapper {
         }
     }
 
+    /**
+     * @deprecated use {@link UiUtil#exceptionRun(eu.ggnet.saft.core.UiUtil.ExceptionRunnable) }
+     *
+     * @param runable
+     * @deprecated
+     */
+    @Deprecated
     public void wrap(RunableWithException runable) {
         wrap(() -> {
             runable.run();

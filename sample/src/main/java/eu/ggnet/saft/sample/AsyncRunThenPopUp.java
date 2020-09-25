@@ -4,6 +4,7 @@ import java.awt.EventQueue;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.sample.progress.SimpleBackgroundProgress;
 import eu.ggnet.saft.sample.support.DocumentAdressUpdateViewOkCanceler;
 import eu.ggnet.saft.sample.support.MainPanel;
 
@@ -31,7 +32,8 @@ public class AsyncRunThenPopUp {
     public static void main(String[] args) {
         final MainPanel panel = new MainPanel();
         UiCore.startSwing(() -> panel);
-        UiCore.backgroundActivityProperty().addListener((o, ov, nv) -> {
+        SimpleBackgroundProgress.initGlobal(new SimpleBackgroundProgress());
+        SimpleBackgroundProgress.globalProgress().activityProperty().addListener((o, ov, nv) -> {
             EventQueue.invokeLater(() -> {
                 panel.getProgressBar().setIndeterminate(nv);
             });
@@ -43,7 +45,7 @@ public class AsyncRunThenPopUp {
     public static void saftNew() {
         Ui.exec(() -> {
             Ui.build().swing().eval(() -> HardWorker.work2s("per", "Eine leere Adresse"), () -> new DocumentAdressUpdateViewOkCanceler()).opt()
-                    .map(Ui.progress().wrap(t -> HardWorker.work2s("middle", t)))
+                    .map(SimpleBackgroundProgress.globalProgress().wrap(t -> HardWorker.work2s("middle", t)))
                     .map(t -> Ui.build().swing().eval(() -> t, () -> new DocumentAdressUpdateViewOkCanceler()))
                     .ifPresent(t -> HardWorker.work2s("post", t));
         });

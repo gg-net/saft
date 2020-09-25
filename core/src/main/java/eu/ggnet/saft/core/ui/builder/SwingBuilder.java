@@ -30,10 +30,11 @@ import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.*;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
+
+import static eu.ggnet.saft.core.UiUtil.exceptionRun;
 
 
 /*
@@ -66,6 +67,8 @@ public class SwingBuilder {
     private static final Logger L = LoggerFactory.getLogger(SwingBuilder.class);
 
     private final PreBuilder preBuilder;
+
+    private Saft saft = UiCore.global();
 
     public SwingBuilder(PreBuilder pre) {
         this.preBuilder = pre;
@@ -130,15 +133,15 @@ public class SwingBuilder {
 
     private <T, P, V extends JPanel> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> jpanelProducer) {
         Objects.requireNonNull(jpanelProducer, "The jpanelaneProducer is null, not allowed");
-        if (UiCore.isGluon()) throw new IllegalStateException("Swing Elements are not supported in gloun (Wont be visible in Android or iOs");
-        
+        if ( UiCore.isGluon() ) throw new IllegalStateException("Swing Elements are not supported in gloun (Wont be visible in Android or iOs");
+
         UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.SWING).build();
 
         // Produce the ui instance
         CompletableFuture<UiParameter> uniChain = CompletableFuture
                 .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
                 .thenApplyAsync(v -> BuilderUtil.produceJPanel(jpanelProducer, parm), EventQueue::invokeLater)
-                .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> Ui.progress().call(pp)).orElse(null)), UiCore.getExecutor())
+                .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
                 .thenApply(BuilderUtil::breakIfOnceAndActive)
                 .thenApply(BuilderUtil::consumePreResult);
 

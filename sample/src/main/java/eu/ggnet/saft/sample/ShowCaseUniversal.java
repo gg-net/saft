@@ -112,6 +112,12 @@ public class ShowCaseUniversal {
 
         ui.fx(button).show(MyPane.CdiSupplier.class);
 
+        See later:
+        Ui.osOpen(). -> If it can be transparent transferd to mobile and jpro.one.
+        Ui.fileChooser() -> See, what is possible.in gluon and jpro. And move to uituil.
+        In der DW: Alle direkten Ui.handle Blöcke anpassen mit SimpleBackgroundProgess.global().activity(false);
+
+
          */
         MENUS = Arrays.asList(
                 menu("SwingDialogs",

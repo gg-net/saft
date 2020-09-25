@@ -16,7 +16,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.ui.*;
-import eu.ggnet.saft.core.ui.builder.*;
+import eu.ggnet.saft.core.ui.builder.FileChooserBuilder;
+import eu.ggnet.saft.core.ui.builder.PreBuilder;
 
 /*
  Notes of olli:
@@ -72,17 +73,9 @@ public class Ui {
      *
      * @return a file chooser builder.
      */
+    // LATER
     public static FileChooserBuilder fileChooser() {
         return new FileChooserBuilder();
-    }
-
-    /**
-     * Returns a new progress Handler.
-     *
-     * @return a new progress Handler.
-     */
-    public static ProgressBuilder progress() {
-        return new ProgressBuilder();
     }
 
     /**
@@ -133,55 +126,29 @@ public class Ui {
      * Allows the wrapping of Exeptions into {@link java.util.concurrent.CompletionException}.
      *
      * @return the ExceptionWrapper.
+     * @deprecated {@link UiUtil}
      */
+    @Deprecated
     public static ExceptionWrapper exception() {
         return ExceptionWrapper.getInstance();
     }
 
     /**
-     * Allows the closing of a window from within a Pane or Panel
-     * <pre>
-     * {@code
-     * JFrame f = new JFrame();
-     * JPanel p = new JPanel();
-     * JButton b = new Button("Close");
-     * p.add(b);
-     * f.getContentPane().get(p);
-     * b.addActionListener(() -> Ui.cloesWindowOf(p);
-     * f.setVisible(true);
-     * }
-     * </pre>.
+     * See {@link Saft#closeWindowOf(java.awt.Component) }.
      *
      * @param c the component which is the closest to the window.
      */
     public static void closeWindowOf(Component c) {
-        if ( UiCore.isGluon() ) throw new IllegalStateException("closeWindowOf call with a swing component, not allowed in gluon model");
-        UiParent.of(c).ifPresent(
-                p -> SwingSaft.run(() -> {
-                    p.setVisible(false);
-                    p.dispose();
-                }),
-                fx -> FxSaft.run(() -> fx.close()));
+        UiCore.global().closeWindowOf(c);
     }
 
     /**
-     * Closes the wrapping Window (or equivalent) of the supplied node.
+     * See {@link Saft#closeWindowOf(javafx.scene.Node) }.
      *
      * @param n the node as refernece.
      */
     public static void closeWindowOf(Node n) {
-        if ( UiCore.isGluon() ) {
-            L.debug("closeWindowOf({}) gluon mode", n);
-            UiCore.global().gluonSupport().ifPresent(g -> g.closeViewOrDialogOf(n));
-        } else {
-            L.debug("closeWindowOf({}) desktop mode", n);
-            UiParent.of(n).ifPresent(
-                    p -> SwingSaft.run(() -> {
-                        p.setVisible(false);
-                        p.dispose();
-                    }),
-                    fx -> FxSaft.run(() -> fx.close()));
-        }
+        UiCore.global().closeWindowOf(n);
     }
 
     /**
@@ -190,7 +157,7 @@ public class Ui {
      * @param file a file to open via ui.
      * @return true if operation was successful, otherwise false. Can be used if the following operations should happen.
      */
-    // TODO: implement for all Modes. Or remove and put back to the developer.
+    // LATER
     public static boolean osOpen(File file) {
         if ( UiCore.isGluon() ) throw new IllegalStateException("Not yet implemented in gluon");
         try {
@@ -203,25 +170,21 @@ public class Ui {
     }
 
     /**
-     * Handles an Exception in the Ui, using the registered ExceptionCosumers form
-     * {@link UiCore#registerExceptionConsumer(java.lang.Class, java.util.function.Consumer)}.
+     * See {@link Saft#handle(java.lang.Throwable) }.
      *
      * @param b the throwable to be handled.
      */
     public static void handle(Throwable b) {
-        UiCore.handle(b);
+        UiCore.global().handle(b);
     }
 
     /**
-     * Retruns a handler, to be used in a CompletableFuture.handle().
+     * See {@link Saft#handler() }.
      *
      * @param <Z> type parameter
      * @return a handler.
      */
     public static <Z> BiFunction<Z, Throwable, Z> handler() {
-        return (Z t, Throwable u) -> {
-            if ( u != null ) Ui.handle(u);
-            return null;
-        };
+        return UiCore.global().handler();
     }
 }

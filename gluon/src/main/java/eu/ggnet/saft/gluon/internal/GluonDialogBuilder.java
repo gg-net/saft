@@ -15,15 +15,15 @@ import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.UiUtil;
 import eu.ggnet.saft.core.ui.builder.Result;
 
 import com.gluonhq.charm.glisten.control.Dialog;
 
 /**
  * Compile-safe gluon dialog builder.
- * 
+ *
  * @author oliver.guenther
  */
 public class GluonDialogBuilder {
@@ -49,11 +49,11 @@ public class GluonDialogBuilder {
         CompletableFuture<GluonParameter> uniChain = CompletableFuture
                 .runAsync(() -> L.debug("Starting new Ui Element creation of Type GluonDialog"), UiCore.getExecutor())
                 .thenApplyAsync(v -> GluonBuilderUtil.produceDialog(dialogProducer), Platform::runLater)
-                .thenApplyAsync((GluonParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> Ui.progress().call(pp)).orElse(null)), UiCore.getExecutor())
+                .thenApplyAsync((GluonParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> UiUtil.exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
                 // no breakIfOnceAndActive is needed here.
                 .thenApply(GluonBuilderUtil::consumePreResult);
 
-        if (!UiCore.isGluon()) {
+        if ( !UiCore.isGluon() ) {
             throw new UnsupportedOperationException("GlounDialog in Swingmode or FXMode is not yet implemented");
         }
         return uniChain
