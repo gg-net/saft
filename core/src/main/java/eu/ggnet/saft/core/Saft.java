@@ -8,6 +8,7 @@ package eu.ggnet.saft.core;
 import java.awt.Component;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -36,6 +37,8 @@ public class Saft {
 
     private final LocationStorage locationStorage;
 
+    private final ExecutorService executorService;
+
     private Optional<GluonSupport> gluonSupport = Optional.empty();
 
     /**
@@ -47,8 +50,9 @@ public class Saft {
      * For transition purposes the {@link UiCore#initGlobal(eu.ggnet.saft.core.Saft) } is designed.
      * </p>
      */
-    Saft(LocationStorage locationStorage) {
+    Saft(LocationStorage locationStorage, ExecutorService executorService) {
         this.locationStorage = Objects.requireNonNull(locationStorage, "LocationStorage must not be null");
+        this.executorService = Objects.requireNonNull(executorService, "ExecutorService must not be null");
     }
 
     /**
@@ -58,6 +62,15 @@ public class Saft {
      */
     public LocationStorage locationStorage() {
         return locationStorage;
+    }
+
+    /**
+     * Returns the execturor service of saft.
+     *
+     * @return the execturor service of saft.
+     */
+    public ExecutorService executorService() {
+        return executorService;
     }
 
     /**

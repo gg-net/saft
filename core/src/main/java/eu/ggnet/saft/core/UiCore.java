@@ -38,19 +38,6 @@ public class UiCore {
 
     private final static Logger L = LoggerFactory.getLogger(UiCore.class);
 
-    // Package private for Ui usage.
-    final static ExecutorService EXECUTOR_SERVICE = Executors.newCachedThreadPool(new ThreadFactory() {
-
-        private final ThreadGroup group = new ThreadGroup("saft-uicore-pool");
-
-        private final AtomicInteger counter = new AtomicInteger(0);
-
-        @Override
-        public Thread newThread(Runnable r) {
-            return new Thread(group, r, "Thread-" + counter.incrementAndGet() + "-" + r.toString());
-        }
-    });
-
     private static final Map<Class<?>, Consumer> EXCEPTION_CONSUMER = new HashMap<>();
 
     private static final Set<Runnable> ON_SHUTDOWN = new HashSet<>();
@@ -105,7 +92,17 @@ public class UiCore {
     public static Saft global() {
         if ( saft == null ) {
             // init defaults.
-            saft = new Saft(new LocationStorage());
+            saft = new Saft(new LocationStorage(), Executors.newCachedThreadPool(new ThreadFactory() {
+
+                private final ThreadGroup group = new ThreadGroup("saft-uicore-pool");
+
+                private final AtomicInteger counter = new AtomicInteger(0);
+
+                @Override
+                public Thread newThread(Runnable r) {
+                    return new Thread(group, r, "Thread-" + counter.incrementAndGet() + "-" + r.toString());
+                }
+            }));
         }
         return saft;
     }
@@ -129,12 +126,11 @@ public class UiCore {
     }
 
     /**
-     * Returns the Executor of the Ui.
-     *
-     * @return the Executor of the Ui.
+     * @deprecated {@link Saft#executorService() }.
      */
+    @Deprecated
     public static Executor getExecutor() {
-        return EXECUTOR_SERVICE;
+        return saft.executorService();
     }
 
     /**
@@ -376,7 +372,7 @@ public class UiCore {
         L.debug("shutdown() running shutdown listeners");
         ON_SHUTDOWN.forEach(Runnable::run);
         L.debug("shutdown() shutdownNow the executor service");
-        EXECUTOR_SERVICE.shutdownNow();
+        saft.executorService().shutdownNow();
         if ( isFx() && !isGluon() ) {
             L.debug("shutdown() closing all open fx stages.");
             FxCore.ACTIVE_STAGES.values().forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
