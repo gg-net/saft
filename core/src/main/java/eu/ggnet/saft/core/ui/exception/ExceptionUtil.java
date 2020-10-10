@@ -54,7 +54,7 @@ public class ExceptionUtil {
         return containsInStacktrace(clazz, ex.getCause());
     }
 
-    public static <T> T extractFromStraktrace(Class<T> clazz, Throwable ex) {
+    public static <T extends Throwable> T extractFromStraktrace(Class<T> clazz, Throwable ex) {
         if ( ex == null ) throw new NullPointerException("No Class in Stacktrace : " + clazz);
         if ( ex.getClass().equals(clazz) ) return (T)ex;
         return extractFromStraktrace(clazz, ex.getCause());

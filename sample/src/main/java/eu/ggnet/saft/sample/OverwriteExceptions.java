@@ -14,10 +14,10 @@ public class OverwriteExceptions {
     public static void main(String[] args) {
         UiCore.startSwing(() -> new MainPanel());
 
-        UiCore.registerExceptionConsumer(IllegalArgumentException.class, (t) -> {
-            Ui.build().alert("Important:" + t.getClass().getSimpleName() + " : " + t.getMessage());
-        });
-
+        // TODO: Reactivate.
+//        UiCore.registerExceptionConsumer(IllegalArgumentException.class, (t) -> {
+//            Ui.build().alert("Important:" + t.getClass().getSimpleName() + " : " + t.getMessage());
+//        });
         Ui.exec(() -> {
             throw new IllegalArgumentException("Sinnlos");
         });

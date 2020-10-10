@@ -99,7 +99,7 @@ public class Ui {
             try {
                 runnable.run();
             } catch (RuntimeException e) {
-                UiCore.handle(e);
+                UiCore.global().handle(e);
             }
         });
     }
@@ -164,7 +164,7 @@ public class Ui {
             Desktop.getDesktop().open(file);
             return true;
         } catch (IOException e) {
-            UiCore.handle(e);
+            UiCore.global().handle(e);
         }
         return false;
     }

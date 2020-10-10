@@ -1,6 +1,7 @@
 package eu.ggnet.saft.core;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.ref.WeakReference;
@@ -10,7 +11,6 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 
 import javax.swing.JFrame;
 
@@ -25,9 +25,6 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.BuilderUtil;
-import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
-import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
-import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
 
 /**
  * The Core of the Saft UI, containing methods for startup or registering things.
@@ -37,8 +34,6 @@ import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
 public class UiCore {
 
     private final static Logger L = LoggerFactory.getLogger(UiCore.class);
-
-    private static final Map<Class<?>, Consumer> EXCEPTION_CONSUMER = new HashMap<>();
 
     private static final Set<Runnable> ON_SHUTDOWN = new HashSet<>();
 
@@ -52,26 +47,14 @@ public class UiCore {
 
     private static Saft saft;
 
-    private static Consumer<Throwable> finalConsumer = (b) -> {
-        if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
-            L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
-            return;
-        }
-        Runnable r = () -> {
-            SwingExceptionDialog.show(SwingCore.mainFrame(), "Systemfehler", ExceptionUtil.extractDeepestMessage(b),
-                    ExceptionUtil.toMultilineStacktraceMessages(b), ExceptionUtil.toStackStrace(b));
-        };
-
-        if ( EventQueue.isDispatchThread() ) r.run();
-        else {
-            try {
-                EventQueue.invokeAndWait(r);
-            } catch (InterruptedException | InvocationTargetException e) {
-                // This will never happen.
-            }
-        }
-
-    };
+    /**
+     * Running means, that one startXXX oder contiuneXXX method was called.
+     *
+     * @return true, if running.
+     */
+    public static boolean isRunning() {
+        return mainFrame != null || mainStage != null;
+    }
 
     /**
      * Initialise the global with the supplied saft.
@@ -205,7 +188,7 @@ public class UiCore {
                 return frame;
             }));
         } catch (InterruptedException | InvocationTargetException | ExecutionException ex) {
-            handle(ex);
+            saft.handle(ex);
         }
     }
 
@@ -299,38 +282,6 @@ public class UiCore {
     }
 
     /**
-     * Registers an extra renderer for an Exception in any stacktrace. HINT: There is no order or hierachy in the engine. So if you register duplicates or have
-     * more than one match in a StackTrace, no one knows what might happen.
-     *
-     * @param <T>      type of the Exception
-     * @param clazz    the class of the Exception
-     * @param consumer the consumer to handle it.
-     */
-    public static <T> void registerExceptionConsumer(Class<T> clazz, Consumer<T> consumer) {
-        EXCEPTION_CONSUMER.put(clazz, consumer);
-    }
-
-    /**
-     * Allows to overwrite the default final consumer of all exceptions.
-     * Make sure to ignore the {@link UiWorkflowBreak} wrapped into a {@link CompletionException}.
-     *
-     * @param <T>      type of consumer
-     * @param consumer the consumer, must not be null
-     */
-    public static <T> void overwriteFinalExceptionConsumer(Consumer<Throwable> consumer) {
-        finalConsumer = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
-    }
-
-    /**
-     * Running means, that one startXXX oder contiuneXXX method was called.
-     *
-     * @return true, if running.
-     */
-    public static boolean isRunning() {
-        return mainFrame != null || mainStage != null;
-    }
-
-    /**
      * Fx mode.
      *
      * @return true if in fx mode.
@@ -386,21 +337,6 @@ public class UiCore {
             L.debug("shutdown() forcing the Platform.exit()");
             Platform.exit();
         }
-    }
-
-    /**
-     * Intake from Ui.
-     * <p>
-     * @param b
-     */
-    static void handle(Throwable b) {
-        for (Class<?> clazz : EXCEPTION_CONSUMER.keySet()) {
-            if ( ExceptionUtil.containsInStacktrace(clazz, b) ) {
-                EXCEPTION_CONSUMER.get(clazz).accept(ExceptionUtil.extractFromStraktrace(clazz, b));
-                return;
-            }
-        }
-        finalConsumer.accept(b);
     }
 
     /**

@@ -6,8 +6,8 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -22,6 +22,9 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
+import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
+import eu.ggnet.saft.core.ui.exception.AndFinallyHandler;
+import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
 
 /**
  * The core of saft, everything that is keept in a singleton way, is registered or held here.
@@ -41,6 +44,30 @@ public class Saft {
 
     private Optional<GluonSupport> gluonSupport = Optional.empty();
 
+    private final Map<Class<? extends Throwable>, ParentShowConsume<? extends Throwable>> exceptionConsumers = new HashMap<>();
+
+    private ParentShowConsume<Throwable> exceptionConsumerFinal = null; // TODO
+
+//    private static Consumer<Throwable> finalConsumer = (b) -> {
+//        if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
+//            L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
+//            return;
+//        }
+//        Runnable r = () -> {
+//            SwingExceptionDialog.show(SwingCore.mainFrame(), "Systemfehler", ExceptionUtil.extractDeepestMessage(b),
+//                    ExceptionUtil.toMultilineStacktraceMessages(b), ExceptionUtil.toStackStrace(b));
+//        };
+//
+//        if ( EventQueue.isDispatchThread() ) r.run();
+//        else {
+//            try {
+//                EventQueue.invokeAndWait(r);
+//            } catch (InterruptedException | InvocationTargetException e) {
+//                // This will never happen.
+//            }
+//        }
+//
+//    };
     /**
      * Default Constructor, ready for own implementations.
      * To ensure that no one will make an instance of Saft by error, the constructor is package private.
@@ -155,45 +182,81 @@ public class Saft {
     }
 
     /**
-     * Handles an Exception in the Ui, using the registered ExceptionCosumers form
-     * {@link UiCore#registerExceptionConsumer(java.lang.Class, java.util.function.Consumer)}.
+     * Tries to map any exception in the stacktrace to a registered exceptionhandler or uses the final exceptionconsumer.
      *
-     * @param b the throwable to be handled.
+     * @param parent    an optional parent, if null main is used.
+     * @param exception the exception to handle, if null nothing happens.
      */
-    public void handle(Throwable b) {
-        UiCore.handle(b);
-    }
-
-    /**
-     * Retruns a handler, to be used in a CompletableFuture.handle().
-     *
-     * @param <Z> type parameter
-     * @return a handler.
-     */
-    public <Z> BiFunction<Z, Throwable, Z> handler() {
-        return (Z t, Throwable u) -> {
-            if ( u != null ) Ui.handle(u);
-            return null;
-        };
-    }
-
-    /**
-     * Retruns a handler, to be used in a CompletableFuture.handle(), with an and block, also to be executed.
-     *
-     * @param <Z>      type parameter
-     * @param runnable to be run before the final handle.
-     * @return a handler.
-     */
-    public <Z> BiFunction<Z, Throwable, Z> handlerAnd(Runnable runnable) {
-        Objects.requireNonNull(runnable, "Runnable must not be null");
-        return (Z t, Throwable u) -> {
-            try {
-                runnable.run();
-            } finally {
-                if ( u != null ) Ui.handle(u);
+    public void handle(UiParent parent, Throwable exception) {
+        if ( parent == null ) parent = UiParent.defaults();
+        for (Class<? extends Throwable> clazz : exceptionConsumers.keySet()) {
+            if ( ExceptionUtil.containsInStacktrace(clazz, exception) ) {
+                // The cast is needed, cause of the different generic types in the map. But it is safe because of the way the map is filled. See the register methods.
+                ParentShowConsume<Throwable> consumer = (ParentShowConsume<Throwable>)exceptionConsumers.get(clazz);
+                Throwable extractedException = ExceptionUtil.extractFromStraktrace(clazz, exception);
+                consumer.show(parent, extractedException);
+                return;
             }
-            return null;
-        };
+        }
+        exceptionConsumerFinal.show(parent, exception);
+    }
+
+    public void handle(Node javafxParentAnchor, Throwable exception) {
+        handle(UiParent.of(javafxParentAnchor), exception);
+    }
+
+    public void handle(Component swingParentAnchor, Throwable exception) {
+        handle(UiParent.of(swingParentAnchor), exception);
+    }
+
+    public void handle(Throwable exception) {
+        handle(UiParent.defaults(), exception);
+    }
+
+    /**
+     * Returns a Handler to be used in {@link CompletableFuture#handle(java.util.function.BiFunction) }.
+     * Use the register methods to define how exception should be handled.
+     *
+     * @param <Z>
+     * @param parent a ui parent to show there to display this.
+     * @return the BiFunction.
+     */
+    public <Z> BiFunction<Z, Throwable, Z> handler(UiParent parent) {
+        return new AndFinallyHandler<>(this, parent);
+    }
+
+    public <Z> BiFunction<Z, Throwable, Z> handler() {
+        return handler(UiParent.defaults());
+    }
+
+    public <Z> BiFunction<Z, Throwable, Z> handler(Node javafxParentAnchor) {
+        return handler(UiParent.of(javafxParentAnchor));
+    }
+
+    public <Z> BiFunction<Z, Throwable, Z> handler(Component swingParentAnchor) {
+        return handler(UiParent.of(swingParentAnchor));
+    }
+
+    /**
+     * Registers an extra renderer for an Exception in any stacktrace. HINT: There is no order or hierachy in the engine. So if you register duplicates or have
+     * more than one match in a StackTrace, no one knows what might happen.
+     *
+     * @param <T>      type of the Exception
+     * @param clazz    the class of the Exception
+     * @param consumer the consumer to handle it.
+     */
+    public <T extends Throwable> void registerExceptionConsumer(Class<T> clazz, ParentShowConsume<T> consumer) {
+        exceptionConsumers.put(clazz, consumer);
+    }
+
+    /**
+     * Allows to overwrite the default final consumer of all exceptions.
+     * Make sure to ignore the {@link UiWorkflowBreak} wrapped into a {@link CompletionException}.
+     *
+     * @param consumer the consumer, must not be null
+     */
+    public void overwriteFinalExceptionConsumer(ParentShowConsume<Throwable> consumer) {
+        exceptionConsumerFinal = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
     }
 
 }
