@@ -18,6 +18,7 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.UiUtil;
 import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.core.ui.FxSaft;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
@@ -67,7 +68,7 @@ public class GluonSupportService implements GluonSupport {
 
     @Override
     public void showAlert(String title, String message, AlertType type) {
-        FxSaft.dispatch(() -> {
+        UiUtil.dispatchFx(() -> {
             Dialog<Void> d = new Dialog<>(title, message);
             switch (type) {
                 case ERROR:

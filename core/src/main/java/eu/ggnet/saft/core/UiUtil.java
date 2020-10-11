@@ -5,8 +5,9 @@
  */
 package eu.ggnet.saft.core;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.*;
+
+import javafx.application.Platform;
 
 /**
  * Ui Utils.
@@ -32,6 +33,35 @@ public class UiUtil {
     }
 
     private UiUtil() {
+    }
+
+    /**
+     * Dispatches the Callable to the Platform Ui Thread. If this method is called on the javafx ui thread, the supplied callable is called,
+     * otherwise the exection on Platform.runLater ist synchrnized via a latch.
+     *
+     * @param <T>      Return type of callable
+     * @param callable the callable to dispatch
+     * @return the result of the callable
+     * @throws RuntimeException wraps InterruptedException of {@link CountDownLatch#await() } and ExecutionException of {@link FutureTask#get() }
+     */
+    public static <T> T dispatchFx(Callable<T> callable) throws RuntimeException {
+        try {
+            FutureTask<T> futureTask = new FutureTask<>(callable);
+            final CountDownLatch cdl = new CountDownLatch(1);
+            if ( Platform.isFxApplicationThread() ) {
+                futureTask.run();
+                cdl.countDown();
+            } else {
+                Platform.runLater(() -> {
+                    futureTask.run();
+                    cdl.countDown();
+                });
+            }
+            cdl.await();
+            return futureTask.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     /**

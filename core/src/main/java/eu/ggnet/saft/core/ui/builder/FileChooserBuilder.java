@@ -23,7 +23,6 @@ import javafx.application.Platform;
 import javafx.stage.FileChooser;
 
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.ui.SwingCore;
 
 import static eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type.NULL_RESULT;
 
@@ -45,7 +44,6 @@ public class FileChooserBuilder {
     // Fixme: Not implemented n Gluon yet.
     public Result<File> open() {
         if ( UiCore.isGluon() ) throw new IllegalStateException("Not yet implemented in gluon");
-        SwingCore.ensurePlatformIsRunning();
         return new Result<>(CompletableFuture.supplyAsync(() -> {
             FileChooser fileChooser = new FileChooser();
             if ( title == null ) fileChooser.setTitle("Open File");

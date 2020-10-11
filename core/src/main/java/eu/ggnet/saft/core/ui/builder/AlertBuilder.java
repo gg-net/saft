@@ -10,8 +10,9 @@ import javafx.scene.control.Alert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.subsystem.Fx;
+import eu.ggnet.saft.core.subsystem.Swing;
 import eu.ggnet.saft.core.ui.*;
 
 import static eu.ggnet.saft.core.ui.AlertType.INFO;
@@ -39,8 +40,11 @@ public class AlertBuilder {
 
     private final UiParent parent;
 
+    private final Saft saft;
+
     public AlertBuilder(PreBuilder pre) {
         parent = pre.uiParent;
+        saft = pre.saft;
         if ( pre.title == null || pre.title.trim().isEmpty() ) title = pre.title;
     }
 
@@ -99,9 +103,9 @@ public class AlertBuilder {
             if ( UiCore.isGluon() ) {
                 UiCore.global().gluonSupport().get().showAlert(title, message, type);
             } else if ( UiCore.isFx() ) {
-                FxSaft.dispatch(() -> {
+                UiUtil.dispatchFx(() -> {
                     Alert alert = new Alert(type.getJavaFxType());
-                    alert.initOwner(parent.fxOrMain());
+                    saft.core(Fx.class).parentIfPresent(parent, p -> alert.initOwner(p));
                     alert.setTitle(title);
                     alert.setContentText(message);
                     alert.showAndWait();
@@ -109,7 +113,7 @@ public class AlertBuilder {
                 });
             } else {
                 SwingSaft.dispatch(() -> {
-                    JOptionPane.showMessageDialog(parent.swingOrMain(), message, title, type.getOptionPaneType());
+                    JOptionPane.showMessageDialog(saft.core(Swing.class).unwrap(parent).orElse(saft.core(Swing.class).unwrapMain().orElse(null)), message, title, type.getOptionPaneType());
                     return null;
                 });
             }

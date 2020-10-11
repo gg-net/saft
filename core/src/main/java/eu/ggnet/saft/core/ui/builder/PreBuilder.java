@@ -17,10 +17,12 @@
 package eu.ggnet.saft.core.ui.builder;
 
 import java.awt.Component;
+import java.util.Objects;
 
 import javafx.scene.Parent;
 import javafx.stage.Modality;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.UiParent;
 
 /**
@@ -29,11 +31,18 @@ import eu.ggnet.saft.core.ui.UiParent;
  */
 public class PreBuilder {
 
+    // TODO: later options for inject
+    final Saft saft;
+
+    public PreBuilder(Saft saft) {
+        this.saft = Objects.requireNonNull(saft, "saft must not be null");
+    }
+
     /**
      * Represents the parent of the ui element, optional.
      * The default is in the swingmode SwingCore.mainFrame();
      */
-    UiParent uiParent = UiParent.defaults();
+    UiParent uiParent = null;
 
     /**
      * Sets the once mode.

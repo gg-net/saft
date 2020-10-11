@@ -1,11 +1,13 @@
 package eu.ggnet.saft.core.ui;
 
-import java.awt.EventQueue;
+import java.awt.*;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 import java.util.concurrent.*;
-import java.util.function.Consumer;
 
-import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+
+import javafx.embed.swing.JFXPanel;
 
 import org.slf4j.LoggerFactory;
 
@@ -14,20 +16,6 @@ import org.slf4j.LoggerFactory;
  * @author oliver.guenther
  */
 public class SwingSaft {
-
-    public static <T, R extends JPanel> R construct(Class<R> panelClazz, T parameter) throws Exception {
-        return dispatch(() -> {
-            R panel = panelClazz.getConstructor().newInstance();
-            if ( parameter != null && panel instanceof Consumer ) {
-                try {
-                    ((Consumer<T>)panel).accept(parameter);
-                } catch (ClassCastException e) {
-                    LoggerFactory.getLogger(SwingSaft.class).warn(panel.getClass() + " implements Consumer, but not of type " + parameter.getClass());
-                }
-            }
-            return panel;
-        });
-    }
 
     /**
      * Executes the supplied callable on the EventQueue.
@@ -40,6 +28,7 @@ public class SwingSaft {
      * @throws InterruptedException      See {@link Future#get() }
      * @throws InvocationTargetException See {@link Future#get() }
      */
+    //HINT: Internal
     public static <T> T dispatch(Callable<T> callable) throws ExecutionException, InterruptedException, InvocationTargetException {
         FutureTask<T> task = new FutureTask(callable);
         if ( EventQueue.isDispatchThread() ) task.run();
@@ -47,9 +36,41 @@ public class SwingSaft {
         return task.get();
     }
 
+    //HINT: Internal
     public static void run(Runnable runnable) {
         if ( EventQueue.isDispatchThread() ) runnable.run();
         else EventQueue.invokeLater(runnable);
+    }
+
+    /**
+     * Special form of {@link SwingUtilities#getWindowAncestor(java.awt.Component) }, as it also verifies if the supplied parameter is of type Window and if
+     * true returns it.
+     *
+     * @param c the component
+     * @return a window.
+     */
+    //HINT: Internal & RedTapeController
+    public static Optional<Window> windowAncestor(Component c) {
+        LoggerFactory.getLogger(SwingSaft.class).debug("windowAncestor({})", c);
+        if ( c == null ) return Optional.empty();
+        if ( c instanceof Window ) return Optional.of((Window)c);
+        return Optional.ofNullable(SwingUtilities.getWindowAncestor(c));
+    }
+
+    private static boolean started = false;
+
+    /**
+     * Holds a mapping of all Scenes in JFXPanels. Used to discover parent windows if in a wrapped JFXPanel.
+     *
+     * @deprecated This is not needed. in Fx mode, the platform is running. In Swingmode, the core does that.
+     */
+    //HINT: Internal
+    @Deprecated
+    public static void ensurePlatformIsRunning() {
+        if ( !started ) {
+            new JFXPanel(); // Implicit start of Fx Platform.
+            started = true;
+        }
     }
 
 }

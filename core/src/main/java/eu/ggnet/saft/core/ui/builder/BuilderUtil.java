@@ -22,7 +22,6 @@ import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.*;
@@ -50,6 +49,8 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.subsystem.Fx;
+import eu.ggnet.saft.core.subsystem.Swing;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Builder;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;
@@ -170,13 +171,11 @@ public final class BuilderUtil {
         window.pack();
         window.setLocationRelativeTo(relativeLocationAnker);
         if ( in.isStoreLocation() ) UiCore.global().locationStorage().loadLocation(storeLocationClass, window);
-        SwingCore.ACTIVE_WINDOWS.put(windowKey, new WeakReference<>(window));
+        in.saft().core(Swing.class).add(window);
         // Removes on close.
         window.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
-                // Clean us up.
-                SwingCore.ACTIVE_WINDOWS.remove(windowKey);
                 // Store location.
                 if ( in.isStoreLocation() ) UiCore.global().locationStorage().storeLocation(storeLocationClass, window);
             }
@@ -301,36 +300,36 @@ public final class BuilderUtil {
 
         return in;
     }
-
-    static UiParameter breakIfOnceAndActive(UiParameter in) {
-        // Look into existing Instances, if in once mode and push up to the front if exist.
-        if ( UiCore.isGluon() ) return in; // Not implemented for gluon.
-        if ( !in.extractOnce() ) return in;
-        String key = in.toKey();
-        if ( UiCore.isFx() && FxCore.ACTIVE_STAGES.containsKey(key) ) {
-            Stage stage = FxCore.ACTIVE_STAGES.get(key).get();
-            if ( stage == null || !stage.isShowing() ) FxCore.ACTIVE_STAGES.remove(key);
-            else {
-                FxSaft.run(() -> {
-                    stage.setIconified(false);
-                    stage.requestFocus();
-                });
-                throw new UiWorkflowBreak(Type.ONCE);
-            }
-        }
-        if ( UiCore.isSwing() && SwingCore.ACTIVE_WINDOWS.containsKey(key) ) {
-            Window window = SwingCore.ACTIVE_WINDOWS.get(key).get();
-            if ( window == null || !window.isVisible() ) SwingCore.ACTIVE_WINDOWS.remove(key);
-            else {
-                SwingSaft.run(() -> {
-                    if ( window instanceof JFrame ) ((JFrame)window).setExtendedState(JFrame.NORMAL);
-                    window.toFront();
-                });
-                throw new UiWorkflowBreak(Type.ONCE);
-            }
-        }
-        return in;
-    }
+// HINT: Will be reimplemented in a completlly different way.
+//    static UiParameter breakIfOnceAndActive(UiParameter in) {
+//        // Look into existing Instances, if in once mode and push up to the front if exist.
+//        if ( UiCore.isGluon() ) return in; // Not implemented for gluon.
+//        if ( !in.extractOnce() ) return in;
+//        String key = in.toKey();
+//        if ( UiCore.isFx() && FxCore.ACTIVE_STAGES.containsKey(key) ) {
+//            Stage stage = FxCore.ACTIVE_STAGES.get(key).get();
+//            if ( stage == null || !stage.isShowing() ) FxCore.ACTIVE_STAGES.remove(key);
+//            else {
+//                FxSaft.run(() -> {
+//                    stage.setIconified(false);
+//                    stage.requestFocus();
+//                });
+//                throw new UiWorkflowBreak(Type.ONCE);
+//            }
+//        }
+//        if ( UiCore.isSwing() && SwingCore.ACTIVE_WINDOWS.containsKey(key) ) {
+//            Window window = SwingCore.ACTIVE_WINDOWS.get(key).get();
+//            if ( window == null || !window.isVisible() ) SwingCore.ACTIVE_WINDOWS.remove(key);
+//            else {
+//                SwingSaft.run(() -> {
+//                    if ( window instanceof JFrame ) ((JFrame)window).setExtendedState(JFrame.NORMAL);
+//                    window.toFront();
+//                });
+//                throw new UiWorkflowBreak(Type.ONCE);
+//            }
+//        }
+//        return in;
+//    }
 
     static UiParameter consumePreResult(UiParameter in) {
         return in.optionalConsumePreResult();
@@ -365,7 +364,7 @@ public final class BuilderUtil {
                 .findAny()
                 .orElseThrow(() -> new IllegalStateException("No Node of the supplied Pane is of type SwingNode"));
         sn.setContent(jpanel);
-        StaticParentMapperJavaFx.map(jpanel, sn);
+        in.saft().core(Fx.class).mapParent(jpanel, sn);
 
         Dimension preferredSize = jpanel.getPreferredSize();
         L.debug("wrapJPanel(in): setting in.pane().prefSize from in.jPanel().preferredSize={}", preferredSize);
@@ -395,7 +394,7 @@ public final class BuilderUtil {
             L.debug("wrapPane(in): in.pane().getScene() is null, creating");
             fxp.setScene(new Scene(in.pane().get(), Color.TRANSPARENT));
         }
-        SwingCore.mapParent(fxp);
+        in.saft().core(Swing.class).mapParent(fxp);
         return in;
     }
 
@@ -416,14 +415,6 @@ public final class BuilderUtil {
         }
     }
 
-    private static void registerActiveWindows(String key, javafx.stage.Stage window) {
-        FxCore.ACTIVE_STAGES.put(key, new WeakReference<>(window));
-        window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> {
-            FxCore.ACTIVE_STAGES.remove(key);
-        });
-
-    }
-
     private static void registerAndSetStoreLocation(Class<?> key, javafx.stage.Stage window) {
         UiCore.global().locationStorage().loadLocation(key, window);
         window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> UiCore.global().locationStorage().storeLocation(key, window));
@@ -432,7 +423,10 @@ public final class BuilderUtil {
     static UiParameter constructJavaFx(UiParameter in) {
         Pane pane = in.pane().get();
         Stage stage = new Stage();
-        if ( !in.extractFrame() ) stage.initOwner(in.uiParent().fxOrMain());
+
+        if ( !in.extractFrame() ) {
+            in.saft().core(Fx.class).parentIfPresent(in.uiParent(), s -> stage.initOwner(s));
+        }
         in.modality().ifPresent(m -> stage.initModality(m));
 
         StringProperty titleProperty = in.toTitleProperty();
@@ -448,7 +442,7 @@ public final class BuilderUtil {
         });
 
         stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
-        registerActiveWindows(in.toKey(), stage);
+        in.saft().core(Fx.class).add(stage);
         if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
         in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed()));
         stage.setScene(new Scene(pane));
@@ -458,7 +452,9 @@ public final class BuilderUtil {
 
     static UiParameter constructDialog(UiParameter in) {
         Dialog<?> dialog = in.dialog().get();
-        if ( !in.extractFrame() ) dialog.initOwner(in.uiParent().fxOrMain());
+        if ( !in.extractFrame() ) {
+            in.saft().core(Fx.class).parentIfPresent(in.uiParent(), s -> dialog.initOwner(s));
+        }
         in.modality().ifPresent(m -> dialog.initModality(m));
         // in.toTitleProperty().addListener((ob, o, n) -> dialog.setTitle(n)); // In Dialog, we use the nativ implementation
         // stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); // Not in dialog avialable.
@@ -473,10 +469,14 @@ public final class BuilderUtil {
         try {
             L.debug("constructSwing");
             JComponent component = in.jPanel().get(); // Must be set at this point.
+
+            // TODO: look into the util methods if the saft.core(Swing.class).parentIfPresent(...) can be used.
+            Window parent = in.saft().core(Swing.class).unwrap(in.uiParent()).orElse(in.saft().core(Swing.class).unwrapMain().orElse(null));
+
             final Window window = in.extractFrame()
                     ? BuilderUtil.newJFrame(in.toTitleProperty(), component)
-                    : BuilderUtil.newJDailog(in.uiParent().swingOrMain(), in.toTitleProperty(), component, in.asSwingModality());
-            BuilderUtil.setWindowProperties(in, window, in.extractReferenceClass(), in.uiParent().swingOrMain(), in.extractReferenceClass(), in.toKey());
+                    : BuilderUtil.newJDailog(parent, in.toTitleProperty(), component, in.asSwingModality());
+            BuilderUtil.setWindowProperties(in, window, in.extractReferenceClass(), parent, in.extractReferenceClass(), in.toKey());
             in.getClosedListenerImplemetation().ifPresent(elem -> window.addWindowListener(new WindowAdapter() {
 
                 @Override

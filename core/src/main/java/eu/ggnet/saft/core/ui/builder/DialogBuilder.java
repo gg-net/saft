@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.ui.SwingCore;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
 import static eu.ggnet.saft.core.UiUtil.exceptionRun;
@@ -47,7 +46,6 @@ public class DialogBuilder {
 
     public DialogBuilder(PreBuilder pre) {
         this.preBuilder = pre;
-        SwingCore.ensurePlatformIsRunning();
     }
 
     /**
@@ -92,7 +90,6 @@ public class DialogBuilder {
                 .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
                 .thenApplyAsync(v -> BuilderUtil.produceDialog(dialogProducer, parm), Platform::runLater)
                 .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
-                .thenApply(BuilderUtil::breakIfOnceAndActive)
                 .thenApply(BuilderUtil::consumePreResult);
 
         if ( UiCore.isSwing() ) {

@@ -35,7 +35,7 @@ public class Gi {
         if ( !RUNNING.compareAndSet(false, true) ) return;
         L.info("startUp(): First call, registering saft-gluon services in Dl");
         UiCore.global().gluonSupport(new GluonSupportService());
-        UiCore.overwriteFinalExceptionConsumer(new DefaultGluonFinalExceptionConsumer());
+        //       UiCore.overwriteFinalExceptionConsumer(new DefaultGluonFinalExceptionConsumer());
     }
 
     /**

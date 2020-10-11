@@ -150,7 +150,6 @@ public class FxmlBuilder {
         CompletableFuture<UiParameter> uniChain = CompletableFuture
                 .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
                 .thenApplyAsync((v) -> parm.withRootClass(fxmlControllerClass).withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
-                .thenApply(BuilderUtil::breakIfOnceAndActive)
                 .thenApplyAsync(BuilderUtil::produceFxml, Platform::runLater)
                 .thenApply(BuilderUtil::consumePreResult);
 

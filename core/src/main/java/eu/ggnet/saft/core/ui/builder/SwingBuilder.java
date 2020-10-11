@@ -142,7 +142,6 @@ public class SwingBuilder {
                 .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
                 .thenApplyAsync(v -> BuilderUtil.produceJPanel(jpanelProducer, parm), EventQueue::invokeLater)
                 .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
-                .thenApply(BuilderUtil::breakIfOnceAndActive)
                 .thenApply(BuilderUtil::consumePreResult);
 
         if ( UiCore.isSwing() ) {

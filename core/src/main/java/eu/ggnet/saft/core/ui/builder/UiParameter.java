@@ -31,6 +31,7 @@ import org.inferred.freebuilder.FreeBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.*;
 
 /**
@@ -79,6 +80,8 @@ public abstract class UiParameter {
         public abstract Object selectRelevantInstance(UiParameter p);
 
     }
+
+    abstract Saft saft();
 
     abstract boolean once();
 
@@ -135,6 +138,7 @@ public abstract class UiParameter {
     @SuppressWarnings("NonPublicExported")
     public static UiParameter.Builder fromPreBuilder(PreBuilder preBuilder) {
         return new UiParameter.Builder()
+                .saft(preBuilder.saft)
                 .nullableTitle(preBuilder.title)
                 .nullableModality(preBuilder.modality)
                 .frame(preBuilder.frame)

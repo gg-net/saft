@@ -24,9 +24,10 @@ public class AndFinallyHandler<Z> implements BiFunction<Z, Throwable, Z> {
 
     private final UiParent parent;
 
+    //TODO: Parent may be null, main will is used from saft
     public AndFinallyHandler(Saft saft, UiParent parent) {
         this.saft = Objects.requireNonNull(saft, "Saft must not be null");
-        this.parent = Objects.requireNonNull(parent, "UiParent must not be null");
+        this.parent = parent;
     }
 
     @Override

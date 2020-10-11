@@ -7,7 +7,7 @@ import javax.swing.JDialog;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.ui.SwingCore;
+import eu.ggnet.saft.core.subsystem.Swing;
 import eu.ggnet.saft.sample.support.DocumentAdressUpdateViewOkCanceler;
 import eu.ggnet.saft.sample.support.MainPanel;
 
@@ -29,7 +29,7 @@ public class SwingPopupSwingParentSwing {
     public static void main(String[] args) {
         UiCore.startSwing(() -> new MainPanel());
 
-        final JDialog d = new JDialog(SwingCore.mainFrame(), "ExtraDialog", Dialog.ModalityType.MODELESS);
+        final JDialog d = new JDialog(UiCore.global().core(Swing.class).unwrapMain().get(), "ExtraDialog", Dialog.ModalityType.MODELESS);
         Label label = new Label("Ein extra Dialog");
         d.getContentPane().add(label);
         d.pack();

@@ -1,10 +1,8 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
-import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -23,6 +21,8 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.subsystem.Fx;
+import eu.ggnet.saft.core.subsystem.Swing;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.BuilderUtil;
 
@@ -64,6 +64,7 @@ public class UiCore {
      */
     public static void initGlobal(Saft newSaft) {
         if ( saft != null ) throw new IllegalStateException("UiCore.global() already inited, call to initGlobal(Saft) not allowed.");
+        L.info("Initialising Saft in classic mode using explizit instance: {}.", newSaft);
         saft = Objects.requireNonNull(newSaft, "Saft must not be null");
     }
 
@@ -72,8 +73,10 @@ public class UiCore {
      *
      * @return the global saft.
      */
+    // TODO: Reconsider, if an autoinit is something wanted. There may be cases, like ui elements displayed before the Saft core is up. A fail first might help solve these.
     public static Saft global() {
         if ( saft == null ) {
+            L.info("Initialising Saft in classic mode using defaults.");
             // init defaults.
             saft = new Saft(new LocationStorage(), Executors.newCachedThreadPool(new ThreadFactory() {
 
@@ -123,19 +126,10 @@ public class UiCore {
      */
     public static void continueSwing(JFrame mainView) {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
-        SwingCore.ensurePlatformIsRunning();
+        SwingSaft.ensurePlatformIsRunning();
         Platform.setImplicitExit(false); // Need this, as we asume many javafx elements opening and closing.
         mainFrame = mainView;
         mainView.addWindowListener(new WindowAdapter() {
-
-            @Override
-            public void windowClosing(WindowEvent e) {
-                for (WeakReference<Window> windowRef : SwingCore.ACTIVE_WINDOWS.values()) {
-                    if ( windowRef.get() == null ) continue;
-                    windowRef.get().setVisible(false); // Close all windows.
-                    windowRef.get().dispose();
-                }
-            }
 
             @Override
             public void windowClosed(WindowEvent e) {
@@ -165,7 +159,7 @@ public class UiCore {
      */
     public static <T extends Component> void startSwing(final Callable<T> builder) {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
-        SwingCore.ensurePlatformIsRunning();
+        SwingSaft.ensurePlatformIsRunning();
         try {
             continueSwing(SwingSaft.dispatch(() -> {
                 T p = builder.call();
@@ -208,7 +202,7 @@ public class UiCore {
     public static <T extends Parent> void startJavaFx(final Stage primaryStage, final Callable<T> builder) {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
         mainStage = primaryStage;
-        FxSaft.dispatch(() -> {
+        UiUtil.dispatchFx(() -> {
             Parent p = builder.call();
             Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
             if ( optionalTitleProperty.isPresent() ) {
@@ -324,18 +318,12 @@ public class UiCore {
         ON_SHUTDOWN.forEach(Runnable::run);
         L.debug("shutdown() shutdownNow the executor service");
         saft.executorService().shutdownNow();
+        // TODO: this can probably be done in saft directly.
         if ( isFx() && !isGluon() ) {
             L.debug("shutdown() closing all open fx stages.");
-            FxCore.ACTIVE_STAGES.values().forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
-            FxCore.getWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
+            global().core(Fx.class).shutdown();
         } else if ( isSwing() ) {
-            L.debug("shutdown() closing all open swing dialogs and frames.");
-            for (Window window : java.awt.Frame.getWindows()) {
-                window.setVisible(false);
-                window.dispose();
-            }
-            L.debug("shutdown() forcing the Platform.exit()");
-            Platform.exit();
+            global().core(Swing.class).shutdown();
         }
     }
 

@@ -7,19 +7,21 @@ package eu.ggnet.saft.core;
 
 import java.awt.Component;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
+import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.subsystem.*;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
@@ -46,7 +48,9 @@ public class Saft {
 
     private final Map<Class<? extends Throwable>, ParentShowConsume<? extends Throwable>> exceptionConsumers = new HashMap<>();
 
-    private ParentShowConsume<Throwable> exceptionConsumerFinal = null; // TODO
+    private Core<?> core = null;
+
+    private ParentShowConsume<Throwable> exceptionConsumerFinal = null; // TODO: Implement a default implementation. Do this after the change in the builder.
 
 //    private static Consumer<Throwable> finalConsumer = (b) -> {
 //        if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
@@ -80,6 +84,45 @@ public class Saft {
     Saft(LocationStorage locationStorage, ExecutorService executorService) {
         this.locationStorage = Objects.requireNonNull(locationStorage, "LocationStorage must not be null");
         this.executorService = Objects.requireNonNull(executorService, "ExecutorService must not be null");
+    }
+
+    /**
+     * Returns the subsystem of
+     *
+     * @param <T>
+     * @param typeClass
+     * @return
+     */
+    public <T extends Core<V>, V> T core(Class<T> typeClass) {
+        Objects.requireNonNull(typeClass, "typeClass must not be null");
+        if ( core == null ) {
+            L.warn("core({}) called in, but core is not yet set. Returning dead core");
+            return deadCore(typeClass);
+        }
+        if ( !typeClass.equals(core.getClass()) ) {
+            L.warn("core({}) called in, but core is {}. Returning dead core", core.getClass().getName());
+            return deadCore(typeClass);
+        }
+        return (T)core;
+    }
+
+    /**
+     * Init Saft with the supplied core and first window.
+     * May only be called once. But Saft builder can be used before.
+     *
+     * @param <T>
+     * @param typeClass  must not be null.
+     * @param mainParent must not be null.
+     * @throws NullPointerException if typeclass or mainParen are null
+     */
+    public <T> void init(Class<Core<T>> typeClass, T mainParent) throws NullPointerException {
+        Objects.requireNonNull(typeClass, "typeClass must not be null");
+        Objects.requireNonNull(mainParent, "mainParent must not be null");
+        if ( core != null ) throw new IllegalStateException("Core is allready initialized. Second call not allowed");
+        // All casts are safe, see Core interface.
+        if ( typeClass.equals(Swing.class) ) core = Swing.createCore((JFrame)mainParent);
+        else if ( typeClass.equals(Fx.class) ) core = Fx.createCore((Stage)mainParent);
+        // TODO: All Knowledge of continue and start must be merged here.
     }
 
     /**
@@ -188,12 +231,12 @@ public class Saft {
      * @param exception the exception to handle, if null nothing happens.
      */
     public void handle(UiParent parent, Throwable exception) {
-        if ( parent == null ) parent = UiParent.defaults();
         for (Class<? extends Throwable> clazz : exceptionConsumers.keySet()) {
             if ( ExceptionUtil.containsInStacktrace(clazz, exception) ) {
                 // The cast is needed, cause of the different generic types in the map. But it is safe because of the way the map is filled. See the register methods.
                 ParentShowConsume<Throwable> consumer = (ParentShowConsume<Throwable>)exceptionConsumers.get(clazz);
                 Throwable extractedException = ExceptionUtil.extractFromStraktrace(clazz, exception);
+                // TODO: Think about the parent. Who shound handle the null and find the main.
                 consumer.show(parent, extractedException);
                 return;
             }
@@ -210,7 +253,7 @@ public class Saft {
     }
 
     public void handle(Throwable exception) {
-        handle(UiParent.defaults(), exception);
+        handle((UiParent)null, exception);
     }
 
     /**
@@ -226,7 +269,7 @@ public class Saft {
     }
 
     public <Z> BiFunction<Z, Throwable, Z> handler() {
-        return handler(UiParent.defaults());
+        return handler((UiParent)null);
     }
 
     public <Z> BiFunction<Z, Throwable, Z> handler(Node javafxParentAnchor) {
@@ -257,6 +300,12 @@ public class Saft {
      */
     public void overwriteFinalExceptionConsumer(ParentShowConsume<Throwable> consumer) {
         exceptionConsumerFinal = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
+    }
+
+    protected <T extends Core<V>, V> T deadCore(Class<T> typeClass) {
+        if ( typeClass.equals(Swing.class) ) return (T)Swing.createCore(null);
+        if ( typeClass.equals(Fx.class) ) return (T)Fx.createCore(null);
+        throw new IllegalArgumentException("Core of type " + typeClass + " is not supported.");
     }
 
 }

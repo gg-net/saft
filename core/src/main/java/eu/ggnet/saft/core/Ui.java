@@ -45,7 +45,7 @@ public class Ui {
      * @return a new Ui builder.
      */
     public static PreBuilder build() {
-        return new PreBuilder();
+        return new PreBuilder(UiCore.global());
     }
 
     /**
@@ -55,7 +55,7 @@ public class Ui {
      * @return a new Ui builder.
      */
     public static PreBuilder build(Component swingParent) {
-        return new PreBuilder().parent(swingParent);
+        return new PreBuilder(UiCore.global()).parent(swingParent);
     }
 
     /**
@@ -65,7 +65,7 @@ public class Ui {
      * @return a new Ui builder.
      */
     public static PreBuilder build(Parent javaFxParent) {
-        return new PreBuilder().parent(javaFxParent);
+        return new PreBuilder(UiCore.global()).parent(javaFxParent);
     }
 
     /**
@@ -119,7 +119,7 @@ public class Ui {
      * @throws RuntimeException         wrapped IOException of {@link FXMLLoader#load() }.
      */
     public static <T, R extends FxController> FXMLLoader construct(Class<R> controllerClazz) throws IllegalArgumentException, NullPointerException, IllegalStateException, RuntimeException {
-        return FxSaft.dispatch(() -> FxSaft.constructFxml(controllerClazz));
+        return UiUtil.dispatchFx(() -> FxSaft.constructFxml(controllerClazz));
     }
 
     /**

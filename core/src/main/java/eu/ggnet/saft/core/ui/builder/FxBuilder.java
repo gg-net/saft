@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.ResultProducer;
-import eu.ggnet.saft.core.ui.SwingCore;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
 import static eu.ggnet.saft.core.UiUtil.exceptionRun;
@@ -70,7 +69,6 @@ public class FxBuilder {
     private final PreBuilder preBuilder;
 
     public FxBuilder(PreBuilder preBuilder) {
-        if ( UiCore.isSwing() ) SwingCore.ensurePlatformIsRunning();
         this.preBuilder = preBuilder;
     }
 
@@ -161,7 +159,6 @@ public class FxBuilder {
                 .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
                 .thenApplyAsync(v -> BuilderUtil.producePane(javafxPaneProducer, parm), Platform::runLater)
                 .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
-                .thenApply(BuilderUtil::breakIfOnceAndActive) // Siwng specific
                 .thenApplyAsync(BuilderUtil::consumePreResult, Platform::runLater);
 
         if ( UiCore.isGluon() ) {
