@@ -17,13 +17,10 @@
 package eu.ggnet.saft.core.ui;
 
 import java.awt.Component;
-import java.awt.Window;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import javafx.scene.Node;
-import javafx.stage.Stage;
 
 /**
  * Parent, that can hold either a swingOrMain or a javafx parent.
@@ -48,7 +45,7 @@ public class UiParent {
      * @return a new wrapped parrent of a swingOrMain component.
      */
     public static UiParent of(Component swingParent) {
-        Objects.requireNonNull(swingParent);
+        Objects.requireNonNull(swingParent, "swingParent must not be null");
         return new UiParent(swingParent, null);
     }
 
@@ -59,7 +56,7 @@ public class UiParent {
      * @return a new wrapped parrent of a javafx parent
      */
     public static UiParent of(Node javafxElement) {
-        Objects.requireNonNull(javafxElement);
+        Objects.requireNonNull(javafxElement, "javafxElement must not be null");
         return new UiParent(null, javafxElement);
     }
 
@@ -74,27 +71,6 @@ public class UiParent {
 
     public Optional<Component> component() {
         return Optional.ofNullable(swingParent);
-    }
-
-    /**
-     * Multipatform consumer.
-     *
-     * @param swingConsumer  consumer, called only in swing mode and if a swing parent is not null.
-     * @param javaFxConsumer consuer, called only in fx mode and if a fx parent is not null.
-     */
-    // TODO: This must be moved into saft.
-    public void ifPresent(Consumer<Window> swingConsumer, Consumer<Stage> javaFxConsumer) {
-
-//        final Logger L = LoggerFactory.getLogger(UiParent.class);
-//        if ( UiCore.isSwing() && swing() != null ) {
-//            L.debug("ifPresent() UiCore.isSwing()=true and swing() is set with {}", swing());
-//            swingConsumer.accept(swing());
-//        } else if ( UiCore.isFx() && fx() != null ) {
-//            L.debug("ifPresent() UiCore.isFx()=true and fx() is set with {}", fx());
-//            javaFxConsumer.accept(fx());
-//        } else {
-//            L.debug("ifPresent() UiCore.isSwing()={}, UiCore.isFx()={}, neither fx() nor swing() is set", UiCore.isSwing(), UiCore.isFx());
-//        }
     }
 
 }

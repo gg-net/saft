@@ -11,17 +11,16 @@ import java.util.concurrent.*;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import javafx.scene.Node;
 import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.subsystem.*;
+import eu.ggnet.saft.core.subsystem.Core;
+import eu.ggnet.saft.core.subsystem.DefaultCoreFactory;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
@@ -39,6 +38,8 @@ public class Saft {
     private final static Logger L = LoggerFactory.getLogger(Saft.class);
 
     public final static String HOME = "Home";
+
+    private final static DefaultCoreFactory DEFAULT_CORE_FACTORY = new DefaultCoreFactory();
 
     private final LocationStorage locationStorage;
 
@@ -97,13 +98,30 @@ public class Saft {
         Objects.requireNonNull(typeClass, "typeClass must not be null");
         if ( core == null ) {
             L.warn("core({}) called in, but core is not yet set. Returning dead core");
-            return deadCore(typeClass);
+            // TODO: Implement ServiceLoader for different cores later.
+
+            return DEFAULT_CORE_FACTORY.dead(typeClass);
         }
-        if ( !typeClass.equals(core.getClass()) ) {
-            L.warn("core({}) called in, but core is {}. Returning dead core", core.getClass().getName());
-            return deadCore(typeClass);
+        if ( typeClass.isAssignableFrom(core.getClass()) ) {
+            return (T)core;
         }
-        return (T)core;
+
+        L.warn("core({}) called in, but core is {}. Returning dead core", core.getClass().getName());
+
+        // TODO: Implement ServiceLoader for different cores later.
+        return DEFAULT_CORE_FACTORY.dead(typeClass);
+    }
+
+    /**
+     * Returns subsystem core if active or a dead core.
+     *
+     * @return
+     */
+    public Core<?> core() {
+        if ( core == null ) {
+            return DEFAULT_CORE_FACTORY.dead();
+        }
+        return core;
     }
 
     /**
@@ -119,9 +137,10 @@ public class Saft {
         Objects.requireNonNull(typeClass, "typeClass must not be null");
         Objects.requireNonNull(mainParent, "mainParent must not be null");
         if ( core != null ) throw new IllegalStateException("Core is allready initialized. Second call not allowed");
-        // All casts are safe, see Core interface.
-        if ( typeClass.equals(Swing.class) ) core = Swing.createCore((JFrame)mainParent);
-        else if ( typeClass.equals(Fx.class) ) core = Fx.createCore((Stage)mainParent);
+        // TODO: Implement ServiceLoader for different cores later.
+
+        if ( core == null ) core = DEFAULT_CORE_FACTORY.create(typeClass);
+        if ( core == null ) throw new IllegalStateException("No CoreFactory produced a core for type " + typeClass.getName());
         // TODO: All Knowledge of continue and start must be merged here.
     }
 
@@ -194,14 +213,11 @@ public class Saft {
      *
      * @param c the component which is the closest to the window.
      */
+    // TODO: Reconsider at the end, if this method still makes sense
     public void closeWindowOf(Component c) {
-        if ( UiCore.isGluon() ) throw new IllegalStateException("closeWindowOf call with a swing component, not allowed in gluon model");
-        UiParent.of(c).ifPresent(
-                p -> SwingSaft.run(() -> {
-                    p.setVisible(false);
-                    p.dispose();
-                }),
-                fx -> FxSaft.run(() -> fx.close()));
+        // TODO: Remember this later
+        // if ( UiCore.isGluon() ) throw new IllegalStateException("closeWindowOf call with a swing component, not allowed in gluon model");
+        core().closeOf(UiParent.of(c));
     }
 
     /**
@@ -209,19 +225,14 @@ public class Saft {
      *
      * @param n the node as refernece.
      */
+    // TODO: Reconsider at the end, if this method still makes sense
     public void closeWindowOf(Node n) {
-        if ( UiCore.isGluon() ) {
-            L.debug("closeWindowOf({}) gluon mode", n);
-            UiCore.global().gluonSupport().ifPresent(g -> g.closeViewOrDialogOf(n));
-        } else {
-            L.debug("closeWindowOf({}) desktop mode", n);
-            UiParent.of(n).ifPresent(
-                    p -> SwingSaft.run(() -> {
-                        p.setVisible(false);
-                        p.dispose();
-                    }),
-                    fx -> FxSaft.run(() -> fx.close()));
-        }
+        // TODO: Remember this later
+//        if ( UiCore.isGluon() ) {
+//            L.debug("closeWindowOf({}) gluon mode", n);
+//            UiCore.global().gluonSupport().ifPresent(g -> g.closeViewOrDialogOf(n));
+//        } else {
+        core().closeOf(UiParent.of(n));
     }
 
     /**
@@ -300,12 +311,6 @@ public class Saft {
      */
     public void overwriteFinalExceptionConsumer(ParentShowConsume<Throwable> consumer) {
         exceptionConsumerFinal = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
-    }
-
-    protected <T extends Core<V>, V> T deadCore(Class<T> typeClass) {
-        if ( typeClass.equals(Swing.class) ) return (T)Swing.createCore(null);
-        if ( typeClass.equals(Fx.class) ) return (T)Fx.createCore(null);
-        throw new IllegalArgumentException("Core of type " + typeClass + " is not supported.");
     }
 
 }

@@ -20,6 +20,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.ui.FxSaft;
 import eu.ggnet.saft.core.ui.UiParent;
 
 /**
@@ -27,79 +28,6 @@ import eu.ggnet.saft.core.ui.UiParent;
  * @author oliver.guenther
  */
 public class Fx implements Core<Stage> {
-
-    public static Fx createCore(Stage mainParent) {
-        if ( mainParent != null ) {
-            return null; // Kommt gleich
-        }
-        LoggerFactory.getLogger(Fx.class).warn("createCore(mainParent=null) returning dead core");
-        return DEAD_CORE;
-    }
-
-    private final static Fx DEAD_CORE = new Fx(null) {
-
-        private final Logger log = LoggerFactory.getLogger(Fx.class);
-
-        @Override
-        public void parentIfPresent(UiParent parent, Consumer<Stage> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public void parentIfPresent(Optional<UiParent> parent, Consumer<Stage> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public void parentIfPresent(Consumer<Stage> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public Optional<Stage> unwrap(UiParent parent) {
-            log.warn("unwrap() call on dead core");
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Stage> unwrap(Optional<UiParent> parent) {
-            log.warn("unwrap() call on dead core");
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Stage> unwrapMain() {
-            log.warn("unwrapMain() call on dead core");
-            return Optional.empty();
-        }
-
-        @Override
-        public void shutdown() {
-            log.warn("shutdown() call on dead core");
-        }
-
-        @Override
-        public void add(Stage window) {
-            log.warn("add() call on dead core");
-        }
-
-        @Override
-        public Stage find(Component c) {
-            log.warn("find() call on dead core");
-            return null;
-        }
-
-        @Override
-        public void mapParent(Component c, SwingNode n) {
-            log.warn("mapParent() call on dead core");
-        }
-
-        @Override
-        public boolean isActiv() {
-            return false;
-        }
-
-    };
 
     private final Stage mainParent;
 
@@ -113,8 +41,7 @@ public class Fx implements Core<Stage> {
      *
      * @param mainParent the mainParent, if null core is dead.
      */
-    // TODO: Consider a internal Class in Saft or package private handling or else.
-    private Fx(Stage mainParent) {
+    Fx(Stage mainParent) {
         this.mainParent = mainParent;
     }
 
@@ -274,4 +201,33 @@ public class Fx implements Core<Stage> {
         return GetWindowsSupplier.get();
     }
 
+    @Override
+    public void closeOf(UiParent parent) {
+        unwrap(parent).ifPresent(s -> FxSaft.run(() -> s.close()));
+    }
+
+    @Override
+    public void relocate() {
+        //TODO: Needs to be tested.
+        unwrapMain().ifPresent(m -> {
+            log.debug("relocate() relocating mainParent {}", m);
+            m.setX(20);
+            m.setY(20);
+            m.setWidth(800);
+            m.setHeight(600);
+
+        });
+        int i = 40;
+
+        for (Iterator<Stage> iterator = allStages.stream().map(w -> w.get()).filter(w -> w != null).iterator();
+                iterator.hasNext();) {
+            Stage w = iterator.next();
+            log.debug("relocate() relocating {}", w);
+            w.setX(i);
+            w.setY(i);
+            w.setWidth(800);
+            w.setHeight(600);
+            i = i + 20;
+        }
+    }
 }

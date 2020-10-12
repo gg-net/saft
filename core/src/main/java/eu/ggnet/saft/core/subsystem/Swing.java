@@ -32,70 +32,6 @@ import eu.ggnet.saft.core.ui.UiParent;
 // TODO: GlobalWarning. The implementation has some global impact, which must be cleaned up in the final implementation
 public class Swing implements Core<Window> {
 
-    private final static Swing DEAD_CORE = new Swing(null) {
-
-        private final Logger log = LoggerFactory.getLogger(Fx.class);
-
-        @Override
-        public void parentIfPresent(UiParent parent, Consumer<Window> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public void parentIfPresent(Optional<UiParent> parent, Consumer<Window> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public void parentIfPresent(Consumer<Window> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public Optional<Window> unwrap(UiParent parent) {
-            log.warn("unwrap() call on dead core");
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Window> unwrap(Optional<UiParent> parent) {
-            log.warn("unwrap() call on dead core");
-            return Optional.empty();
-        }
-
-        @Override
-        public Optional<Window> unwrapMain() {
-            log.warn("unwrapMain() call on dead core");
-            return Optional.empty();
-        }
-
-        @Override
-        public void shutdown() {
-            log.warn("shutdown() call on dead core");
-        }
-
-        @Override
-        public void add(Window window) {
-            log.warn("add() call on dead core");
-        }
-
-        @Override
-        public Optional<Window> windowAncestor(Node p) {
-            log.warn("windowAncestor() call on dead core");
-            return Optional.empty();
-        }
-
-        @Override
-        public void mapParent(JFXPanel fxp) {
-            log.warn("mapParent() call on dead core");
-        }
-
-        @Override
-        public boolean isActiv() {
-            return false;
-        }
-    };
-
     // TODO: Implement cyclic verification of null weak references and remove elements.
     private final List<WeakReference<Window>> allWindows = new ArrayList<>();
 
@@ -130,7 +66,7 @@ public class Swing implements Core<Window> {
         return SwingSaft.windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
     }
 
-    private Swing(JFrame mainParent) {
+    Swing(JFrame mainParent) {
         // TODO: Global activity. reconsider.
         new JFXPanel(); // Start the Fx platform.
         Platform.setImplicitExit(false);
@@ -205,10 +141,32 @@ public class Swing implements Core<Window> {
         return true;
     }
 
-    public static Swing createCore(JFrame mainParent) {
-        if ( mainParent != null ) return new Swing(mainParent);
-        LoggerFactory.getLogger(Swing.class).warn("createCore(mainParent=null) returning dead core");
-        return DEAD_CORE;
+    @Override
+    public void closeOf(UiParent parent) {
+        unwrap(parent).ifPresent(p -> SwingSaft.run(() -> {
+            p.setVisible(false);
+            p.dispose();
+        }));
+    }
+
+    @Override
+    public void relocate() {
+        unwrapMain().ifPresent(m -> {
+            log.debug("relocate() relocating mainParent {}", m);
+            m.setSize(800, 600);
+            m.setLocation(20, 20);
+        });
+
+        int i = 40;
+
+        for (Iterator<java.awt.Window> iterator = allWindows.stream().map(w -> w.get()).filter(w -> w != null).iterator();
+                iterator.hasNext();) {
+            Window w = iterator.next();
+            log.debug("relocate() relocating {}", w);
+            w.setSize(800, 600);
+            w.setLocation(i, i);
+            i = i + 20;
+        }
     }
 
 }

@@ -41,6 +41,19 @@ public interface Core<T> {
     Optional<T> unwrapMain();
 
     /**
+     * Closes the container/window of the supplied anchor.
+     *
+     * @param parent the parent, must not be null.
+     */
+    void closeOf(UiParent parent);
+
+    /**
+     * Relocate all active windows on the visible screen.
+     * Usefull to rescue offscreen windows.
+     */
+    void relocate();
+
+    /**
      * Weak register of windows.
      * Remove is not needed, as it will be weak referenced.
      *

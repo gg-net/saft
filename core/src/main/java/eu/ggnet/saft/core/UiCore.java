@@ -1,6 +1,7 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -37,10 +38,25 @@ public class UiCore {
 
     private static final Set<Runnable> ON_SHUTDOWN = new HashSet<>();
 
+    /**
+     *
+     * @deprecated Remove after builder optimisation
+     */
+    @Deprecated
     private static JFrame mainFrame = null; // Frame in Swing Mode
 
+    /**
+     *
+     * @deprecated Remove after builder optimisation
+     */
+    @Deprecated
     private static Stage mainStage = null; // Frame in Fx Mode
 
+    /**
+     *
+     * @deprecated Remove after builder optimisation
+     */
+    @Deprecated
     private static boolean gluon = false; // Special FX Gloun mode. See https://gluonhq.com/products/mobile/
 
     private static AtomicBoolean shuttingDown = new AtomicBoolean(false); // Shut down handler.
@@ -51,9 +67,11 @@ public class UiCore {
      * Running means, that one startXXX oder contiuneXXX method was called.
      *
      * @return true, if running.
+     * @deprecated Use UiCore.global().core().isActive() in classic mode or @Inject Saft saft; and saft.core().isActive();
      */
-    public static boolean isRunning() {
-        return mainFrame != null || mainStage != null;
+    private static boolean isRunning() {
+        if ( saft == null ) return false;
+        return saft.core().isActiv();
     }
 
     /**
@@ -97,18 +115,11 @@ public class UiCore {
      * Returns the mainFrame in swing mode, otherwise null.
      *
      * @return the mainFrame in swing mode, otherwise null
+     * @deprecated will be remove later, should not be needed, but is used in dwoss on multiple old places. Use saft.core(Swing.class).unwrapMain().get();
      */
-    public static JFrame getMainFrame() {
-        return mainFrame;
-    }
-
-    /**
-     * Returns the mainStage in fx mode, otherwise null.
-     *
-     * @return the mainStage in fx mode, otherwise null
-     */
-    public static Stage getMainStage() {
-        return mainStage;
+    @Deprecated
+    public static Window getMainFrame() {
+        return global().core(Swing.class).unwrapMain().get();
     }
 
     /**
@@ -128,7 +139,7 @@ public class UiCore {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
         SwingSaft.ensurePlatformIsRunning();
         Platform.setImplicitExit(false); // Need this, as we asume many javafx elements opening and closing.
-        mainFrame = mainView;
+        //  mainFrame = mainView;
         mainView.addWindowListener(new WindowAdapter() {
 
             @Override
@@ -279,7 +290,9 @@ public class UiCore {
      * Fx mode.
      *
      * @return true if in fx mode.
+     * @deprecated Only used in builder, will be removed before release.
      */
+    @Deprecated
     public static boolean isFx() {
         return (mainStage != null);
     }
@@ -288,7 +301,9 @@ public class UiCore {
      * Returns true if Saft is running in a special fx mode, modified for gluon mobile. (https://gluonhq.com/products/mobile/)
      *
      * @return true if in gluon mode.
+     * @deprecated Only used in builder, will be removed before release.
      */
+    @Deprecated
     public static boolean isGluon() {
         return gluon;
     }
@@ -297,7 +312,9 @@ public class UiCore {
      * Returns true if in swing mode.
      *
      * @return true if in swing mode
+     * @deprecated Only used in builder, will be removed before release.
      */
+    @Deprecated
     public static boolean isSwing() {
         return (mainFrame != null);
     }
