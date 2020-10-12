@@ -13,7 +13,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.JFrame;
 
-import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -136,30 +135,19 @@ public class UiCore {
      * @param mainView the mainView to continue on.
      */
     public static void continueSwing(JFrame mainView) {
-        if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
-        SwingSaft.ensurePlatformIsRunning();
-        Platform.setImplicitExit(false); // Need this, as we asume many javafx elements opening and closing.
-        //  mainFrame = mainView;
+        global().init(Swing.class, mainView);
+        mainFrame = mainView;
+
+        // TODO: This must be moved to saft
         mainView.addWindowListener(new WindowAdapter() {
 
             @Override
             public void windowClosed(WindowEvent e) {
-                UiCore.shutdown();
+                global().shutdown();
             }
 
         });
         postStartUp();
-    }
-
-    /**
-     * Adds a shutdown listener.
-     *
-     * @param runnable the runnable to called on shutdown
-     */
-    public static void addOnShutdown(Runnable runnable) {
-        if ( runnable == null ) return;
-        L.info("Adding on Shutdown {}", runnable);
-        ON_SHUTDOWN.add(runnable);
     }
 
     /**
@@ -169,8 +157,6 @@ public class UiCore {
      * @param builder the builder for swing.
      */
     public static <T extends Component> void startSwing(final Callable<T> builder) {
-        if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
-        SwingSaft.ensurePlatformIsRunning();
         try {
             continueSwing(SwingSaft.dispatch(() -> {
                 T p = builder.call();
@@ -193,7 +179,7 @@ public class UiCore {
                 return frame;
             }));
         } catch (InterruptedException | InvocationTargetException | ExecutionException ex) {
-            saft.handle(ex);
+            global().handle(ex);
         }
     }
 
@@ -211,7 +197,7 @@ public class UiCore {
      * @param builder      the build for the main ui.
      */
     public static <T extends Parent> void startJavaFx(final Stage primaryStage, final Callable<T> builder) {
-        if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
+        global().init(Fx.class, primaryStage);
         mainStage = primaryStage;
         UiUtil.dispatchFx(() -> {
             Parent p = builder.call();
@@ -226,7 +212,7 @@ public class UiCore {
             primaryStage.sizeToScene();
             primaryStage.show();
             primaryStage.setOnCloseRequest((e) -> {
-                UiCore.shutdown();
+                global().shutdown();
             });
             return null;
         });
@@ -245,10 +231,10 @@ public class UiCore {
      * @param primaryStage the primaryStage for the application, not yet visible.
      */
     public static void contiuneJavaFx(final Stage primaryStage) {
-        if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
+        global().init(Fx.class, primaryStage);
         mainStage = primaryStage;
         primaryStage.setOnCloseRequest((e) -> {
-            UiCore.shutdown();
+            global().shutdown();
         });
         postStartUp();
     }
@@ -260,7 +246,7 @@ public class UiCore {
      * @param <T>   type restriction.
      * @param scene the first and only scene of gluon.
      */
-    // Todo: das kann eingentlich nach gloun. Wenn jemand gluon benutzt, dann hat er beim start auch die dependencie. Das muss ich gar nicht reflexif machen.
+    // TODO: Muss complett nach gluon. 
     public static <T extends Parent> void continueGluon(final Scene scene) {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
 
@@ -281,7 +267,7 @@ public class UiCore {
         L.info("Starting SAFT in Gloun Mode, using MainStage {}", mainStage);
         gluon = true;
         mainStage.setOnCloseRequest((e) -> {
-            UiCore.shutdown();
+            global().shutdown();
         });
         postStartUp();
     }
@@ -320,34 +306,10 @@ public class UiCore {
     }
 
     /**
-     * Shutdown the core, cleaning up every thing.
-     * This should be called via listerners on the mainview or mainframe, but at least in gluon it dosn't work.
-     * Tries to close all windows. Stops the executor. Other tasks.
-     * Thread safe, may be called multiple times, will only excute once.
-     */
-    public static void shutdown() {
-        if ( !shuttingDown.compareAndSet(false, true) ) {
-            L.debug("shutdown() called after shutdown. Ignored");
-            return;
-        }
-        L.info("shutdown() of UiCore");
-        L.debug("shutdown() running shutdown listeners");
-        ON_SHUTDOWN.forEach(Runnable::run);
-        L.debug("shutdown() shutdownNow the executor service");
-        saft.executorService().shutdownNow();
-        // TODO: this can probably be done in saft directly.
-        if ( isFx() && !isGluon() ) {
-            L.debug("shutdown() closing all open fx stages.");
-            global().core(Fx.class).shutdown();
-        } else if ( isSwing() ) {
-            global().core(Swing.class).shutdown();
-        }
-    }
-
-    /**
      * This to be done after a contiue or start, but for every ui toolkit.
      */
     private static void postStartUp() {
+        // TODO: This is a global activity. Probably remove, or consider some final global saft handling.
         Thread.setDefaultUncaughtExceptionHandler((Thread t, Throwable e) -> {
             L.warn("Exception occured on {}", t, e);
             Ui.handle(e);

@@ -102,7 +102,7 @@ public abstract class UiParameter {
 
     abstract Type type();
 
-    abstract UiParent uiParent();
+    abstract Optional<UiParent> uiParent();
 
     abstract Optional<Object> preResult();
 
@@ -142,7 +142,8 @@ public abstract class UiParameter {
                 .nullableTitle(preBuilder.title)
                 .nullableModality(preBuilder.modality)
                 .frame(preBuilder.frame)
-                .once(preBuilder.once).uiParent(preBuilder.uiParent);
+                .once(preBuilder.once)
+                .nullableUiParent(preBuilder.uiParent);
     }
 
     /**

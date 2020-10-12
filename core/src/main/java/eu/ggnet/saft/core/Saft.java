@@ -6,8 +6,10 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
+import java.awt.Window;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -19,13 +21,11 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.subsystem.Core;
-import eu.ggnet.saft.core.subsystem.DefaultCoreFactory;
+import eu.ggnet.saft.core.subsystem.*;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
-import eu.ggnet.saft.core.ui.exception.AndFinallyHandler;
-import eu.ggnet.saft.core.ui.exception.ExceptionUtil;
+import eu.ggnet.saft.core.ui.exception.*;
 
 /**
  * The core of saft, everything that is keept in a singleton way, is registered or held here.
@@ -51,28 +51,29 @@ public class Saft {
 
     private Core<?> core = null;
 
-    private ParentShowConsume<Throwable> exceptionConsumerFinal = null; // TODO: Implement a default implementation. Do this after the change in the builder.
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false); // Shut down handler.
 
-//    private static Consumer<Throwable> finalConsumer = (b) -> {
-//        if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
-//            L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
-//            return;
-//        }
-//        Runnable r = () -> {
-//            SwingExceptionDialog.show(SwingCore.mainFrame(), "Systemfehler", ExceptionUtil.extractDeepestMessage(b),
-//                    ExceptionUtil.toMultilineStacktraceMessages(b), ExceptionUtil.toStackStrace(b));
-//        };
-//
-//        if ( EventQueue.isDispatchThread() ) r.run();
-//        else {
-//            try {
-//                EventQueue.invokeAndWait(r);
-//            } catch (InterruptedException | InvocationTargetException e) {
-//                // This will never happen.
-//            }
-//        }
-//
-//    };
+    private final Set<Runnable> onShutdown = new HashSet<>();
+
+    // TODO: Implement a default implementation. Do this after the change in the builder.
+    // This implementation only handles parents in swing mode. in Fx mode it's displayed anythere.
+    private ParentShowConsume<Throwable> exceptionConsumerFinal = (UiParent parent, Throwable b) -> {
+        if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
+            L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
+            return;
+        }
+
+        Swing sc = Saft.this.core(Swing.class);
+        Window p = sc.unwrap(parent).orElse(sc.unwrapMain().orElse(null));
+
+        Runnable r = () -> {
+            SwingExceptionDialog.show(p, "Systemfehler", ExceptionUtil.extractDeepestMessage(b),
+                    ExceptionUtil.toMultilineStacktraceMessages(b), ExceptionUtil.toStackStrace(b));
+        };
+
+        SwingSaft.run(r);
+    };
+
     /**
      * Default Constructor, ready for own implementations.
      * To ensure that no one will make an instance of Saft by error, the constructor is package private.
@@ -133,13 +134,13 @@ public class Saft {
      * @param mainParent must not be null.
      * @throws NullPointerException if typeclass or mainParen are null
      */
-    public <T> void init(Class<Core<T>> typeClass, T mainParent) throws NullPointerException {
+    public <T extends Core<V>, V> void init(Class<T> typeClass, V mainParent) throws NullPointerException {
         Objects.requireNonNull(typeClass, "typeClass must not be null");
         Objects.requireNonNull(mainParent, "mainParent must not be null");
         if ( core != null ) throw new IllegalStateException("Core is allready initialized. Second call not allowed");
         // TODO: Implement ServiceLoader for different cores later.
 
-        if ( core == null ) core = DEFAULT_CORE_FACTORY.create(typeClass);
+        if ( core == null ) core = DEFAULT_CORE_FACTORY.create(typeClass, mainParent);
         if ( core == null ) throw new IllegalStateException("No CoreFactory produced a core for type " + typeClass.getName());
         // TODO: All Knowledge of continue and start must be merged here.
     }
@@ -241,13 +242,13 @@ public class Saft {
      * @param parent    an optional parent, if null main is used.
      * @param exception the exception to handle, if null nothing happens.
      */
+    // TODO: Consider Optional<UiParent> but not null.
     public void handle(UiParent parent, Throwable exception) {
         for (Class<? extends Throwable> clazz : exceptionConsumers.keySet()) {
             if ( ExceptionUtil.containsInStacktrace(clazz, exception) ) {
                 // The cast is needed, cause of the different generic types in the map. But it is safe because of the way the map is filled. See the register methods.
                 ParentShowConsume<Throwable> consumer = (ParentShowConsume<Throwable>)exceptionConsumers.get(clazz);
                 Throwable extractedException = ExceptionUtil.extractFromStraktrace(clazz, exception);
-                // TODO: Think about the parent. Who shound handle the null and find the main.
                 consumer.show(parent, extractedException);
                 return;
             }
@@ -311,6 +312,26 @@ public class Saft {
      */
     public void overwriteFinalExceptionConsumer(ParentShowConsume<Throwable> consumer) {
         exceptionConsumerFinal = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
+    }
+
+    public void addOnShutdown(Runnable runnable) {
+        Objects.requireNonNull(runnable, "runnable must not be null");
+        L.debug("addOnShutdown({})", runnable);
+        onShutdown.add(runnable);
+    }
+
+    public void shutdown() {
+        if ( !shuttingDown.compareAndSet(false, true) ) {
+            L.debug("shutdown() called after shutdown. Ignored");
+            return;
+        }
+        L.info("shutdown()");
+        L.debug("shutdown() running onShutdown");
+        onShutdown.forEach(Runnable::run);
+        L.debug("shutdown() shutdown the executor service");
+        // TODO: Reconsider, the executorservice could be global in a multisaft environment.
+        executorService().shutdownNow();
+        core().shutdown();
     }
 
 }

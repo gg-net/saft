@@ -10,6 +10,8 @@ import java.awt.Window;
 import java.util.Optional;
 import java.util.function.Consumer;
 
+import javax.swing.JFrame;
+
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Node;
@@ -193,9 +195,10 @@ public class DefaultCoreFactory implements CoreFactory {
     }
 
     @Override
-    public <T extends Core<V>, V> T create(Class<T> typeClass) {
-
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public <T extends Core<V>, V> T create(Class<T> typeClass, V mainParent) {
+        if ( typeClass.equals(Swing.class) ) return (T)new Swing((JFrame)mainParent);
+        if ( typeClass.equals(Fx.class) ) return (T)new Fx((Stage)mainParent);
+        return null;
     }
 
 }
