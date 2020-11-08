@@ -10,8 +10,7 @@ import java.awt.Window;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
+import java.util.function.*;
 
 import javax.swing.JPanel;
 
@@ -47,7 +46,7 @@ public class Saft {
 
     private Optional<GluonSupport> gluonSupport = Optional.empty();
 
-    private final Map<Class<? extends Throwable>, ParentShowConsume<? extends Throwable>> exceptionConsumers = new HashMap<>();
+    private final Map<Class<? extends Throwable>, BiConsumer<Optional<UiParent>, ? extends Throwable>> exceptionConsumers = new HashMap<>();
 
     private Core<?> core = null;
 
@@ -57,7 +56,7 @@ public class Saft {
 
     // TODO: Implement a default implementation. Do this after the change in the builder.
     // This implementation only handles parents in swing mode. in Fx mode it's displayed anythere.
-    private ParentShowConsume<Throwable> exceptionConsumerFinal = (UiParent parent, Throwable b) -> {
+    private BiConsumer<Optional<UiParent>, Throwable> exceptionConsumerFinal = (Optional<UiParent> parent, Throwable b) -> {
         if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
             L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
             return;
@@ -140,7 +139,7 @@ public class Saft {
         if ( core != null ) throw new IllegalStateException("Core is allready initialized. Second call not allowed");
         // TODO: Implement ServiceLoader for different cores later.
 
-        if ( core == null ) core = DEFAULT_CORE_FACTORY.create(typeClass, mainParent);
+        if ( core == null ) core = DEFAULT_CORE_FACTORY.create(this, typeClass, mainParent);
         if ( core == null ) throw new IllegalStateException("No CoreFactory produced a core for type " + typeClass.getName());
         // TODO: All Knowledge of continue and start must be merged here.
     }
@@ -242,30 +241,29 @@ public class Saft {
      * @param parent    an optional parent, if null main is used.
      * @param exception the exception to handle, if null nothing happens.
      */
-    // TODO: Consider Optional<UiParent> but not null.
-    public void handle(UiParent parent, Throwable exception) {
+    public void handle(Optional<UiParent> parent, Throwable exception) {
         for (Class<? extends Throwable> clazz : exceptionConsumers.keySet()) {
             if ( ExceptionUtil.containsInStacktrace(clazz, exception) ) {
                 // The cast is needed, cause of the different generic types in the map. But it is safe because of the way the map is filled. See the register methods.
-                ParentShowConsume<Throwable> consumer = (ParentShowConsume<Throwable>)exceptionConsumers.get(clazz);
+                BiConsumer<Optional<UiParent>, Throwable> consumer = (BiConsumer<Optional<UiParent>, Throwable>)exceptionConsumers.get(clazz);
                 Throwable extractedException = ExceptionUtil.extractFromStraktrace(clazz, exception);
-                consumer.show(parent, extractedException);
+                consumer.accept(parent, extractedException);
                 return;
             }
         }
-        exceptionConsumerFinal.show(parent, exception);
+        exceptionConsumerFinal.accept(parent, exception);
     }
 
     public void handle(Node javafxParentAnchor, Throwable exception) {
-        handle(UiParent.of(javafxParentAnchor), exception);
+        handle(Optional.of(UiParent.of(javafxParentAnchor)), exception);
     }
 
     public void handle(Component swingParentAnchor, Throwable exception) {
-        handle(UiParent.of(swingParentAnchor), exception);
+        handle(Optional.of(UiParent.of(swingParentAnchor)), exception);
     }
 
     public void handle(Throwable exception) {
-        handle((UiParent)null, exception);
+        handle(Optional.empty(), exception);
     }
 
     /**
@@ -276,20 +274,20 @@ public class Saft {
      * @param parent a ui parent to show there to display this.
      * @return the BiFunction.
      */
-    public <Z> BiFunction<Z, Throwable, Z> handler(UiParent parent) {
+    public <Z> BiFunction<Z, Throwable, Z> handler(Optional<UiParent> parent) {
         return new AndFinallyHandler<>(this, parent);
     }
 
     public <Z> BiFunction<Z, Throwable, Z> handler() {
-        return handler((UiParent)null);
+        return handler(Optional.empty());
     }
 
     public <Z> BiFunction<Z, Throwable, Z> handler(Node javafxParentAnchor) {
-        return handler(UiParent.of(javafxParentAnchor));
+        return handler(Optional.of(UiParent.of(javafxParentAnchor)));
     }
 
     public <Z> BiFunction<Z, Throwable, Z> handler(Component swingParentAnchor) {
-        return handler(UiParent.of(swingParentAnchor));
+        return handler(Optional.of(UiParent.of(swingParentAnchor)));
     }
 
     /**
@@ -300,7 +298,7 @@ public class Saft {
      * @param clazz    the class of the Exception
      * @param consumer the consumer to handle it.
      */
-    public <T extends Throwable> void registerExceptionConsumer(Class<T> clazz, ParentShowConsume<T> consumer) {
+    public <T extends Throwable> void registerExceptionConsumer(Class<T> clazz, BiConsumer<Optional<UiParent>, T> consumer) {
         exceptionConsumers.put(clazz, consumer);
     }
 
@@ -310,7 +308,7 @@ public class Saft {
      *
      * @param consumer the consumer, must not be null
      */
-    public void overwriteFinalExceptionConsumer(ParentShowConsume<Throwable> consumer) {
+    public void overwriteFinalExceptionConsumer(BiConsumer<Optional<UiParent>, Throwable> consumer) {
         exceptionConsumerFinal = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
     }
 

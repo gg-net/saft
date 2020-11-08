@@ -20,6 +20,7 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.UiParent;
 
 /**
@@ -28,7 +29,7 @@ import eu.ggnet.saft.core.ui.UiParent;
  */
 public class DefaultCoreFactory implements CoreFactory {
 
-    private final static Fx DEAD_FX_CORE = new Fx(null) {
+    private final static Fx DEAD_FX_CORE = new Fx(null, null) {
 
         private final Logger log = LoggerFactory.getLogger(Fx.class);
 
@@ -103,7 +104,7 @@ public class DefaultCoreFactory implements CoreFactory {
 
     };
 
-    private final static Swing DEAD_SWING_CORE = new Swing(null) {
+    private final static Swing DEAD_SWING_CORE = new Swing(null, null) {
 
         private final Logger log = LoggerFactory.getLogger(Fx.class);
 
@@ -195,9 +196,9 @@ public class DefaultCoreFactory implements CoreFactory {
     }
 
     @Override
-    public <T extends Core<V>, V> T create(Class<T> typeClass, V mainParent) {
-        if ( typeClass.equals(Swing.class) ) return (T)new Swing((JFrame)mainParent);
-        if ( typeClass.equals(Fx.class) ) return (T)new Fx((Stage)mainParent);
+    public <T extends Core<V>, V> T create(Saft saft, Class<T> typeClass, V mainParent) {
+        if ( typeClass.equals(Swing.class) ) return (T)new Swing(saft, (JFrame)mainParent);
+        if ( typeClass.equals(Fx.class) ) return (T)new Fx(saft, (Stage)mainParent);
         return null;
     }
 

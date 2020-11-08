@@ -117,7 +117,7 @@ public final class BuilderUtil {
      * @param component
      * @return
      */
-    static JFrame newJFrame(StringProperty titleProperty, JComponent component) {
+    public static JFrame newJFrame(StringProperty titleProperty, JComponent component) {
         JFrame jframe = new JFrame();
         jframe.setName(titleProperty.get());
         jframe.setTitle(titleProperty.get());
@@ -139,7 +139,7 @@ public final class BuilderUtil {
      * @param modalityType
      * @return
      */
-    static JDialog newJDailog(Window swingParent, StringProperty titleProperty, JComponent component, ModalityType modalityType) {
+    public static JDialog newJDailog(Window swingParent, StringProperty titleProperty, JComponent component, ModalityType modalityType) {
         JDialog dialog = new JDialog(swingParent);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.setModalityType(modalityType);
@@ -166,7 +166,7 @@ public final class BuilderUtil {
      * @return the window instance.
      * @throws IOException If icons could not be loaded.
      */
-    static <T extends Window> T setWindowProperties(UiParameter in, T window, Class<?> iconReferenzClass, Window relativeLocationAnker, Class<?> storeLocationClass, String windowKey) throws IOException { // IO Exeception based on loadIcons
+    public static <T extends Window> T setWindowProperties(UiParameter in, T window, Class<?> iconReferenzClass, Window relativeLocationAnker, Class<?> storeLocationClass, String windowKey) throws IOException { // IO Exeception based on loadIcons
         window.setIconImages(loadAwtImages(iconReferenzClass));
         window.pack();
         window.setLocationRelativeTo(relativeLocationAnker);
@@ -183,7 +183,7 @@ public final class BuilderUtil {
         return window;
     }
 
-    static void wait(Window window) throws InterruptedException, IllegalStateException, NullPointerException {
+    public static void wait(Window window) throws InterruptedException, IllegalStateException, NullPointerException {
         Objects.requireNonNull(window, "Window is null");
         if ( !window.isVisible() ) {
             L.debug("Wait on non visible window called, continue without latch");
@@ -203,7 +203,7 @@ public final class BuilderUtil {
         latch.await();
     }
 
-    static <V extends JPanel> UiParameter produceJPanel(Callable<V> producer, UiParameter parm) {
+    public static <V extends JPanel> UiParameter produceJPanel(Callable<V> producer, UiParameter parm) {
         try {
             V panel = producer.call();
             L.debug("produceJPanel: {}", panel);
@@ -217,7 +217,7 @@ public final class BuilderUtil {
         }
     }
 
-    static <V extends Pane> UiParameter producePane(Callable<V> producer, UiParameter parm) {
+    public static <V extends Pane> UiParameter producePane(Callable<V> producer, UiParameter parm) {
         try {
             V pane = producer.call();
             L.debug("producePane() created instance of {}", pane.getClass().getName());
@@ -273,7 +273,7 @@ public final class BuilderUtil {
         return as;
     }
 
-    static <T, V extends Dialog<T>> UiParameter produceDialog(Callable<V> producer, UiParameter parm) {
+    public static <T, V extends Dialog<T>> UiParameter produceDialog(Callable<V> producer, UiParameter parm) {
         try {
             V dialog = producer.call();
             L.debug("produceDialog: {}", dialog);
@@ -290,7 +290,7 @@ public final class BuilderUtil {
      * @param in
      * @return
      */
-    static UiParameter modifyDialog(UiParameter in) {
+    public static UiParameter modifyDialog(UiParameter in) {
         Dialog dialog = in.dialog().get();
         // Activates the closing of any surounding swing element.
         dialog.setOnCloseRequest((event) -> {
@@ -331,7 +331,7 @@ public final class BuilderUtil {
 //        return in;
 //    }
 
-    static UiParameter consumePreResult(UiParameter in) {
+    public static UiParameter consumePreResult(UiParameter in) {
         return in.optionalConsumePreResult();
     }
 
@@ -341,7 +341,7 @@ public final class BuilderUtil {
      * @param in the uiparameter
      * @return the modified uiparameter
      */
-    static UiParameter createSwingNode(UiParameter in) {
+    public static UiParameter createSwingNode(UiParameter in) {
         SwingNode sn = new SwingNode();
         BorderPane p = new BorderPane(sn);
         return in.toBuilder().pane(p).build();
@@ -354,7 +354,7 @@ public final class BuilderUtil {
      * @param in the uiparamter
      * @return the uiparamter
      */
-    static UiParameter wrapJPanel(UiParameter in) {
+    public static UiParameter wrapJPanel(UiParameter in) {
         Pane pane = in.pane().orElseThrow(() -> new NoSuchElementException("Pane in UiParameter is null"));
         JComponent jpanel = in.jPanel().orElseThrow(() -> new NoSuchElementException("JPanel in UiParameter is null"));
         if ( pane.getChildren().isEmpty() ) throw new IllegalStateException("Supplied Pane has no children, but a SwingNode is expected");
@@ -374,7 +374,7 @@ public final class BuilderUtil {
     }
 
     // Call only from Swing EventQueue
-    static UiParameter createJFXPanel(UiParameter in) {
+    public static UiParameter createJFXPanel(UiParameter in) {
         return in.toBuilder().jPanel(new JFXPanel()).build();
     }
 
@@ -384,7 +384,7 @@ public final class BuilderUtil {
      * @param in
      * @return modified in.
      */
-    static UiParameter wrapPane(UiParameter in) {
+    public static UiParameter wrapPane(UiParameter in) {
         if ( !(in.jPanel().get() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
         JFXPanel fxp = (JFXPanel)in.jPanel().get();
         if ( in.pane().get().getScene() != null ) {
@@ -398,7 +398,7 @@ public final class BuilderUtil {
         return in;
     }
 
-    static UiParameter produceFxml(UiParameter in) {
+    public static UiParameter produceFxml(UiParameter in) {
         try {
             Class<FxController> controllerClazz = (Class<FxController>)in.rootClass().get();  // Cast is a shortcut.
             FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(loadView(controllerClazz), "No View for " + controllerClazz));
@@ -420,7 +420,7 @@ public final class BuilderUtil {
         window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> UiCore.global().locationStorage().storeLocation(key, window));
     }
 
-    static UiParameter constructJavaFx(UiParameter in) {
+    public static UiParameter constructJavaFx(UiParameter in) {
         Pane pane = in.pane().get();
         Stage stage = new Stage();
 
@@ -450,7 +450,7 @@ public final class BuilderUtil {
         return in;
     }
 
-    static UiParameter constructDialog(UiParameter in) {
+    public static UiParameter constructDialog(UiParameter in) {
         Dialog<?> dialog = in.dialog().get();
         if ( !in.extractFrame() ) {
             in.saft().core(Fx.class).parentIfPresent(in.uiParent(), s -> dialog.initOwner(s));
@@ -458,14 +458,13 @@ public final class BuilderUtil {
         in.modality().ifPresent(m -> dialog.initModality(m));
         // in.toTitleProperty().addListener((ob, o, n) -> dialog.setTitle(n)); // In Dialog, we use the nativ implementation
         // stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); // Not in dialog avialable.
-        if ( in.extractOnce() ) throw new IllegalArgumentException("Dialog with once mode is not supported yet");
         if ( in.isStoreLocation() ) throw new IllegalArgumentException("Dialog with store location mode is not supported yet");
         in.getClosedListenerImplemetation().ifPresent(elem -> dialog.setOnCloseRequest(e -> elem.closed()));
         dialog.showAndWait();
         return in;
     }
 
-    static UiParameter constructSwing(UiParameter in) {
+    public static UiParameter constructSwing(UiParameter in) {
         try {
             L.debug("constructSwing");
             JComponent component = in.jPanel().get(); // Must be set at this point.
@@ -493,9 +492,9 @@ public final class BuilderUtil {
         }
     }
 
-    static <T> T waitAndProduceResult(UiParameter in) {
+    public static <T> T waitAndProduceResult(UiParameter in) {
         if ( !(in.type().selectRelevantInstance(in) instanceof ResultProducer || in.type().selectRelevantInstance(in) instanceof Dialog) ) {
-            throw new IllegalStateException("Calling Produce Result on a none ResultProducer. Try show instead of eval");
+            throw new IllegalStateException("Calling Produce Result on a none ResultProducer. Try show instead of eval. Type: " + in.type());
         }
         try {
             if ( UiCore.isSwing() ) BuilderUtil.wait(in.window().get()); // Only needed in Swing mode. In JavaFx the showAndWait() is allways used.

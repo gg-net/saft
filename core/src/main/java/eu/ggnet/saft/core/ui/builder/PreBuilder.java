@@ -18,12 +18,15 @@ package eu.ggnet.saft.core.ui.builder;
 
 import java.awt.Component;
 import java.util.Objects;
+import java.util.Optional;
 
 import javafx.scene.Parent;
 import javafx.stage.Modality;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.UiParent;
+
+import static eu.ggnet.saft.core.ui.UiParent.of;
 
 /**
  *
@@ -32,55 +35,66 @@ import eu.ggnet.saft.core.ui.UiParent;
 public class PreBuilder {
 
     // TODO: later options for inject
-    final Saft saft;
-
-    public PreBuilder(Saft saft) {
-        this.saft = Objects.requireNonNull(saft, "saft must not be null");
-    }
+    private final Saft saft;
 
     /**
      * Represents the parent of the ui element, optional.
      * The default is in the swingmode SwingCore.mainFrame();
      */
-    UiParent uiParent = null;
-
-    /**
-     * Sets the once mode.
-     * If set to true, an once mode is enable. This ensures that one one window of the same type is created and show.
-     * If minimised it becomes reopend, if in the back it becomes moved to the front.
-     * Default = false.
-     */
-    boolean once = false;
+    private final UiParent uiParent;
 
     /**
      * An optional title. If no title is given, the classname is used.
      * Default = null
      */
-    String title = null;
+    private final String title;// = null;
 
     /**
      * Enables the Frame mode, makeing the created window a first class element.
      * Default = false
      */
-    boolean frame = false;
+    private final boolean frame;// = false;
 
     /**
      * Optional value for the modality.
      * Default = null
      */
-    Modality modality = null;
+    private final Modality modality;// = null;
 
-    /**
-     * Sets the once mode.
-     * If set to true, an once mode is enable. This ensures that one one window of the same type is created and show.
-     * If minimised it becomes reopend, if in the back it becomes moved to the front.
-     *
-     * @param once the once mode
-     * @return this as fluent usage
-     */
-    public PreBuilder once(boolean once) {
-        this.once = once;
-        return this;
+    public PreBuilder(Saft saft) {
+        this(Objects.requireNonNull(saft, "saft must not be null"), null, null, null, false);
+    }
+
+    private PreBuilder(Saft saft, UiParent uiParent, String title, Modality modality, boolean frame) {
+        this.saft = saft;
+        this.uiParent = uiParent;
+        this.title = title;
+        this.frame = frame;
+        this.modality = modality;
+    }
+
+    public Saft saft() {
+        return saft;
+    }
+
+    public Optional<UiParent> parent() {
+        return Optional.ofNullable(uiParent);
+    }
+
+    public Optional<String> title() {
+        return Optional.ofNullable(title);
+    }
+
+    public boolean frame() {
+        return frame;
+    }
+
+    public Optional<Modality> modality() {
+        return Optional.ofNullable(modality);
+    }
+
+    public Optional<UiParent> uiParent() {
+        return Optional.ofNullable(uiParent);
     }
 
     /**
@@ -90,8 +104,8 @@ public class PreBuilder {
      * @return this as fluent usage
      */
     public PreBuilder title(String title) {
-        this.title = title;
-        return this;
+        if ( title != null && title.isBlank() ) return new PreBuilder(saft, uiParent, null, modality, frame);
+        return new PreBuilder(saft, uiParent, title, modality, frame);
     }
 
     /**
@@ -101,41 +115,7 @@ public class PreBuilder {
      * @return this as fluent usage
      */
     public PreBuilder frame(boolean frame) {
-        this.frame = frame;
-        return this;
-    }
-
-    /**
-     * Optional value for the modality.
-     *
-     * @param modality the modality to use
-     * @return this as fluent usage
-     */
-    public PreBuilder modality(Modality modality) {
-        this.modality = modality;
-        return this;
-    }
-
-    /**
-     * Represents the parent of the ui element, optional.
-     *
-     * @param swingParent the parent
-     * @return this as fluent usage
-     */
-    public PreBuilder parent(Component swingParent) {
-        if ( swingParent != null ) this.uiParent = UiParent.of(swingParent);
-        return this;
-    }
-
-    /**
-     * Represents the parent of the ui element, optional.
-     *
-     * @param javaFxParent the parent
-     * @return this as fluent usage
-     */
-    public PreBuilder parent(Parent javaFxParent) {
-        if ( javaFxParent != null ) this.uiParent = UiParent.of(javaFxParent);
-        return this;
+        return new PreBuilder(saft, uiParent, title, modality, frame);
     }
 
     /**
@@ -145,8 +125,37 @@ public class PreBuilder {
      * @return this as fluent usage
      */
     public PreBuilder parent(UiParent uiParent) {
-        if ( uiParent != null ) this.uiParent = uiParent;
-        return this;
+        return new PreBuilder(saft, uiParent, title, modality, frame);
+    }
+
+    /**
+     * Optional value for the modality.
+     *
+     * @param modality the modality to use
+     * @return this as fluent usage
+     */
+    public PreBuilder modality(Modality modality) {
+        return new PreBuilder(saft, uiParent, title, modality, frame);
+    }
+
+    /**
+     * Represents the parent of the ui element, optional.
+     *
+     * @param swingParent the parent
+     * @return this as fluent usage
+     */
+    public PreBuilder parent(Component swingParent) {
+        return parent(of(swingParent));
+    }
+
+    /**
+     * Represents the parent of the ui element, optional.
+     *
+     * @param javaFxParent the parent
+     * @return this as fluent usage
+     */
+    public PreBuilder parent(Parent javaFxParent) {
+        return parent(of(javaFxParent));
     }
 
     /**

@@ -25,12 +25,11 @@ import java.util.function.Consumer;
 
 import javax.swing.JPanel;
 
-import javafx.application.Platform;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.subsystem.CoreUiFuture;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
@@ -68,10 +67,13 @@ public class SwingBuilder {
 
     private final PreBuilder preBuilder;
 
-    private Saft saft = UiCore.global();
+    private final Saft saft;
+
+    private static final Type TYPE = Type.SWING;
 
     public SwingBuilder(PreBuilder pre) {
         this.preBuilder = pre;
+        this.saft = preBuilder.saft();
     }
 
     /**
@@ -83,7 +85,7 @@ public class SwingBuilder {
      * @param swingPanelProducer the swingPanelProducer of the JPanel, must not be null and must not return null.
      */
     public <V extends JPanel> void show(Callable<V> swingPanelProducer) {
-        internalShow(null, swingPanelProducer).handle(Ui.handler());
+        internalShow2(null, swingPanelProducer).proceed().handle(Ui.handler());
     }
 
     /**
@@ -97,7 +99,7 @@ public class SwingBuilder {
      * @param swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      */
     public <P, V extends JPanel & Consumer<P>> void show(Callable<P> preProducer, Callable<V> swingPanelProducer) {
-        internalShow(preProducer, swingPanelProducer).handle(Ui.handler());
+        internalShow2(preProducer, swingPanelProducer).proceed().handle(Ui.handler());
     }
 
     /**
@@ -111,8 +113,8 @@ public class SwingBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, V extends JPanel & ResultProducer<T>> Result<T> eval(Callable<V> swingPanelProducer) {
-        return new Result<>(internalShow(null, swingPanelProducer)
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
+        return new Result<>(internalShow2(null, swingPanelProducer).proceed()
+                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -127,34 +129,27 @@ public class SwingBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, P, V extends JPanel & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Callable<V> swingPanelProducer) {
-        return new Result<>(internalShow(preProducer, swingPanelProducer)
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
+        return new Result<>(internalShow2(preProducer, swingPanelProducer).proceed()
+                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
-    private <T, P, V extends JPanel> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> jpanelProducer) {
+    private <T, P, V extends JPanel> CoreUiFuture internalShow2(Callable<P> preProducer, Callable<V> jpanelProducer) {
         Objects.requireNonNull(jpanelProducer, "The jpanelaneProducer is null, not allowed");
         if ( UiCore.isGluon() ) throw new IllegalStateException("Swing Elements are not supported in gloun (Wont be visible in Android or iOs");
 
-        UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.SWING).build();
+        // TODO: the parent handling must be optimized. And the javaFx
+        return preBuilder.saft().core().prepare(() -> {
+            UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(TYPE).build();
 
-        // Produce the ui instance
-        CompletableFuture<UiParameter> uniChain = CompletableFuture
-                .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
-                .thenApplyAsync(v -> BuilderUtil.produceJPanel(jpanelProducer, parm), EventQueue::invokeLater)
-                .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
-                .thenApply(BuilderUtil::consumePreResult);
+            // Produce the ui instance
+            CompletableFuture<UiParameter> uiChain = CompletableFuture
+                    .runAsync(() -> L.debug("Starting new Ui Element creation"), saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
+                    .thenApplyAsync(v -> BuilderUtil.produceJPanel(jpanelProducer, parm), EventQueue::invokeLater)
+                    .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), saft.executorService())
+                    .thenApply(BuilderUtil::consumePreResult);
+            return uiChain;
+        }, TYPE);
 
-        if ( UiCore.isSwing() ) {
-            return uniChain
-                    .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
-        } else if ( UiCore.isFx() ) {
-            return uniChain
-                    .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
-                    .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
-                    .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater);
-        } else {
-            throw new IllegalStateException("UiCore is neither Fx nor Swing");
-        }
     }
 
 }

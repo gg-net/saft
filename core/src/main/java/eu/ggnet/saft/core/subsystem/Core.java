@@ -6,9 +6,12 @@
 package eu.ggnet.saft.core.subsystem;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import eu.ggnet.saft.core.ui.UiParent;
+import eu.ggnet.saft.core.ui.builder.UiParameter;
 
 /**
  *
@@ -73,4 +76,5 @@ public interface Core<T> {
      */
     boolean isActiv();
 
+    CoreUiFuture prepare(Supplier<CompletableFuture<UiParameter>> later, UiParameter.Type type);
 }

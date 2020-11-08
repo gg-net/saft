@@ -43,9 +43,9 @@ public class AlertBuilder {
     private final Saft saft;
 
     public AlertBuilder(PreBuilder pre) {
-        parent = pre.uiParent;
-        saft = pre.saft;
-        if ( pre.title == null || pre.title.trim().isEmpty() ) title = pre.title;
+        parent = pre.uiParent().orElse(null);
+        saft = pre.saft();
+        pre.title().ifPresent(v -> title = v);
     }
 
     public AlertBuilder title(String title) {

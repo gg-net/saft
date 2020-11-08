@@ -6,6 +6,7 @@
 package eu.ggnet.saft.core.ui.exception;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 
 import org.slf4j.LoggerFactory;
@@ -24,16 +25,15 @@ public class AndFinallyHandler<Z> implements BiFunction<Z, Throwable, Z> {
 
     private final UiParent parent;
 
-    //TODO: Parent may be null, main will is used from saft
-    public AndFinallyHandler(Saft saft, UiParent parent) {
+    public AndFinallyHandler(Saft saft, Optional<UiParent> optParent) {
         this.saft = Objects.requireNonNull(saft, "Saft must not be null");
-        this.parent = parent;
+        this.parent = optParent.orElse(null);
     }
 
     @Override
     public Z apply(Z in, Throwable exception) {
         if ( exception != null ) {
-            saft.handle(parent, exception);
+            saft.handle(Optional.ofNullable(parent), exception);
             return null; // If an exception ocourd, we drop the result value.
         } else {
             return in;
@@ -49,7 +49,7 @@ public class AndFinallyHandler<Z> implements BiFunction<Z, Throwable, Z> {
                     LoggerFactory.getLogger(AndFinallyHandler.class).warn("{}.andFinally(): internal exception {} with message {}",
                             AndFinallyHandler.class.getSimpleName(), internalException.getClass().getName(), internalException.getMessage());
                 } finally {
-                    saft.handle(parent, exception);
+                    saft.handle(Optional.ofNullable(parent), exception);
                 }
                 return null; // If an exception ocourd, we drop the result value.
             } else {

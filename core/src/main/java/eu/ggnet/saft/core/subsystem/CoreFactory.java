@@ -5,6 +5,8 @@
  */
 package eu.ggnet.saft.core.subsystem;
 
+import eu.ggnet.saft.core.Saft;
+
 /**
  * Interface to be implemented by other core suppliers as ServiceLoader.
  *
@@ -17,12 +19,13 @@ public interface CoreFactory {
      *
      * @param <T>
      * @param <V>
+     * @param saft       the saft of this core, must not be null.
      * @param typeClass  the typeclass, must not be null
      * @param mainParent the main parent, must not be null
      * @return an new core of the supplied type or null
      * @throws NullPointerException if typeclass or mainparent are null.
      */
-    <T extends Core<V>, V> T create(Class<T> typeClass, V mainParent) throws NullPointerException;
+    <T extends Core<V>, V> T create(Saft saft, Class<T> typeClass, V mainParent) throws NullPointerException;
 
     /**
      * Returns a dead core of the supplied type or null.

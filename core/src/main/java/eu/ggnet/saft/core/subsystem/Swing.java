@@ -5,11 +5,13 @@
  */
 package eu.ggnet.saft.core.subsystem;
 
-import java.awt.Component;
-import java.awt.Window;
+import java.awt.*;
 import java.lang.ref.WeakReference;
+import java.util.List;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -22,8 +24,11 @@ import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.SwingSaft;
 import eu.ggnet.saft.core.ui.UiParent;
+import eu.ggnet.saft.core.ui.builder.BuilderUtil;
+import eu.ggnet.saft.core.ui.builder.UiParameter;
 
 /**
  *
@@ -34,6 +39,8 @@ public class Swing implements Core<Window> {
 
     // TODO: Implement cyclic verification of null weak references and remove elements.
     private final List<WeakReference<Window>> allWindows = new ArrayList<>();
+
+    private final Saft saft;
 
     private final JFrame mainParent;
 
@@ -66,10 +73,12 @@ public class Swing implements Core<Window> {
         return SwingSaft.windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
     }
 
-    Swing(JFrame mainParent) {
+    Swing(Saft saft, JFrame mainParent) {
         // TODO: Global activity. reconsider.
         new JFXPanel(); // Start the Fx platform.
         Platform.setImplicitExit(false);
+
+        this.saft = saft;
         this.mainParent = mainParent;
     }
 
@@ -167,6 +176,46 @@ public class Swing implements Core<Window> {
             w.setLocation(i, i);
             i = i + 20;
         }
+    }
+
+    @Override
+    public CoreUiFuture prepare(final Supplier<CompletableFuture<UiParameter>> supplier, UiParameter.Type type) {
+        Objects.requireNonNull(type, "type must not be null");
+        return new CoreUiFuture() {
+
+            @Override
+            public CompletableFuture<UiParameter> proceed() {
+                switch (type) {
+
+                    case DIALOG:
+                        return supplier.get()
+                                .thenApply(BuilderUtil::modifyDialog)
+                                .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
+                                .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
+                                .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
+
+                    case SWING:
+                        return supplier.get()
+                                .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater);
+
+                    case FX:
+                    case FXML:
+                        return supplier.get()
+                                .thenApplyAsync(in -> in, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
+                                .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
+                                .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
+                                .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
+
+                    default:
+                        throw new IllegalArgumentException(type + " not implemented");
+                }
+            }
+
+            @Override
+            public void show() {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        };
     }
 
 }

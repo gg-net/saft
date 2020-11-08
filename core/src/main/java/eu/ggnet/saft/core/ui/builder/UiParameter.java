@@ -81,50 +81,47 @@ public abstract class UiParameter {
 
     }
 
-    abstract Saft saft();
+    public abstract Saft saft();
 
-    abstract boolean once();
+    public abstract boolean frame();
 
-    abstract boolean frame();
+    public abstract Optional<String> title();
 
-    abstract Optional<String> title();
-
-    abstract Optional<StringProperty> titleProperty();
+    public abstract Optional<StringProperty> titleProperty();
 
     /**
      * Optional property for the showing status.
      *
      * @return an optional property.
      */
-    abstract Optional<BooleanProperty> showingProperty();
+    public abstract Optional<BooleanProperty> showingProperty();
 
-    abstract Optional<Modality> modality();
+    public abstract Optional<Modality> modality();
 
-    abstract Type type();
+    public abstract Type type();
 
-    abstract Optional<UiParent> uiParent();
+    public abstract Optional<UiParent> uiParent();
 
-    abstract Optional<Object> preResult();
+    public abstract Optional<Object> preResult();
 
-    abstract Optional<Class<?>> rootClass();
+    public abstract Optional<Class<?>> rootClass();
 
     public abstract Optional<Pane> pane();
 
-    abstract Optional<JComponent> jPanel();
+    public abstract Optional<JComponent> jPanel();
 
-    abstract Optional<Window> window();
+    public abstract Optional<Window> window();
 
-    abstract Optional<FxController> fxController();
+    public abstract Optional<FxController> fxController();
 
-    abstract Optional<javafx.scene.control.Dialog> dialog();
+    public abstract Optional<javafx.scene.control.Dialog> dialog();
 
-    abstract Builder toBuilder();
+    public abstract Builder toBuilder();
 
-    static class Builder extends UiParameter_Builder {
+    public static class Builder extends UiParameter_Builder {
 
         @SuppressWarnings("OverridableMethodCallInConstructor")
         public Builder() {
-            once(false);
             frame(false);
         }
 
@@ -138,12 +135,11 @@ public abstract class UiParameter {
     @SuppressWarnings("NonPublicExported")
     public static UiParameter.Builder fromPreBuilder(PreBuilder preBuilder) {
         return new UiParameter.Builder()
-                .saft(preBuilder.saft)
-                .nullableTitle(preBuilder.title)
-                .nullableModality(preBuilder.modality)
-                .frame(preBuilder.frame)
-                .once(preBuilder.once)
-                .nullableUiParent(preBuilder.uiParent);
+                .saft(preBuilder.saft())
+                .title(preBuilder.title())
+                .modality(preBuilder.modality())
+                .frame(preBuilder.frame())
+                .uiParent(preBuilder.uiParent());
     }
 
     /**
@@ -169,19 +165,6 @@ public abstract class UiParameter {
 
     public final UiParameter withRootClass(Class<?> clazz) {
         return toBuilder().rootClass(clazz).build();
-    }
-
-    /**
-     * Returns the once value, either set or inspected in the root class.
-     * The annotation has a higher priority over the set value.
-     *
-     * @return the once value, either set or inspected in the root class.
-     */
-    public final boolean extractOnce() {
-        return rootClass().map(c -> c.getAnnotation(Once.class)).map(annotation -> {
-            L.debug("OnceAnnotation is set on {} with {}", rootClass().get(), annotation.value());
-            return annotation.value();
-        }).orElse(once());
     }
 
     /**

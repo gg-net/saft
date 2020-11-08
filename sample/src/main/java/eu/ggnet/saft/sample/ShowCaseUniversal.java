@@ -120,8 +120,8 @@ public class ShowCaseUniversal {
         MENUS = Arrays.asList(
                 menu("SwingDialogs",
                         item("Once", () -> Ui.build().swing().show(() -> new PanelOnceDialog())),
-                        item("Multiple : 1", () -> Ui.build().once(true).title("UnitViewer: 1").swing().show(() -> new UnitViewer())),
-                        item("Multiple : 2", () -> Ui.build().once(true).title("UnitViewer: 2").swing().show(() -> new UnitViewer())),
+                        item("Multiple : 1", () -> Ui.build().title("UnitViewer: 1").swing().show(() -> new UnitViewer())), // was once
+                        item("Multiple : 2", () -> Ui.build().title("UnitViewer: 2").swing().show(() -> new UnitViewer())), // was once
                         item("Multiple : 3 , with precall", () -> Ui.build().swing().show(() -> "Das ist der Riesentext für Unit 3", () -> new UnitViewer())),
                         item("SelfCloser", () -> Ui.build().swing().show(() -> new PanelWithSelfCloser()))
                 ),

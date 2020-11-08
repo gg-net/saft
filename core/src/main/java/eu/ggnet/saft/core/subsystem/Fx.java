@@ -6,13 +6,16 @@
 package eu.ggnet.saft.core.subsystem;
 
 import java.awt.Component;
+import java.awt.EventQueue;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -20,14 +23,19 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.FxSaft;
 import eu.ggnet.saft.core.ui.UiParent;
+import eu.ggnet.saft.core.ui.builder.BuilderUtil;
+import eu.ggnet.saft.core.ui.builder.UiParameter;
 
 /**
  *
  * @author oliver.guenther
  */
 public class Fx implements Core<Stage> {
+
+    private final Saft saft;
 
     private final Stage mainParent;
 
@@ -41,7 +49,8 @@ public class Fx implements Core<Stage> {
      *
      * @param mainParent the mainParent, if null core is dead.
      */
-    Fx(Stage mainParent) {
+    Fx(Saft saft, Stage mainParent) {
+        this.saft = saft;
         this.mainParent = mainParent;
     }
 
@@ -229,5 +238,39 @@ public class Fx implements Core<Stage> {
             w.setHeight(600);
             i = i + 20;
         }
+    }
+
+    @Override
+    public CoreUiFuture prepare(final Supplier<CompletableFuture<UiParameter>> supplier, UiParameter.Type type) {
+        return new CoreUiFuture() {
+
+            @Override
+            public CompletableFuture<UiParameter> proceed() {
+                switch (type) {
+                    case SWING:
+                        return supplier.get()
+                                .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
+                                .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
+                                .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater);
+
+                    case DIALOG:
+                        return supplier.get()
+                                .thenApplyAsync(BuilderUtil::constructDialog, Platform::runLater);
+
+                    case FX:
+                    case FXML:
+                        return supplier.get()
+                                .thenApply(BuilderUtil::constructJavaFx);
+
+                    default:
+                        throw new IllegalArgumentException(type + " not implemented");
+                }
+            }
+
+            @Override
+            public void show() {
+                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+        };
     }
 }

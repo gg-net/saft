@@ -16,7 +16,6 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
-import java.awt.EventQueue;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -29,7 +28,9 @@ import javafx.scene.control.Dialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.subsystem.CoreUiFuture;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
 import static eu.ggnet.saft.core.UiUtil.exceptionRun;
@@ -44,8 +45,13 @@ public class DialogBuilder {
 
     private final PreBuilder preBuilder;
 
+    private final Saft saft;
+
+    private static final Type TYPE = Type.DIALOG;
+
     public DialogBuilder(PreBuilder pre) {
         this.preBuilder = pre;
+        saft = preBuilder.saft();
     }
 
     /**
@@ -57,8 +63,8 @@ public class DialogBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, V extends Dialog<T>> Result<T> eval(Callable<V> dialogProducer) {
-        return new Result<>(internalShow(null, dialogProducer)
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
+        return new Result<>(internalShow2(null, dialogProducer).proceed()
+                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -73,37 +79,26 @@ public class DialogBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, P, V extends Dialog<T> & Consumer<P>> Result<T> eval(Callable<P> preProducer, Callable<V> dialogProducer) {
-        return new Result<>(internalShow(preProducer, dialogProducer)
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
+        return new Result<>(internalShow2(preProducer, dialogProducer).proceed()
+                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
-    private <T, P, V extends Dialog<T>> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Callable<V> dialogProducer) {
+    private <T, P, V extends Dialog<T>> CoreUiFuture internalShow2(Callable<P> preProducer, Callable<V> dialogProducer) {
         Objects.requireNonNull(dialogProducer, "The javafxPaneProducer is null, not allowed");
         if ( UiCore.isGluon() )
             throw new IllegalStateException("Javafx Dialog is not supported in gloun yet. If you really need this, call Olli. It's possible");
 
-        // TODO: the parent handling must be optimized. And the javaFx
-        UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.DIALOG).build();
+        return saft.core().prepare(() -> {
+            UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(TYPE).build();
 
-        // Produce the ui instance
-        CompletableFuture<UiParameter> uniChain = CompletableFuture
-                .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
-                .thenApplyAsync(v -> BuilderUtil.produceDialog(dialogProducer, parm), Platform::runLater)
-                .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
-                .thenApply(BuilderUtil::consumePreResult);
-
-        if ( UiCore.isSwing() ) {
-            return uniChain
-                    .thenApply(BuilderUtil::modifyDialog)
-                    .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                    .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
-                    .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
-        } else if ( UiCore.isFx() ) {
-            return uniChain
-                    .thenApplyAsync(BuilderUtil::constructDialog, Platform::runLater);
-        } else {
-            throw new IllegalStateException("UiCore is neither Fx nor Swing");
-        }
+            // Produce the ui instance
+            CompletableFuture<UiParameter> uiChain = CompletableFuture
+                    .runAsync(() -> L.debug("Starting new Ui Element creation"), saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
+                    .thenApplyAsync(v -> BuilderUtil.produceDialog(dialogProducer, parm), Platform::runLater)
+                    .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), saft.executorService())
+                    .thenApply(BuilderUtil::consumePreResult);
+            return uiChain;
+        }, TYPE);
     }
 
 }

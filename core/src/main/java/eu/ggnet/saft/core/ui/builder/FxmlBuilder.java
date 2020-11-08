@@ -16,7 +16,6 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
-import java.awt.EventQueue;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -28,8 +27,9 @@ import javafx.application.Platform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.subsystem.CoreUiFuture;
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
@@ -68,8 +68,13 @@ public class FxmlBuilder {
 
     private final PreBuilder preBuilder;
 
+    private final Saft saft;
+
+    private static final Type TYPE = Type.FXML;
+
     public FxmlBuilder(PreBuilder pre) {
         this.preBuilder = pre;
+        this.saft = preBuilder.saft();
     }
 
     /**
@@ -81,7 +86,7 @@ public class FxmlBuilder {
      * @param fxmlControllerClass the swingPanelProducer of the JPanel, must not be null and must not return null.
      */
     public <V extends FxController> void show(Class<V> fxmlControllerClass) {
-        internalShow(null, fxmlControllerClass).handle(Ui.handler());
+        internalShow2(null, fxmlControllerClass).proceed().handle(Ui.handler());
     }
 
     /**
@@ -96,7 +101,7 @@ public class FxmlBuilder {
      *                            javafxPaneProducer swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      */
     public <P, V extends FxController & Consumer<P>> void show(Callable<P> preProducer, Class<V> fxmlControllerClass) {
-        internalShow(preProducer, fxmlControllerClass).handle(Ui.handler());
+        internalShow2(preProducer, fxmlControllerClass).proceed().handle(Ui.handler());
     }
 
     /**
@@ -110,8 +115,8 @@ public class FxmlBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, V extends FxController & ResultProducer<T>> Result<T> eval(Class<V> fxmlControllerClass) {
-        return new Result<>(internalShow(null, fxmlControllerClass)
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
+        return new Result<>(internalShow2(null, fxmlControllerClass).proceed()
+                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -127,47 +132,26 @@ public class FxmlBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, P, V extends FxController & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Class<V> fxmlControllerClass) {
-        return new Result<>(internalShow(preProducer, fxmlControllerClass)
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
+        return new Result<>(internalShow2(preProducer, fxmlControllerClass).proceed()
+                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
-    /**
-     * Internal implementation, breaks the compile safty of the public methodes.
-     * For now we have two normal execptions. The UiWorkflowBreak (allready open) and the NoSuchElementException (no result)
-     *
-     * @param <P>
-     * @param <V>
-     * @param preProducer
-     * @param javafxPaneProducer
-     * @return
-     */
-    private <T, P, V extends FxController> CompletableFuture<UiParameter> internalShow(Callable<P> preProducer, Class<V> fxmlControllerClass) {
+    private <T, P, V extends FxController> CoreUiFuture internalShow2(Callable<P> preProducer, Class<V> fxmlControllerClass) {
         Objects.requireNonNull(fxmlControllerClass, "The fxmlControllerClass is null, not allowed");
+
         // TODO: the parent handling must be optimized. And the javaFx
-        UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(Type.FXML).build();
+        return preBuilder.saft().core().prepare(() -> {
+            UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(TYPE).build();
 
-        // Produce the ui instance
-        CompletableFuture<UiParameter> uniChain = CompletableFuture
-                .runAsync(() -> L.debug("Starting new Ui Element creation"), UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
-                .thenApplyAsync((v) -> parm.withRootClass(fxmlControllerClass).withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), UiCore.getExecutor())
-                .thenApplyAsync(BuilderUtil::produceFxml, Platform::runLater)
-                .thenApply(BuilderUtil::consumePreResult);
+            // Produce the ui instance
+            CompletableFuture<UiParameter> uiChain = CompletableFuture
+                    .runAsync(() -> L.debug("Starting new Ui Element creation"), saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
+                    .thenApplyAsync((v) -> parm.withRootClass(fxmlControllerClass).withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), saft.executorService())
+                    .thenApplyAsync(BuilderUtil::produceFxml, Platform::runLater)
+                    .thenApply(BuilderUtil::consumePreResult);
+            return uiChain;
+        }, TYPE);
 
-        if ( UiCore.isGluon() ) {
-            return uniChain
-                    .thenApply(UiCore.global().gluonSupport().get()::constructJavaFx); // Allready on JavaFx Thread.
-        } else if ( UiCore.isSwing() ) {
-            return uniChain
-                    .thenApplyAsync(in -> in, UiCore.getExecutor()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
-                    .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                    .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
-                    .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
-        } else if ( UiCore.isFx() ) {
-            return uniChain
-                    .thenApply(BuilderUtil::constructJavaFx); // Allready on JavaFX Theard.
-        } else {
-            throw new IllegalStateException("UiCore is neither Fx nor Swing");
-        }
     }
 
 }
