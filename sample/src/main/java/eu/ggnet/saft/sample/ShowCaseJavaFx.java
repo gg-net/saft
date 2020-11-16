@@ -69,6 +69,7 @@ public class ShowCaseJavaFx {
         public void stop() throws Exception {
             System.out.println("Stop called: Showing open threads");
             Thread.getAllStackTraces().keySet().stream().forEach(System.out::println);
+            UiCore.global().shutdown();
         }
 
     }

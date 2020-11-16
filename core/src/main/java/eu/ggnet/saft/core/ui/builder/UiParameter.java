@@ -26,6 +26,7 @@ import javax.swing.JComponent;
 import javafx.beans.property.*;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
+import javafx.stage.Stage;
 
 import org.inferred.freebuilder.FreeBuilder;
 import org.slf4j.Logger;
@@ -111,6 +112,8 @@ public abstract class UiParameter {
     public abstract Optional<JComponent> jPanel();
 
     public abstract Optional<Window> window();
+
+    public abstract Optional<Stage> stage();
 
     public abstract Optional<FxController> fxController();
 

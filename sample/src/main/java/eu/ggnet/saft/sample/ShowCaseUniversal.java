@@ -78,9 +78,9 @@ public class ShowCaseUniversal {
     protected final List<Smenu> MENUS;
 
     public ShowCaseUniversal() {
-        UiCore.global().addFx(ONCE, () -> new PaneAsFrame());
-        UiCore.global().addFx(ONCE_WITH_SELF_CLOSER, () -> new PaneAsFrameWithSelfCloser());
-        UiCore.global().addFxml(ONCE_FXML, BasicApplicationController.class);
+        UiCore.global().registerOnceFx(ONCE, () -> new PaneAsFrame());
+        UiCore.global().registerOnceFx(ONCE_WITH_SELF_CLOSER, PaneAsFrameWithSelfCloser.class);
+        UiCore.global().registerOnceFxml(ONCE_FXML, BasicApplicationController.class);
 
         // @RequestScoped, e.g. to observer events
         class PaneSupplier implements Supplier<BorderPane> {
@@ -160,9 +160,9 @@ public class ShowCaseUniversal {
                         item("Dialog of Dialogs", () -> Ui.build().fx().show(() -> new DialogOfDialogs()))
                 ),
                 menu("JavaFxFrames",
-                        item("Once", () -> UiCore.global().show(ONCE)),
-                        item("Once With Self Closer", () -> UiCore.global().show(ONCE_WITH_SELF_CLOSER)),
-                        item("Once Fxml", () -> UiCore.global().show(ONCE_FXML))
+                        item("Once", () -> UiCore.global().showOnce(ONCE)),
+                        item("Once With Self Closer", () -> UiCore.global().showOnce(ONCE_WITH_SELF_CLOSER)),
+                        item("Once Fxml", () -> UiCore.global().showOnce(ONCE_FXML))
                 )
         );
     }

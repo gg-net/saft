@@ -9,26 +9,25 @@ import java.awt.*;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.SwingSaft;
-import eu.ggnet.saft.core.ui.UiParent;
-import eu.ggnet.saft.core.ui.builder.BuilderUtil;
-import eu.ggnet.saft.core.ui.builder.UiParameter;
+import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.ui.builder.*;
 
 /**
  *
@@ -48,6 +47,16 @@ public class Swing implements Core<Window> {
 
     // TODO: Implement a cleanup for all references. Good candidate for WeakReferneces on Key and Value.
     private final Map<Scene, JFXPanel> SWING_PARENT_HELPER = new WeakHashMap<>();
+
+    /**
+     * Contains all active once windows.
+     */
+    private final Map<String, Window> ONCES_ACTIVE = new HashMap<>();
+
+    /**
+     * Contains all wrapped builders to return the window for future usage.
+     */
+    private final Map<String, Supplier<Window>> ONCES_BUILDER = new HashMap<>();
 
     /**
      * Registers a jfx panel in the ui parent helper.
@@ -212,10 +221,119 @@ public class Swing implements Core<Window> {
             }
 
             @Override
-            public void show() {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            public CompletableFuture<Object> show() {
+                return proceed().thenApply(in -> in.window().get());
             }
         };
+    }
+
+    @Override
+    public void registerOnceFx(String key, Supplier<? extends Pane> paneSupplier) throws NullPointerException {
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.isBlank() ) throw new NullPointerException("key must not be blank");
+        Objects.requireNonNull(paneSupplier, "paneSupplier must not be null");
+//        ONCES_BUILDER.put(key, new Supplier<Window>() {
+//            @Override
+//            public Window get() {
+//                // Ui.build().fx(). ...
+//            }
+//        });
+    }
+
+    @Override
+    public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException {
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.isBlank() ) throw new NullPointerException("key must not be blank");
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException {
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.isBlank() ) throw new NullPointerException("key must not be blank");
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException {
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.isBlank() ) throw new NullPointerException("key must not be blank");
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException {
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.isBlank() ) throw new NullPointerException("key must not be blank");
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean showOnce(String key) throws NullPointerException {
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.isBlank() ) throw new NullPointerException("key must not be blank");
+        if ( !ONCES_BUILDER.containsKey(key) ) return false;
+        if ( ONCES_ACTIVE.containsKey(key) && ONCES_ACTIVE.get(key).isVisible() ) {
+            log.debug("showOnce(key={}) is visible", key);
+            Window window = ONCES_ACTIVE.get(key);
+            EventQueue.invokeLater(() -> {
+                if ( window instanceof JFrame ) ((JFrame)window).setExtendedState(JFrame.NORMAL);
+                window.toFront();
+            });
+        } else {
+            Window window = ONCES_BUILDER.get(key).get();
+            window.toFront();
+            ONCES_ACTIVE.put(key, window);
+        }
+        return true;
+    }
+
+    public <V extends Pane> CompletableFuture<Window> showFx(PreBuilder prebuilder, Callable<V> javafxPaneProducer) {
+        return null;
+    }
+
+    public <V extends Pane> CompletableFuture<Window> showFx(PreBuilder prebuilder, Class<V> javafxPaneClass) {
+        return null;
+    }
+
+    public <P, V extends Pane & Consumer<P>> CompletableFuture<Window> showFx(PreBuilder prebuilder, Callable<P> preProducer, Callable<V> javafxPaneProducer) {
+        return null;
+    }
+
+    public <P, V extends Pane & Consumer<P>> CompletableFuture<Window> showFx(PreBuilder prebuilder, Callable<P> preProducer, Class<V> javafxPaneClass) {
+        return null;
+    }
+
+    public <T, V extends Pane & ResultProducer<T>> Result<T> evalFx(PreBuilder prebuilder, Callable<V> javafxPaneProducer) {
+        return null;
+    }
+
+    public <T, V extends Pane & ResultProducer<T>> Result<T> evalFx(PreBuilder prebuilder, Class<V> javafxPaneClass) {
+        return null;
+    }
+
+    public <T, P, V extends Pane & Consumer<P> & ResultProducer<T>> Result<T> evalFx(PreBuilder prebuilder, Callable<P> preProducer, Callable<V> javafxPaneProducer) {
+        return null;
+    }
+
+    public <T, P, V extends Pane & Consumer<P> & ResultProducer<T>> Result<T> evalFx(PreBuilder prebuilder, Callable<P> preProducer, Class<V> javafxPaneClass) {
+        return null;
+    }
+
+    public <V extends FxController> CompletableFuture<Window> showFxml(PreBuilder prebuilder, Class<V> fxmlControllerClass) {
+        return null;
+    }
+
+    public <P, V extends FxController & Consumer<P>> CompletableFuture<Window> show(PreBuilder prebuilder, Callable<P> preProducer, Class<V> fxmlControllerClass) {
+        return null;
+    }
+
+    public <T, V extends FxController & ResultProducer<T>> Result<T> eval(PreBuilder prebuilder, Class<V> fxmlControllerClass) {
+        return null;
+    }
+
+    public <T, P, V extends FxController & Consumer<P> & ResultProducer<T>> Result<T> eval(PreBuilder prebuilder, Callable<P> preProducer, Class<V> fxmlControllerClass) {
+        return null;
     }
 
 }

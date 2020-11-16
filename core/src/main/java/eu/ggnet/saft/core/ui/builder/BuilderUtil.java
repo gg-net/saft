@@ -446,8 +446,7 @@ public final class BuilderUtil {
         if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
         in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed()));
         stage.setScene(new Scene(pane));
-        stage.showAndWait();
-        return in;
+        return in.toBuilder().stage(stage).build();
     }
 
     public static UiParameter constructDialog(UiParameter in) {

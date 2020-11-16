@@ -10,6 +10,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.swing.JPanel;
+
+import javafx.scene.layout.Pane;
+
+import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.UiParameter;
 
@@ -75,6 +80,62 @@ public interface Core<T> {
      * @return
      */
     boolean isActiv();
+
+    /**
+     * Registers a Supplier with a key in the core for once useage.
+     *
+     * @param key          the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param paneSupplier the supplier of the pane
+     * @throws NullPointerException if the key was null or blank or the supplier was null.
+     */
+    void registerOnceFx(String key, Supplier<? extends Pane> paneSupplier) throws NullPointerException;
+
+    /**
+     * Registers a pane class with a key in the core for once useage.
+     * Will be created via reflections. Intended usage pattern is in the cdi environment.
+     *
+     * @param key       the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param paneClass the class of the pane.
+     * @throws NullPointerException if the key was null or blank or the controllerClass was null.
+     */
+    void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException;
+
+    /**
+     * Registers a Supplier with a key in the core for once useage.
+     *
+     * @param key           the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param panelSupplier the supplier for the panel
+     * @throws NullPointerException if the key was null or blank or the supplier was null.
+     */
+    void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException;
+
+    /**
+     * Registers a panel class with a key in the core for once useage.
+     * Will be created via reflections. Intended usage pattern is in the cdi environment.
+     *
+     * @param key        the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param panelClass the class of the panel.
+     * @throws NullPointerException
+     */
+    void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException;
+
+    /**
+     * Registers an FxController with a key in the core for once useage.
+     *
+     * @param key             the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param controllerClass the fx controller class
+     * @throws NullPointerException if the key was null or blank or the controllerClass was null.
+     */
+    void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException;
+
+    /**
+     * Shows a before registerd once element either creating it or refocusing, if still acitve.
+     *
+     * @param key the registered key
+     * @return ture, if the key was registered before.
+     * @throws NullPointerException if the key was null or blank.
+     */
+    boolean showOnce(String key) throws NullPointerException;
 
     CoreUiFuture prepare(Supplier<CompletableFuture<UiParameter>> later, UiParameter.Type type);
 }

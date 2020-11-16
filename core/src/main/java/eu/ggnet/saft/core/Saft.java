@@ -181,20 +181,84 @@ public class Saft {
         this.gluonSupport = Optional.ofNullable(gluonSupport);
     }
 
-    public void addFx(String name, Supplier<? extends Pane> pane) {
-
+    /**
+     * Registers a Supplier with a key in the core for once useage.
+     *
+     * @param key          the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param paneSupplier the supplier of the pane
+     * @throws NullPointerException     if the key was null or blank or the supplier was null.
+     * @throws IllegalArgumentException if core is not active.
+     */
+    public void registerOnceFx(String key, Supplier<? extends Pane> paneSupplier) throws NullPointerException, IllegalArgumentException {
+        if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
+        core().registerOnceFx(key, paneSupplier);
     }
 
-    public void addSwing(String name, Supplier<? extends JPanel> pane) {
-
+    /**
+     * Registers a pane class with a key in the core for once useage.
+     * Will be created via reflections. Intended usage pattern is in the cdi environment.
+     *
+     * @param key       the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param paneClass the class of the pane.
+     * @throws NullPointerException     if the key was null or blank or the controllerClass was null.
+     * @throws IllegalArgumentException if core is not active.
+     */
+    public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException, IllegalArgumentException {
+        if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
+        core().registerOnceFx(key, paneClass);
     }
 
-    public void addFxml(String name, Class<? extends FxController> controllerClass) {
-
+    /**
+     * Registers a Supplier with a key in the core for once useage.
+     *
+     * @param key           the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param panelSupplier the supplier for the panel
+     * @throws NullPointerException     if the key was null or blank or the supplier was null.
+     * @throws IllegalArgumentException if core is not active.
+     */
+    public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException, IllegalArgumentException {
+        if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
+        core().registerOnceSwing(key, panelSupplier);
     }
 
-    public void show(String name) {
+    /**
+     * Registers a panel class with a key in the core for once useage.
+     * Will be created via reflections. Intended usage pattern is in the cdi environment.
+     *
+     * @param key        the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param panelClass the class of the panel.
+     * @throws NullPointerException     if the key was null or blank or the panelClass was null.
+     * @throws IllegalArgumentException if core is not active.
+     */
+    public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException, IllegalArgumentException {
+        if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
+        core().registerOnceSwing(key, panelClass);
+    }
 
+    /**
+     * Registers an FxController with a key in the core for once useage.
+     *
+     * @param key             the unique key for usage with {@link #showOnce(java.lang.String) }.
+     * @param controllerClass the fx controller class
+     * @throws NullPointerException     if the key was null or blank or the controllerClass was null.
+     * @throws IllegalArgumentException if core is not active.
+     */
+    public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException, IllegalArgumentException {
+        if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
+        core().registerOnceFxml(key, controllerClass);
+    }
+
+    /**
+     * Shows a before registerd once element either creating it or refocusing, if still acitve.
+     *
+     * @param key the registered key
+     * @throws NullPointerException     if the key was null or blank.
+     * @throws IllegalArgumentException if key was not registerd before or core is not active.
+     */
+    public void showOnce(String key) throws NullPointerException, IllegalArgumentException {
+        if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
+        boolean result = core().showOnce(key);
+        if ( !result ) throw new IllegalArgumentException("key " + key + " was not registered before");
     }
 
     /**

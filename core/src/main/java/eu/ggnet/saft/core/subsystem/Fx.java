@@ -15,17 +15,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.swing.JPanel;
+
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.FxSaft;
-import eu.ggnet.saft.core.ui.UiParent;
+import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.BuilderUtil;
 import eu.ggnet.saft.core.ui.builder.UiParameter;
 
@@ -251,7 +253,8 @@ public class Fx implements Core<Stage> {
                         return supplier.get()
                                 .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
                                 .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
-                                .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater);
+                                .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
+                                .thenApply(in -> showAndWaitJavaFx(in));
 
                     case DIALOG:
                         return supplier.get()
@@ -260,7 +263,8 @@ public class Fx implements Core<Stage> {
                     case FX:
                     case FXML:
                         return supplier.get()
-                                .thenApply(BuilderUtil::constructJavaFx);
+                                .thenApply(BuilderUtil::constructJavaFx)
+                                .thenApply(in -> showAndWaitJavaFx(in));
 
                     default:
                         throw new IllegalArgumentException(type + " not implemented");
@@ -268,9 +272,63 @@ public class Fx implements Core<Stage> {
             }
 
             @Override
-            public void show() {
-                throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            public CompletableFuture<Object> show() {
+                switch (type) {
+                    case SWING:
+                        return supplier.get()
+                                .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
+                                .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
+                                .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
+                                .thenApply(in -> in.stage().get());
+
+                    case FX:
+                    case FXML:
+                        return supplier.get()
+                                .thenApply(BuilderUtil::constructJavaFx)
+                                                                .thenApply(in -> in.stage().get());
+                    case DIALOG:
+                        throw new IllegalArgumentException(type + " can only be evaluated not shown");
+                    default:
+                        throw new IllegalArgumentException(type + " not implemented");
+                }
+
             }
         };
     }
+
+    public static UiParameter showAndWaitJavaFx(UiParameter in) {
+        in.stage().get().showAndWait();
+        return in;
+    }
+
+    @Override
+    public void registerOnceFx(String key, Supplier<? extends Pane> paneSupplier) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean showOnce(String key) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
 }

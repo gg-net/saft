@@ -7,17 +7,12 @@ package eu.ggnet.saft.core.subsystem;
 
 import java.util.concurrent.CompletableFuture;
 
-import eu.ggnet.saft.core.ui.builder.UiParameter;
-
 /**
  *
  * @author oliver.guenther
  */
-public interface CoreUiFuture extends Showable {
+public interface Showable {
 
-    CompletableFuture<UiParameter> proceed();
-
-    @Override
-    CompletableFuture<Object> show();
+    public CompletableFuture<Object> show();
 
 }

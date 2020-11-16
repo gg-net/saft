@@ -29,6 +29,7 @@ import eu.ggnet.saft.core.ui.UiParent;
  */
 public class DefaultCoreFactory implements CoreFactory {
 
+    // TODO: fill up dead core methods.
     private final static Fx DEAD_FX_CORE = new Fx(null, null) {
 
         private final Logger log = LoggerFactory.getLogger(Fx.class);
