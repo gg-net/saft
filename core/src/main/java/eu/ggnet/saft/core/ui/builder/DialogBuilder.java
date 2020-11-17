@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javafx.application.Platform;
 import javafx.scene.control.Dialog;
@@ -30,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.impl.Core;
 import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
@@ -62,9 +64,10 @@ public class DialogBuilder {
      * @param dialogProducer the javafx Dialog producer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
-    public <T, V extends Dialog<T>> Result<T> eval(Callable<V> dialogProducer) {
-        return new Result<>(internalShow2(null, dialogProducer).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+    public <T, V extends Dialog<T>> Result<T> eval(Supplier<V> dialogProducer) {
+        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(Dialog.class, () -> dialogProducer.get()));
+//        return new Result<>(internalShow2(null, dialogProducer).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -78,9 +81,11 @@ public class DialogBuilder {
      * @param dialogProducer the javafx Dialog producer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
-    public <T, P, V extends Dialog<T> & Consumer<P>> Result<T> eval(Callable<P> preProducer, Callable<V> dialogProducer) {
-        return new Result<>(internalShow2(preProducer, dialogProducer).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+    public <T, P, V extends Dialog<T> & Consumer<P>> Result<T> eval(Callable<P> preProducer, Supplier<V> dialogProducer) {
+        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(Dialog.class, () -> dialogProducer.get()));
+
+//        return new Result<>(internalShow2(preProducer, dialogProducer).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     private <T, P, V extends Dialog<T>> CoreUiFuture internalShow2(Callable<P> preProducer, Callable<V> dialogProducer) {

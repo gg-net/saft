@@ -28,7 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.impl.Core;
 import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
@@ -86,7 +86,8 @@ public class FxmlBuilder {
      * @param fxmlControllerClass the swingPanelProducer of the JPanel, must not be null and must not return null.
      */
     public <V extends FxController> void show(Class<V> fxmlControllerClass) {
-        internalShow2(null, fxmlControllerClass).proceed().handle(Ui.handler());
+        saft.core().show(preBuilder, Optional.empty(), new Core.In<>(fxmlControllerClass));
+//        internalShow2(null, fxmlControllerClass).proceed().handle(Ui.handler());
     }
 
     /**
@@ -101,7 +102,8 @@ public class FxmlBuilder {
      *                            javafxPaneProducer swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      */
     public <P, V extends FxController & Consumer<P>> void show(Callable<P> preProducer, Class<V> fxmlControllerClass) {
-        internalShow2(preProducer, fxmlControllerClass).proceed().handle(Ui.handler());
+        saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(fxmlControllerClass));
+//        internalShow2(preProducer, fxmlControllerClass).proceed().handle(Ui.handler());
     }
 
     /**
@@ -115,8 +117,10 @@ public class FxmlBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, V extends FxController & ResultProducer<T>> Result<T> eval(Class<V> fxmlControllerClass) {
-        return new Result<>(internalShow2(null, fxmlControllerClass).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(fxmlControllerClass));
+
+//        return new Result<>(internalShow2(null, fxmlControllerClass).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -132,8 +136,10 @@ public class FxmlBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, P, V extends FxController & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Class<V> fxmlControllerClass) {
-        return new Result<>(internalShow2(preProducer, fxmlControllerClass).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(fxmlControllerClass));
+
+//        return new Result<>(internalShow2(preProducer, fxmlControllerClass).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     private <T, P, V extends FxController> CoreUiFuture internalShow2(Callable<P> preProducer, Class<V> fxmlControllerClass) {

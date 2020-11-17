@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.impl.Core;
 import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
@@ -85,8 +85,9 @@ public class FxBuilder {
      * @param <V>                the type
      * @param javafxPaneProducer the producer of the JPanel, must not be null and must not return null.
      */
-    public <V extends Pane> void show(Callable<V> javafxPaneProducer) {
-        internalShow2(null, javafxPaneProducer).proceed().handle(Ui.handler());
+    public <V extends Pane> void show(Supplier<V> javafxPaneProducer) {
+        saft.core().show(preBuilder, Optional.empty(), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
+        // internalShow2(null, javafxPaneProducer).proceed().handle(Ui.handler());
     }
 
     /**
@@ -99,8 +100,9 @@ public class FxBuilder {
      * @param preProducer        the preProducer, must not be null
      * @param javafxPaneProducer the producer of the JPanel, must not be null and must not return null.
      */
-    public <P, V extends Pane & Consumer<P>> void show(Callable<P> preProducer, Callable<V> javafxPaneProducer) {
-        internalShow2(preProducer, javafxPaneProducer).proceed().handle(Ui.handler());
+    public <P, V extends Pane & Consumer<P>> void show(Callable<P> preProducer, Supplier<V> javafxPaneProducer) {
+        saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
+//        internalShow2(preProducer, javafxPaneProducer).proceed().handle(Ui.handler());
     }
 
     //TODO: Reconsider after change of core handling.
@@ -129,9 +131,11 @@ public class FxBuilder {
      * @param javafxPaneProducer the producer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
-    public <T, V extends Pane & ResultProducer<T>> Result<T> eval(Callable<V> javafxPaneProducer) {
-        return new Result<>(internalShow2(null, javafxPaneProducer).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+    public <T, V extends Pane & ResultProducer<T>> Result<T> eval(Supplier<V> javafxPaneProducer) {
+        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
+//
+//        return new Result<>(internalShow2(null, javafxPaneProducer).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -145,9 +149,10 @@ public class FxBuilder {
      * @param javafxPaneProducer the producer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
-    public <T, P, V extends Pane & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Callable<V> javafxPaneProducer) {
-        return new Result<>(internalShow2(preProducer, javafxPaneProducer).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+    public <T, P, V extends Pane & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Supplier<V> javafxPaneProducer) {
+        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
+//        return new Result<>(internalShow2(preProducer, javafxPaneProducer).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**

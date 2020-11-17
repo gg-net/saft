@@ -35,7 +35,7 @@ import eu.ggnet.saft.core.ui.builder.*;
  *
  * @author oliver.guenther
  */
-public class Fx implements Core<Stage> {
+public class Fx extends AbstractCore implements Core<Stage> {
 
     private final Saft saft;
 
@@ -243,6 +243,97 @@ public class Fx implements Core<Stage> {
     }
 
     @Override
+    public <U extends Pane> void registerOnceFx(String key, Supplier<U> paneSupplier) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean showOnce(String key) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public <R, S extends R> CompletableFuture<Stage> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
+        return prepareShowEval(prebuilder, preProducer, in).thenApply((UiParameter p) -> p.stage().get());
+    }
+
+    @Override
+    public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
+        return new Result<>(prepareShowEval(prebuilder, preProducer, in)
+                .thenApplyAsync((UiParameter p) -> BuilderUtil.waitAndProduceResult(p), saft.executorService()));
+    }
+
+    private <R, S extends R> CompletableFuture<UiParameter> prepareShowEval(PreBuilder preBuilder, Optional<Callable<?>> optPreProducer, Core.In<R, S> in) {
+        Objects.requireNonNull(preBuilder, "preBuilder must not be null");
+        Objects.requireNonNull(optPreProducer, "optPreProducer must not be null");
+        Objects.requireNonNull(in, "in must not be null");
+
+        UiParameter.Type type = selectType(in);
+
+        switch (type) {
+            case SWING:
+                return CompletableFuture
+                        .supplyAsync(() -> init(preBuilder, type), saft.executorService())
+                        .thenApplyAsync(p -> produceJPanel(in, p), EventQueue::invokeLater)
+                        .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
+                        .thenApplyAsync(p -> optionalConsumePreProducer(p), EventQueue::invokeLater)
+                        .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
+                        .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
+                        .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
+                        .thenApply(p -> showAndWaitJavaFx(p));
+
+            case DIALOG:
+                return CompletableFuture
+                        .supplyAsync(() -> init(preBuilder, type), saft.executorService())
+                        .thenApplyAsync(p -> produceDialog(in, p), Platform::runLater)
+                        .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
+                        .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
+                        .thenApplyAsync(BuilderUtil::constructDialog, Platform::runLater);
+
+            case FX:
+                return CompletableFuture
+                        .supplyAsync(() -> init(preBuilder, type), saft.executorService())
+                        .thenApplyAsync(p -> producePane(in, p), Platform::runLater)
+                        .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
+                        .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
+                        .thenApply(BuilderUtil::constructJavaFx)
+                        .thenApply(p -> showAndWaitJavaFx(p));
+            case FXML:
+                return CompletableFuture
+                        .supplyAsync(() -> init(preBuilder, type), saft.executorService())
+                        .thenApplyAsync(p -> produceFxml(in, p), Platform::runLater)
+                        .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
+                        .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
+                        .thenApply(BuilderUtil::constructJavaFx)
+                        .thenApply(p -> showAndWaitJavaFx(p));
+
+            default:
+                throw new IllegalArgumentException(type + " not implemented");
+        }
+
+    }
+
+    @Override
     public CoreUiFuture prepare(final Supplier<CompletableFuture<UiParameter>> supplier, UiParameter.Type type) {
         return new CoreUiFuture() {
 
@@ -296,49 +387,9 @@ public class Fx implements Core<Stage> {
         };
     }
 
-    public static UiParameter showAndWaitJavaFx(UiParameter in) {
+    private UiParameter showAndWaitJavaFx(UiParameter in) {
         in.stage().get().showAndWait();
         return in;
-    }
-
-    @Override
-    public <U extends Pane> void registerOnceFx(String key, Supplier<U> paneSupplier) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public boolean showOnce(String key) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public <R, S extends R> CompletableFuture<Stage> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
 }

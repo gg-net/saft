@@ -5,8 +5,6 @@
  */
 package eu.ggnet.saft.core.impl;
 
-import javax.swing.JPanel;
-
 /**
  *
  * @author oliver.guenther
@@ -14,7 +12,7 @@ import javax.swing.JPanel;
 public class CoreTest {
 
     public static void main(String[] args) {
-        System.out.println(Swing.selectType(new Core.In<>(JPanel.class)));
+        //    System.out.println(Swing.selectType(new Core.In<>(JPanel.class)));
         //  Swing.selectType(new Core.In<>(() -> new BorderPane()));
     }
 }
