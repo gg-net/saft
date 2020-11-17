@@ -219,6 +219,7 @@ public abstract class UiParameter {
         return Optional.empty();
     }
 
+    @Deprecated // In Swing schon manuel gemacht.
     public final UiParameter optionalConsumePreResult() {
         if ( !preResult().isPresent() ) return this;
         if ( !(type().selectRelevantInstance(this) instanceof Consumer) ) return this;

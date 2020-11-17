@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.subsystem.CoreUiFuture;
+import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
 import static eu.ggnet.saft.core.UiUtil.exceptionRun;

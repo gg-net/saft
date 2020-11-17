@@ -22,14 +22,17 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.swing.JPanel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.*;
-import eu.ggnet.saft.core.subsystem.CoreUiFuture;
+import eu.ggnet.saft.core.Saft;
+import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.impl.Core;
+import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
@@ -84,8 +87,9 @@ public class SwingBuilder {
      * @param <V>                the type
      * @param swingPanelProducer the swingPanelProducer of the JPanel, must not be null and must not return null.
      */
-    public <V extends JPanel> void show(Callable<V> swingPanelProducer) {
-        internalShow2(null, swingPanelProducer).proceed().handle(Ui.handler());
+    public <V extends JPanel> void show(Supplier<V> swingPanelProducer) {
+        saft.core().show(preBuilder, Optional.empty(), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
+//        internalShow2(null, swingPanelProducer).proceed().handle(Ui.handler());
     }
 
     /**
@@ -98,8 +102,10 @@ public class SwingBuilder {
      * @param preProducer        the preproducer, must not be null
      * @param swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      */
-    public <P, V extends JPanel & Consumer<P>> void show(Callable<P> preProducer, Callable<V> swingPanelProducer) {
-        internalShow2(preProducer, swingPanelProducer).proceed().handle(Ui.handler());
+    public <P, V extends JPanel & Consumer<P>> void show(Callable<P> preProducer, Supplier<V> swingPanelProducer) {
+        saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
+
+        // internalShow2(preProducer, swingPanelProducer).proceed().handle(Ui.handler());
     }
 
     /**
@@ -112,9 +118,12 @@ public class SwingBuilder {
      * @param swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
-    public <T, V extends JPanel & ResultProducer<T>> Result<T> eval(Callable<V> swingPanelProducer) {
-        return new Result<>(internalShow2(null, swingPanelProducer).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+    public <T, V extends JPanel & ResultProducer<T>> Result<T> eval(Supplier<V> swingPanelProducer) {
+        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
+//
+//
+//        return new Result<>(internalShow2(null, swingPanelProducer).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -128,9 +137,10 @@ public class SwingBuilder {
      * @param swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
-    public <T, P, V extends JPanel & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Callable<V> swingPanelProducer) {
-        return new Result<>(internalShow2(preProducer, swingPanelProducer).proceed()
-                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+    public <T, P, V extends JPanel & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Supplier<V> swingPanelProducer) {
+        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
+//        return new Result<>(internalShow2(preProducer, swingPanelProducer).proceed()
+//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     private <T, P, V extends JPanel> CoreUiFuture internalShow2(Callable<P> preProducer, Callable<V> jpanelProducer) {

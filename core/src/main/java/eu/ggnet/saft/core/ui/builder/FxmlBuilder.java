@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.subsystem.CoreUiFuture;
+import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;

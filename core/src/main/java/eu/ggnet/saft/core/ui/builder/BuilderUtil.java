@@ -49,8 +49,8 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.subsystem.Fx;
-import eu.ggnet.saft.core.subsystem.Swing;
+import eu.ggnet.saft.core.impl.Fx;
+import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Builder;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;

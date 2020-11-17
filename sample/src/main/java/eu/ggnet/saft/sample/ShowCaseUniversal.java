@@ -78,9 +78,9 @@ public class ShowCaseUniversal {
     protected final List<Smenu> MENUS;
 
     public ShowCaseUniversal() {
-        UiCore.global().registerOnceFx(ONCE, () -> new PaneAsFrame());
-        UiCore.global().registerOnceFx(ONCE_WITH_SELF_CLOSER, PaneAsFrameWithSelfCloser.class);
-        UiCore.global().registerOnceFxml(ONCE_FXML, BasicApplicationController.class);
+//        UiCore.global().registerOnceFx(ONCE, () -> new PaneAsFrame());
+//        UiCore.global().registerOnceFx(ONCE_WITH_SELF_CLOSER, PaneAsFrameWithSelfCloser.class);
+//        UiCore.global().registerOnceFxml(ONCE_FXML, BasicApplicationController.class);
 
         // @RequestScoped, e.g. to observer events
         class PaneSupplier implements Supplier<BorderPane> {

@@ -104,7 +104,7 @@ public class PreBuilder {
      * @return this as fluent usage
      */
     public PreBuilder title(String title) {
-        if ( title != null && title.isBlank() ) return new PreBuilder(saft, uiParent, null, modality, frame);
+        if ( title != null && title.trim().isEmpty() ) return new PreBuilder(saft, uiParent, null, modality, frame);
         return new PreBuilder(saft, uiParent, title, modality, frame);
     }
 

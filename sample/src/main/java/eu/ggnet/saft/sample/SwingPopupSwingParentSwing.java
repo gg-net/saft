@@ -7,7 +7,7 @@ import javax.swing.JDialog;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.subsystem.Swing;
+import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.sample.support.DocumentAdressUpdateViewOkCanceler;
 import eu.ggnet.saft.sample.support.MainPanel;
 

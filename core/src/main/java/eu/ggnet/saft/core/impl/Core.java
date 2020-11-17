@@ -3,9 +3,11 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.ggnet.saft.core.subsystem;
+package eu.ggnet.saft.core.impl;
 
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -16,7 +18,7 @@ import javafx.scene.layout.Pane;
 
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.UiParent;
-import eu.ggnet.saft.core.ui.builder.UiParameter;
+import eu.ggnet.saft.core.ui.builder.*;
 
 /**
  *
@@ -26,6 +28,38 @@ import eu.ggnet.saft.core.ui.builder.UiParameter;
  * @author oliver.guenther
  */
 public interface Core<T> {
+
+    //The R and S construct is the only way to ensure, that the Suppliers result extends the class token.
+    public static class In<R, S extends R> {
+
+        private final Supplier<S> supplier;
+
+        private final Class<R> clazz;
+
+        public In(Class<R> clazz, Supplier<S> supplier) {
+            this.supplier = Objects.requireNonNull(supplier, "supplier must not be null");
+            this.clazz = Objects.requireNonNull(clazz, "clazz must not be null");
+        }
+
+        public In(Class<R> clazz) {
+            this.supplier = null;
+            this.clazz = Objects.requireNonNull(clazz, "clazz must not be null");
+        }
+
+        public Class<R> clazz() {
+            return clazz;
+        }
+
+        public Optional<Supplier<S>> supplier() {
+            return Optional.ofNullable(supplier);
+        }
+
+        @Override
+        public String toString() {
+            return "In{" + "supplier=" + supplier + ", clazz=" + clazz + '}';
+        }
+
+    }
 
     /**
      * Suppling unwrapped parent or main to the consumer.
@@ -84,11 +118,12 @@ public interface Core<T> {
     /**
      * Registers a Supplier with a key in the core for once useage.
      *
+     * @param <U>
      * @param key          the unique key for usage with {@link #showOnce(java.lang.String) }.
      * @param paneSupplier the supplier of the pane
      * @throws NullPointerException if the key was null or blank or the supplier was null.
      */
-    void registerOnceFx(String key, Supplier<? extends Pane> paneSupplier) throws NullPointerException;
+    <U extends Pane> void registerOnceFx(String key, Supplier<U> paneSupplier) throws NullPointerException;
 
     /**
      * Registers a pane class with a key in the core for once useage.
@@ -136,6 +171,10 @@ public interface Core<T> {
      * @throws NullPointerException if the key was null or blank.
      */
     boolean showOnce(String key) throws NullPointerException;
+
+    <R, S extends R> CompletableFuture<T> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in);
+
+    <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in);
 
     CoreUiFuture prepare(Supplier<CompletableFuture<UiParameter>> later, UiParameter.Type type);
 }

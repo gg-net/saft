@@ -11,8 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.*;
-import eu.ggnet.saft.core.subsystem.Fx;
-import eu.ggnet.saft.core.subsystem.Swing;
+import eu.ggnet.saft.core.impl.Fx;
+import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.*;
 
 import static eu.ggnet.saft.core.ui.AlertType.INFO;

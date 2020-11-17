@@ -5,6 +5,10 @@
  */
 package eu.ggnet.saft.core;
 
+import eu.ggnet.saft.core.impl.Swing;
+import eu.ggnet.saft.core.impl.DefaultCoreFactory;
+import eu.ggnet.saft.core.impl.Core;
+
 import java.awt.Component;
 import java.awt.Window;
 import java.util.*;
@@ -20,7 +24,6 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.subsystem.*;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;

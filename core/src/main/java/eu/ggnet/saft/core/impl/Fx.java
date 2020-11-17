@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package eu.ggnet.saft.core.subsystem;
+package eu.ggnet.saft.core.impl;
 
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -11,6 +11,7 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -28,8 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.*;
-import eu.ggnet.saft.core.ui.builder.BuilderUtil;
-import eu.ggnet.saft.core.ui.builder.UiParameter;
+import eu.ggnet.saft.core.ui.builder.*;
 
 /**
  *
@@ -285,7 +285,7 @@ public class Fx implements Core<Stage> {
                     case FXML:
                         return supplier.get()
                                 .thenApply(BuilderUtil::constructJavaFx)
-                                                                .thenApply(in -> in.stage().get());
+                                .thenApply(in -> in.stage().get());
                     case DIALOG:
                         throw new IllegalArgumentException(type + " can only be evaluated not shown");
                     default:
@@ -302,7 +302,7 @@ public class Fx implements Core<Stage> {
     }
 
     @Override
-    public void registerOnceFx(String key, Supplier<? extends Pane> paneSupplier) throws NullPointerException {
+    public <U extends Pane> void registerOnceFx(String key, Supplier<U> paneSupplier) throws NullPointerException {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
@@ -328,6 +328,16 @@ public class Fx implements Core<Stage> {
 
     @Override
     public boolean showOnce(String key) throws NullPointerException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public <R, S extends R> CompletableFuture<Stage> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
