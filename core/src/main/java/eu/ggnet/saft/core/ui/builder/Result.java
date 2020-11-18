@@ -17,8 +17,7 @@
 package eu.ggnet.saft.core.ui.builder;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +52,11 @@ public class Result<T> {
             return Optional.of(cf.get());
         } catch (InterruptedException ex) {
             Ui.handle(ex);
+        } catch (CancellationException ex) {
+            L.debug("Cancelation, retruning empty");
+            return Optional.empty();
         } catch (ExecutionException ex) {
-            if ( ex.getCause() instanceof UiWorkflowBreak ) {
+            if ( ex.getCause() instanceof CancellationException ) {
                 L.debug(ex.getCause() + ", retruning empty");
                 return Optional.empty();
             }

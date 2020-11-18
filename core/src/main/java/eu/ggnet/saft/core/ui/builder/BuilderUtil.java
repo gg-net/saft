@@ -53,7 +53,6 @@ import eu.ggnet.saft.core.impl.Fx;
 import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Builder;
-import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type;
 
 import static eu.ggnet.saft.core.ui.Bind.Type.SHOWING;
 import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
@@ -502,11 +501,11 @@ public final class BuilderUtil {
         }
         if ( in.type().selectRelevantInstance(in) instanceof ResultProducer ) {
             T result = ((ResultProducer<T>)in.type().selectRelevantInstance(in)).getResult();
-            if ( result == null ) throw new UiWorkflowBreak(Type.NULL_RESULT);
+            if ( result == null ) throw new CancellationException();
             return result;
         } else {
             T result = ((Dialog<T>)in.type().selectRelevantInstance(in)).getResult();
-            if ( result == null ) throw new UiWorkflowBreak(Type.NULL_RESULT);
+            if ( result == null ) throw new CancellationException();
             return result;
         }
     }

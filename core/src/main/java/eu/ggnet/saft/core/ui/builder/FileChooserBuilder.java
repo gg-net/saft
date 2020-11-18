@@ -17,14 +17,13 @@
 package eu.ggnet.saft.core.ui.builder;
 
 import java.io.File;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
 import javafx.application.Platform;
 import javafx.stage.FileChooser;
 
 import eu.ggnet.saft.core.UiCore;
-
-import static eu.ggnet.saft.core.ui.builder.UiWorkflowBreak.Type.NULL_RESULT;
 
 public class FileChooserBuilder {
 
@@ -49,7 +48,7 @@ public class FileChooserBuilder {
             if ( title == null ) fileChooser.setTitle("Open File");
             else fileChooser.setTitle(title);
             File result = fileChooser.showOpenDialog(null);
-            if ( result == null ) throw new UiWorkflowBreak(NULL_RESULT);
+            if ( result == null ) throw new CancellationException();
             return result;
         }, Platform::runLater).thenApplyAsync(r -> r, UiCore.getExecutor())); // the last Apply is for the thread change only
     }

@@ -5,10 +5,6 @@
  */
 package eu.ggnet.saft.core;
 
-import eu.ggnet.saft.core.impl.Swing;
-import eu.ggnet.saft.core.impl.DefaultCoreFactory;
-import eu.ggnet.saft.core.impl.Core;
-
 import java.awt.Component;
 import java.awt.Window;
 import java.util.*;
@@ -24,6 +20,7 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.impl.*;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
 import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
@@ -60,8 +57,8 @@ public class Saft {
     // TODO: Implement a default implementation. Do this after the change in the builder.
     // This implementation only handles parents in swing mode. in Fx mode it's displayed anythere.
     private BiConsumer<Optional<UiParent>, Throwable> exceptionConsumerFinal = (Optional<UiParent> parent, Throwable b) -> {
-        if ( b instanceof UiWorkflowBreak || b.getCause() instanceof UiWorkflowBreak ) {
-            L.debug("FinalExceptionConsumer catches UiWorkflowBreak, which is ignored by default");
+        if ( b instanceof CancellationException || b.getCause() instanceof CancellationException ) {
+            L.debug("FinalExceptionConsumer catches CancellationException, which is ignored by default");
             return;
         }
 
@@ -144,6 +141,7 @@ public class Saft {
 
         if ( core == null ) core = DEFAULT_CORE_FACTORY.create(this, typeClass, mainParent);
         if ( core == null ) throw new IllegalStateException("No CoreFactory produced a core for type " + typeClass.getName());
+        L.info("init() complete with core " + core.getClass().getName());
         // TODO: All Knowledge of continue and start must be merged here.
     }
 

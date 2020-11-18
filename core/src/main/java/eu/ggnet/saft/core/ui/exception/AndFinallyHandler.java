@@ -7,6 +7,7 @@ package eu.ggnet.saft.core.ui.exception;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.CancellationException;
 import java.util.function.BiFunction;
 
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,7 @@ public class AndFinallyHandler<Z> implements BiFunction<Z, Throwable, Z> {
     public Z apply(Z in, Throwable exception) {
         if ( exception != null ) {
             saft.handle(Optional.ofNullable(parent), exception);
-            return null; // If an exception ocourd, we drop the result value.
+            throw new CancellationException("Exception " + exception.getClass().getSimpleName() + " allready handeld, canceling everything else");
         } else {
             return in;
         }
@@ -51,7 +52,7 @@ public class AndFinallyHandler<Z> implements BiFunction<Z, Throwable, Z> {
                 } finally {
                     saft.handle(Optional.ofNullable(parent), exception);
                 }
-                return null; // If an exception ocourd, we drop the result value.
+                throw new CancellationException("Exception " + exception.getClass().getSimpleName() + " allready handeld, canceling everything else");
             } else {
                 return in;
             }

@@ -19,11 +19,9 @@ package eu.ggnet.saft.core.ui.builder;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javafx.application.Platform;
 import javafx.scene.layout.Pane;
 
 import org.slf4j.Logger;
@@ -31,11 +29,9 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.impl.Core;
-import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
 
-import static eu.ggnet.saft.core.UiUtil.exceptionRun;
 
 /*
     I - 4 Fälle:
@@ -87,7 +83,10 @@ public class FxBuilder {
      */
     public <V extends Pane> void show(Supplier<V> javafxPaneProducer) {
         saft.core().show(preBuilder, Optional.empty(), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
-        // internalShow2(null, javafxPaneProducer).proceed().handle(Ui.handler());
+    }
+
+    public <P, V extends Pane> void show(Class<V> javafxPaneClass) {
+        saft.core().show(preBuilder, Optional.empty(), new Core.In<>(javafxPaneClass));
     }
 
     /**
@@ -102,23 +101,10 @@ public class FxBuilder {
      */
     public <P, V extends Pane & Consumer<P>> void show(Callable<P> preProducer, Supplier<V> javafxPaneProducer) {
         saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
-//        internalShow2(preProducer, javafxPaneProducer).proceed().handle(Ui.handler());
     }
 
-    //TODO: Reconsider after change of core handling.
-    public <V extends Pane> Runnable showable(Callable<V> javafxPaneProducer) {
-
-        return null;
-    }
-
-    // TODO: Zusatzvariante um eine Managementinstance über cdi zu erzeugen, das fx elemente final sind und damit keinen @Scope bekommen können.
-    // Supplier wird via cdi erzeugt und get liefert dann die ui komponente. Der entwickler kann überlegen, wie er den Supplier mit ui bei erzeugen füllt
-    // Außerdem: Defaultsupplier um nur eine Fx Element zu erzeugen, class MyPane. inner class MySupplier extends DefaultSupplier<MyPane> und im constructor
-    // super(MyPane.class)
-    // und das ganze auf construct und eval vertreilen.
-    // ggf auch nur im CDI mode laufen lassen, sonst exception.
-    public <P, V extends Pane & Consumer<P>> void show(Callable<P> preProducer, Class<Supplier<V>> javafxPaneClass) {
-
+    public <P, V extends Pane & Consumer<P>> void show(Callable<P> preProducer, Class<V> javafxPaneClass) {
+        saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(javafxPaneClass));
     }
 
     /**
@@ -133,9 +119,10 @@ public class FxBuilder {
      */
     public <T, V extends Pane & ResultProducer<T>> Result<T> eval(Supplier<V> javafxPaneProducer) {
         return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
-//
-//        return new Result<>(internalShow2(null, javafxPaneProducer).proceed()
-//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+    }
+
+    public <T, V extends Pane & ResultProducer<T>> Result<T> eval(Class<V> javafxPaneClass) {
+        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(javafxPaneClass));
     }
 
     /**
@@ -151,41 +138,10 @@ public class FxBuilder {
      */
     public <T, P, V extends Pane & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Supplier<V> javafxPaneProducer) {
         return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(Pane.class, () -> javafxPaneProducer.get()));
-//        return new Result<>(internalShow2(preProducer, javafxPaneProducer).proceed()
-//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
-    /**
-     * Internal implementation, breaks the compile safty of the public methodes.
-     * For now we have two normal execptions. The UiWorkflowBreak (allready open) and the NoSuchElementException (no result)
-     *
-     * @param <P>                type of the result
-     * @param <V>                type of the result
-     * @param preProducer        a pre processor, must not be null
-     * @param javafxPaneProducer the producer, must not be null and must not return null.
-     * @return a completeable future processing in the background for the result
-     */
-    private <P, V extends Pane> CoreUiFuture internalShow2(Callable<P> preProducer, Callable<V> javafxPaneProducer) {
-        Objects.requireNonNull(javafxPaneProducer, "The javafxPaneProducer is null, not allowed");
-
-        /*
-        // Was for gluon.
-        if ( UiCore.isGluon() ) {
-            return uniChain
-                    .thenApply(UiCore.global().gluonSupport().get()::constructJavaFx); // Allready on JavaFx Thread.
-         */
-        // TODO: the parent handling must be optimized. And the javaFx
-        return saft.core().prepare(() -> {
-            UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(TYPE).build();
-
-            // Produce the ui instance
-            CompletableFuture<UiParameter> uiChain = CompletableFuture
-                    .runAsync(() -> L.debug("Starting new Ui Element creation"), preBuilder.saft().executorService()) // Make sure we are not switching from Swing to JavaFx directly, which fails sometimes.
-                    .thenApplyAsync(v -> BuilderUtil.producePane(javafxPaneProducer, parm), Platform::runLater)
-                    .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), preBuilder.saft().executorService())
-                    .thenApplyAsync(BuilderUtil::consumePreResult, Platform::runLater);
-            return uiChain;
-        }, TYPE);
-
+    public <T, P, V extends Pane & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Class<V> javafxPaneClass) {
+        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(javafxPaneClass));
     }
+
 }

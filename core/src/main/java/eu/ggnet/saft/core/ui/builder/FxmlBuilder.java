@@ -16,26 +16,18 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-
-import javafx.application.Platform;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.impl.Core;
-import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
-
-import static eu.ggnet.saft.core.UiUtil.exceptionRun;
-
 
 /*
     I - 4 Fälle:
@@ -87,7 +79,6 @@ public class FxmlBuilder {
      */
     public <V extends FxController> void show(Class<V> fxmlControllerClass) {
         saft.core().show(preBuilder, Optional.empty(), new Core.In<>(fxmlControllerClass));
-//        internalShow2(null, fxmlControllerClass).proceed().handle(Ui.handler());
     }
 
     /**
@@ -103,7 +94,6 @@ public class FxmlBuilder {
      */
     public <P, V extends FxController & Consumer<P>> void show(Callable<P> preProducer, Class<V> fxmlControllerClass) {
         saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(fxmlControllerClass));
-//        internalShow2(preProducer, fxmlControllerClass).proceed().handle(Ui.handler());
     }
 
     /**
@@ -118,9 +108,6 @@ public class FxmlBuilder {
      */
     public <T, V extends FxController & ResultProducer<T>> Result<T> eval(Class<V> fxmlControllerClass) {
         return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(fxmlControllerClass));
-
-//        return new Result<>(internalShow2(null, fxmlControllerClass).proceed()
-//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
     }
 
     /**
@@ -137,27 +124,6 @@ public class FxmlBuilder {
      */
     public <T, P, V extends FxController & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Class<V> fxmlControllerClass) {
         return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(fxmlControllerClass));
-
-//        return new Result<>(internalShow2(preProducer, fxmlControllerClass).proceed()
-//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
-    }
-
-    private <T, P, V extends FxController> CoreUiFuture internalShow2(Callable<P> preProducer, Class<V> fxmlControllerClass) {
-        Objects.requireNonNull(fxmlControllerClass, "The fxmlControllerClass is null, not allowed");
-
-        // TODO: the parent handling must be optimized. And the javaFx
-        return preBuilder.saft().core().prepare(() -> {
-            UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(TYPE).build();
-
-            // Produce the ui instance
-            CompletableFuture<UiParameter> uiChain = CompletableFuture
-                    .runAsync(() -> L.debug("Starting new Ui Element creation"), saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
-                    .thenApplyAsync((v) -> parm.withRootClass(fxmlControllerClass).withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), saft.executorService())
-                    .thenApplyAsync(BuilderUtil::produceFxml, Platform::runLater)
-                    .thenApply(BuilderUtil::consumePreResult);
-            return uiChain;
-        }, TYPE);
-
     }
 
 }

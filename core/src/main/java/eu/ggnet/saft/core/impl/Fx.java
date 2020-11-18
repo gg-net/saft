@@ -300,7 +300,8 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
                         .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
                         .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
-                        .thenApply(p -> showAndWaitJavaFx(p));
+                        .thenApply(p -> showAndWaitJavaFx(p))
+                        .handle(saft.handler());
 
             case DIALOG:
                 return CompletableFuture
@@ -308,7 +309,8 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> produceDialog(in, p), Platform::runLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
-                        .thenApplyAsync(BuilderUtil::constructDialog, Platform::runLater);
+                        .thenApplyAsync(BuilderUtil::constructDialog, Platform::runLater)
+                        .handle(saft.handler());
 
             case FX:
                 return CompletableFuture
@@ -317,7 +319,9 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         .thenApply(BuilderUtil::constructJavaFx)
-                        .thenApply(p -> showAndWaitJavaFx(p));
+                        .thenApply(p -> showAndWaitJavaFx(p))
+                        .handle(saft.handler());
+
             case FXML:
                 return CompletableFuture
                         .supplyAsync(() -> init(preBuilder, type), saft.executorService())
@@ -325,66 +329,13 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         .thenApply(BuilderUtil::constructJavaFx)
-                        .thenApply(p -> showAndWaitJavaFx(p));
+                        .thenApply(p -> showAndWaitJavaFx(p))
+                        .handle(saft.handler());
 
             default:
                 throw new IllegalArgumentException(type + " not implemented");
         }
 
-    }
-
-    @Override
-    public CoreUiFuture prepare(final Supplier<CompletableFuture<UiParameter>> supplier, UiParameter.Type type) {
-        return new CoreUiFuture() {
-
-            @Override
-            public CompletableFuture<UiParameter> proceed() {
-                switch (type) {
-                    case SWING:
-                        return supplier.get()
-                                .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
-                                .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
-                                .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
-                                .thenApply(in -> showAndWaitJavaFx(in));
-
-                    case DIALOG:
-                        return supplier.get()
-                                .thenApplyAsync(BuilderUtil::constructDialog, Platform::runLater);
-
-                    case FX:
-                    case FXML:
-                        return supplier.get()
-                                .thenApply(BuilderUtil::constructJavaFx)
-                                .thenApply(in -> showAndWaitJavaFx(in));
-
-                    default:
-                        throw new IllegalArgumentException(type + " not implemented");
-                }
-            }
-
-            @Override
-            public CompletableFuture<Object> show() {
-                switch (type) {
-                    case SWING:
-                        return supplier.get()
-                                .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
-                                .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
-                                .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
-                                .thenApply(in -> in.stage().get());
-
-                    case FX:
-                    case FXML:
-                        return supplier.get()
-                                .thenApply(BuilderUtil::constructJavaFx)
-                                .thenApply(in -> in.stage().get());
-                    case DIALOG:
-                        throw new IllegalArgumentException(type + " can only be evaluated not shown");
-                    default:
-                        throw new IllegalArgumentException(type + " not implemented");
-                }
-
-            }
-        };
     }
 
     private UiParameter showAndWaitJavaFx(UiParameter in) {

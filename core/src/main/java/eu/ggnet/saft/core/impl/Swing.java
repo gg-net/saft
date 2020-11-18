@@ -250,8 +250,8 @@ public class Swing extends AbstractCore implements Core<Window> {
         if ( !ONCES_BUILDER.containsKey(key) ) return false;
         if ( ONCES_ACTIVE.containsKey(key) && ONCES_ACTIVE.get(key).isVisible() ) {
             log.debug("showOnce(key={}) is visible", key);
-            Window window = ONCES_ACTIVE.get(key);
             EventQueue.invokeLater(() -> {
+                Window window = ONCES_ACTIVE.get(key);
                 if ( window instanceof JFrame ) ((JFrame)window).setExtendedState(JFrame.NORMAL);
                 window.toFront();
             });
@@ -261,10 +261,12 @@ public class Swing extends AbstractCore implements Core<Window> {
         return true;
     }
 
+    @Override
     public <R, S extends R> CompletableFuture<Window> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in) {
         return prepareShowEval(prebuilder, preProducer, in).thenApply((UiParameter p) -> p.window().get());
     }
 
+    @Override
     public <T, R, S extends R> Result<T> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in) {
         return new Result<>(prepareShowEval(prebuilder, preProducer, in)
                 .thenApplyAsync((UiParameter p) -> BuilderUtil.waitAndProduceResult(p), saft.executorService()));
@@ -287,8 +289,9 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         .thenApply(BuilderUtil::modifyDialog)
                         .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
-                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
+                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater)
+                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
+                        .handle(saft.handler());
 
             case SWING:
                 return CompletableFuture
@@ -296,7 +299,9 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> produceJPanel(in, p), EventQueue::invokeLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), EventQueue::invokeLater)
-                        .thenApply(BuilderUtil::constructSwing);
+                        .thenApply(BuilderUtil::constructSwing)
+                        .handle(saft.handler());
+
             case FX:
                 return CompletableFuture
                         .supplyAsync(() -> init(preBuilder, type), saft.executorService())
@@ -305,8 +310,10 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         //                        .thenApplyAsync(i -> i, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
                         .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
-                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
+                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater)
+                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
+                        .handle(saft.handler());
+
             case FXML:
                 return CompletableFuture
                         .supplyAsync(() -> init(preBuilder, type), saft.executorService())
@@ -315,53 +322,14 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         //                        .thenApplyAsync(i -> i, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
                         .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
-                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
+                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater)
+                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
+                        .handle(saft.handler());
 
             default:
                 throw new IllegalArgumentException(type + " not implemented");
 
         }
-    }
-
-    @Override
-    public CoreUiFuture prepare(final Supplier<CompletableFuture<UiParameter>> supplier, UiParameter.Type type) {
-        Objects.requireNonNull(type, "type must not be null");
-        return new CoreUiFuture() {
-
-            @Override
-            public CompletableFuture<UiParameter> proceed() {
-                switch (type) {
-
-                    case DIALOG:
-                        return supplier.get()
-                                .thenApply(BuilderUtil::modifyDialog)
-                                .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                                .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
-                                .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
-
-                    case SWING:
-                        return supplier.get()
-                                .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater);
-
-                    case FX:
-                    case FXML:
-                        return supplier.get()
-                                .thenApplyAsync(in -> in, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
-                                .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                                .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater) // Swing Specific
-                                .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater); // Swing Specific
-
-                    default:
-                        throw new IllegalArgumentException(type + " not implemented");
-                }
-            }
-
-            @Override
-            public CompletableFuture<Object> show() {
-                return proceed().thenApply(in -> in.window().get());
-            }
-        };
     }
 
 }

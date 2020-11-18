@@ -113,16 +113,16 @@ public class AbstractCore {
 
     protected UiParameter optionalConsumePreProducer(UiParameter in) {
         if ( in.preResult().isPresent() && (in.type().selectRelevantInstance(in) instanceof Consumer) ) {
-            ((Consumer)in.type().selectRelevantInstance(in)).accept(in.preResult());
+            ((Consumer)in.type().selectRelevantInstance(in)).accept(in.preResult().get());
         }
         return in;
     }
 
     protected UiParameter.Type selectType(Core.In<?, ?> in) {
-        if ( in.clazz().isAssignableFrom(JPanel.class) ) return SWING;
-        if ( in.clazz().isAssignableFrom(Pane.class) ) return FX;
-        if ( in.clazz().isAssignableFrom(javafx.scene.control.Dialog.class) ) return DIALOG;
-        if ( in.clazz().isAssignableFrom(FxController.class) ) return FXML;
+        if ( JPanel.class.isAssignableFrom(in.clazz()) ) return SWING;
+        if ( Pane.class.isAssignableFrom(in.clazz()) ) return FX;
+        if ( javafx.scene.control.Dialog.class.isAssignableFrom(in.clazz()) ) return DIALOG;
+        if ( FxController.class.isAssignableFrom(in.clazz()) ) return FXML;
         throw new IllegalArgumentException(Swing.class.getSimpleName() + " does not support " + in.clazz() + " for show or eval (selectType)");
     }
 

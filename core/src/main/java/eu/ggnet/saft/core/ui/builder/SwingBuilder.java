@@ -16,11 +16,8 @@
  */
 package eu.ggnet.saft.core.ui.builder;
 
-import java.awt.EventQueue;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -30,14 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.impl.Core;
-import eu.ggnet.saft.core.impl.CoreUiFuture;
 import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
-
-import static eu.ggnet.saft.core.UiUtil.exceptionRun;
-
 
 /*
     I - 4 Fälle:
@@ -89,7 +81,10 @@ public class SwingBuilder {
      */
     public <V extends JPanel> void show(Supplier<V> swingPanelProducer) {
         saft.core().show(preBuilder, Optional.empty(), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
-//        internalShow2(null, swingPanelProducer).proceed().handle(Ui.handler());
+    }
+
+    public <V extends JPanel> void show(Class<V> swingPanelClass) {
+        saft.core().show(preBuilder, Optional.empty(), new Core.In<>(swingPanelClass));
     }
 
     /**
@@ -104,8 +99,10 @@ public class SwingBuilder {
      */
     public <P, V extends JPanel & Consumer<P>> void show(Callable<P> preProducer, Supplier<V> swingPanelProducer) {
         saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
+    }
 
-        // internalShow2(preProducer, swingPanelProducer).proceed().handle(Ui.handler());
+    public <P, V extends JPanel & Consumer<P>> void show(Callable<P> preProducer, Class<V> swingPanelClass) {
+        saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(swingPanelClass));
     }
 
     /**
@@ -119,11 +116,11 @@ public class SwingBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, V extends JPanel & ResultProducer<T>> Result<T> eval(Supplier<V> swingPanelProducer) {
-        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
-//
-//
-//        return new Result<>(internalShow2(null, swingPanelProducer).proceed()
-//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(JPanel.class, swingPanelProducer));
+    }
+
+    public <T, V extends JPanel & ResultProducer<T>> Result<T> eval(Class<V> swingPanelClass) {
+        return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(swingPanelClass));
     }
 
     /**
@@ -138,28 +135,11 @@ public class SwingBuilder {
      * @return the result of the evaluation, never null.
      */
     public <T, P, V extends JPanel & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Supplier<V> swingPanelProducer) {
-        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
-//        return new Result<>(internalShow2(preProducer, swingPanelProducer).proceed()
-//                .thenApplyAsync(BuilderUtil::waitAndProduceResult, saft.executorService()));
+        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(JPanel.class, swingPanelProducer));
     }
 
-    private <T, P, V extends JPanel> CoreUiFuture internalShow2(Callable<P> preProducer, Callable<V> jpanelProducer) {
-        Objects.requireNonNull(jpanelProducer, "The jpanelaneProducer is null, not allowed");
-        if ( UiCore.isGluon() ) throw new IllegalStateException("Swing Elements are not supported in gloun (Wont be visible in Android or iOs");
-
-        // TODO: the parent handling must be optimized. And the javaFx
-        return preBuilder.saft().core().prepare(() -> {
-            UiParameter parm = UiParameter.fromPreBuilder(preBuilder).type(TYPE).build();
-
-            // Produce the ui instance
-            CompletableFuture<UiParameter> uiChain = CompletableFuture
-                    .runAsync(() -> L.debug("Starting new Ui Element creation"), saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which fails.
-                    .thenApplyAsync(v -> BuilderUtil.produceJPanel(jpanelProducer, parm), EventQueue::invokeLater)
-                    .thenApplyAsync((UiParameter p) -> p.withPreResult(Optional.ofNullable(preProducer).map(pp -> exceptionRun(pp)).orElse(null)), saft.executorService())
-                    .thenApply(BuilderUtil::consumePreResult);
-            return uiChain;
-        }, TYPE);
-
+    public <T, P, V extends JPanel & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Class<V> swingPanelClass) {
+        return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(swingPanelClass));
     }
 
 }

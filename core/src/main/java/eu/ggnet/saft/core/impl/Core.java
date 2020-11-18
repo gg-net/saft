@@ -18,7 +18,8 @@ import javafx.scene.layout.Pane;
 
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.UiParent;
-import eu.ggnet.saft.core.ui.builder.*;
+import eu.ggnet.saft.core.ui.builder.PreBuilder;
+import eu.ggnet.saft.core.ui.builder.Result;
 
 /**
  *
@@ -176,5 +177,4 @@ public interface Core<T> {
 
     <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in);
 
-    CoreUiFuture prepare(Supplier<CompletableFuture<UiParameter>> later, UiParameter.Type type);
 }

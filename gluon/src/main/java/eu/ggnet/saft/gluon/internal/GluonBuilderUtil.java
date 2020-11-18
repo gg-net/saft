@@ -6,13 +6,10 @@
 package eu.ggnet.saft.gluon.internal;
 
 import java.util.Optional;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionException;
+import java.util.concurrent.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
 
 import com.gluonhq.charm.glisten.control.Dialog;
 
@@ -46,7 +43,7 @@ public class GluonBuilderUtil {
 
     static <T> T waitAndProduceResult(GluonParameter in) {
         Optional<T> result = (Optional<T>)in.result();
-        if ( !result.isPresent() ) throw new UiWorkflowBreak(UiWorkflowBreak.Type.NULL_RESULT);
+        if ( !result.isPresent() ) throw new CancellationException();
         return result.get();
 
     }

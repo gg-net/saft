@@ -24,7 +24,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.sample.support.*;
 
 import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
@@ -120,18 +119,19 @@ public class ShowCaseUniversal {
         MENUS = Arrays.asList(
                 menu("SwingDialogs",
                         item("Once", () -> Ui.build().swing().show(() -> new PanelOnceDialog())),
-                        item("Multiple : 1", () -> Ui.build().title("UnitViewer: 1").swing().show(() -> new UnitViewer())), // was once
-                        item("Multiple : 2", () -> Ui.build().title("UnitViewer: 2").swing().show(() -> new UnitViewer())), // was once
+                        item("Multiple : 1 via Supplier", () -> Ui.build().title("UnitViewer: 1").swing().show(() -> new UnitViewer())),
+                        item("Multiple : 2 via Class", () -> Ui.build().title("UnitViewer: 2").swing().show(UnitViewer.class)),
                         item("Multiple : 3 , with precall", () -> Ui.build().swing().show(() -> "Das ist der Riesentext für Unit 3", () -> new UnitViewer())),
                         item("SelfCloser", () -> Ui.build().swing().show(() -> new PanelWithSelfCloser()))
                 ),
                 menu("SwingFrames",
-                        item("Once Frame with ClosedListener", () -> Ui.build().swing().show(() -> new PanelAsFrame()))
+                        item("Once Frame with ClosedListener via Supplier", () -> Ui.build().swing().show(() -> new PanelAsFrame())),
+                        item("Once Frame with ClosedListener via Class", () -> Ui.build().swing().show(PanelAsFrame.class))
                 ),
                 menu("JavaFxDialogs",
                         item("Once + Store Location", () -> Ui.build().fx().show(() -> new SimplePane())),
-                        item("Mutiple 1 with Title + Store Location", () -> Ui.build().title("SimplePane: 1").fx().show(() -> new SimplePane())),
-                        item("Mutiple 2 with Title + Store Location", () -> Ui.build().title("SimplePane: 2").fx().show(() -> new SimplePane())),
+                        item("Mutiple 1 with Title + Store Location via Supplier", () -> Ui.build().title("SimplePane: 1").fx().show(() -> new SimplePane())),
+                        item("Mutiple 2 with Title + Store Location via Class", () -> Ui.build().title("SimplePane: 2").fx().show(SimplePane.class)),
                         item("HtmlPane", () -> Ui.build().fx().show(() -> "<h1>Ueberschrift</h1>", () -> new HtmlPane())),
                         item("Once InputPane via Fxml",
                                 () -> Ui.exec(() -> {
@@ -160,9 +160,10 @@ public class ShowCaseUniversal {
                         item("Dialog of Dialogs", () -> Ui.build().fx().show(() -> new DialogOfDialogs()))
                 ),
                 menu("JavaFxFrames",
-                        item("Once", () -> UiCore.global().showOnce(ONCE)),
-                        item("Once With Self Closer", () -> UiCore.global().showOnce(ONCE_WITH_SELF_CLOSER)),
-                        item("Once Fxml", () -> UiCore.global().showOnce(ONCE_FXML))
+                        item("Frame", () -> Ui.build().fx().show(() -> new PaneAsFrame())),
+                        item("Once With Self Closer via Supplier", () -> Ui.build().fx().show(() -> new PaneAsFrameWithSelfCloser())),
+                        item("Once With Self Closer via Class", () -> Ui.build().fx().show(PaneAsFrameWithSelfCloser.class)),
+                        item("Once Fxml", () -> Ui.build().fxml().show(BasicApplicationController.class))
                 )
         );
     }
