@@ -15,6 +15,7 @@ import java.util.function.*;
 import javax.swing.JPanel;
 
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.layout.Pane;
 
 import org.slf4j.Logger;
@@ -23,8 +24,7 @@ import org.slf4j.LoggerFactory;
 import eu.ggnet.saft.core.impl.Core.In;
 import eu.ggnet.saft.core.impl.*;
 import eu.ggnet.saft.core.ui.*;
-import eu.ggnet.saft.core.ui.builder.GluonSupport;
-import eu.ggnet.saft.core.ui.builder.UiWorkflowBreak;
+import eu.ggnet.saft.core.ui.builder.*;
 import eu.ggnet.saft.core.ui.exception.*;
 
 /**
@@ -181,6 +181,30 @@ public class Saft {
      */
     public void gluonSupport(GluonSupport gluonSupport) {
         this.gluonSupport = Optional.ofNullable(gluonSupport);
+    }
+
+    public PreBuilder build() {
+        return new PreBuilder(this);
+    }
+
+    /**
+     * Returns a new Ui builder.
+     *
+     * @param swingParent optional swing parrent
+     * @return a new Ui builder.
+     */
+    public PreBuilder build(Component swingParent) {
+        return new PreBuilder(this).parent(swingParent);
+    }
+
+    /**
+     * Returns a new Ui builder.
+     *
+     * @param javaFxParent optional javafx parrent
+     * @return a new Ui builder.
+     */
+    public PreBuilder build(Parent javaFxParent) {
+        return new PreBuilder(this).parent(javaFxParent);
     }
 
     /**

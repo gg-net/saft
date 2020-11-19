@@ -27,5 +27,9 @@
             <groupId>de.huxhorn.lilith</groupId>
             <artifactId>de.huxhorn.lilith.logback.appender.multiplex-classic</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.jboss.weld.se</groupId>
+            <artifactId>weld-se-core</artifactId>
+        </dependency>
     </dependencies>
 </project>

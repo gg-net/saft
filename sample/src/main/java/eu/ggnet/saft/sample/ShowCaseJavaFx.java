@@ -16,6 +16,8 @@
  */
 package eu.ggnet.saft.sample;
 
+import eu.ggnet.saft.sample.support.ShowCaseUniversal;
+
 import javafx.application.Application;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -24,8 +26,8 @@ import javafx.stage.Stage;
 
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.Title;
-import eu.ggnet.saft.sample.ShowCaseUniversal.Sitem;
-import eu.ggnet.saft.sample.ShowCaseUniversal.Smenu;
+import eu.ggnet.saft.sample.support.ShowCaseUniversal.Sitem;
+import eu.ggnet.saft.sample.support.ShowCaseUniversal.Smenu;
 
 /**
  *

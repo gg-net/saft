@@ -14,25 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package eu.ggnet.saft.sample;
-
-import eu.ggnet.saft.sample.support.ShowCaseUniversal;
+package eu.ggnet.saft.sample.cdi.swing;
 
 import java.awt.BorderLayout;
 
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.se.SeContainer;
+import javax.enterprise.inject.se.SeContainerInitializer;
 import javax.swing.*;
 
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.sample.support.*;
 import eu.ggnet.saft.sample.support.ShowCaseUniversal.Sitem;
 import eu.ggnet.saft.sample.support.ShowCaseUniversal.Smenu;
-import eu.ggnet.saft.sample.support.MainPanelAddButtons;
 
 /**
  *
  * @author oliver.guenther
  */
-public class ShowCaseSwing {
+public class ShowCaseCdiSwing {
 
     @Title("ShowCase Swing")
     public static class SwingPanel extends JPanel {
@@ -53,9 +55,27 @@ public class ShowCaseSwing {
         }
     }
 
-    public static void main(String[] args) {
+    public void start(final SeContainer container) {
         UiCore.startSwing(() -> new SwingPanel());
+        UiCore.global().addOnShutdown(() -> {
+            if ( container.isRunning() ) {
+                // Shutdown the global executor.
+//            container.getBeanManager().createInstance().select(ExecutorManager.class).get().shutdown();
+                container.close();
+            }
+        });
         ShowCaseUniversal.registerGlobals();
+    }
+
+    public static void main(String[] args) {
+        SeContainerInitializer ci = SeContainerInitializer.newInstance();
+        ci.addPackages(ShowCaseCdiSwing.class);
+        ci.addPackages(BasicApplicationController.class);
+        ci.addPackages(true, Saft.class);
+        ci.disableDiscovery();
+        SeContainer container = ci.initialize();
+        Instance<Object> instance = container.getBeanManager().createInstance();
+        instance.select(ShowCaseCdiSwing.class).get().start(container);
     }
 
 }

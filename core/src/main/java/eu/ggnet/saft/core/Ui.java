@@ -40,32 +40,33 @@ public class Ui {
     private final static Logger L = LoggerFactory.getLogger(Ui.class);
 
     /**
-     * Returns a new Ui builder.
+     * Static global version of {@link Saft#build() } via {@link UiCore#global() }
      *
+     * @see Saft for direct usage.
      * @return a new Ui builder.
      */
     public static PreBuilder build() {
-        return new PreBuilder(UiCore.global());
+        return UiCore.global().build();
     }
 
     /**
-     * Returns a new Ui builder.
+     * Static global version of {@link Saft#build() } via {@link UiCore#global() }
      *
      * @param swingParent optional swing parrent
      * @return a new Ui builder.
      */
     public static PreBuilder build(Component swingParent) {
-        return new PreBuilder(UiCore.global()).parent(swingParent);
+        return UiCore.global().build(swingParent);
     }
 
     /**
-     * Returns a new Ui builder.
+     * Static global version of {@link Saft#build() } via {@link UiCore#global() }
      *
      * @param javaFxParent optional javafx parrent
      * @return a new Ui builder.
      */
     public static PreBuilder build(Parent javaFxParent) {
-        return new PreBuilder(UiCore.global()).parent(javaFxParent);
+        return UiCore.global().build(javaFxParent);
     }
 
     /**
