@@ -37,10 +37,9 @@ public class ShowCaseJavaFx {
     public static class FxPane extends BorderPane {
 
         public FxPane() {
-            ShowCaseUniversal u = new ShowCaseUniversal();
 
             MenuBar mb = new MenuBar();
-            for (Smenu smenu : u.menu()) {
+            for (Smenu smenu : ShowCaseUniversal.menu()) {
                 Menu submenu = new Menu(smenu.name);
                 for (Sitem item : smenu.items) {
                     MenuItem menuItem = new MenuItem(item.key);
@@ -63,6 +62,7 @@ public class ShowCaseJavaFx {
         @Override
         public void start(Stage primaryStage) throws Exception {
             UiCore.startJavaFx(primaryStage, () -> new FxPane());
+            ShowCaseUniversal.registerGlobals();
         }
 
         @Override

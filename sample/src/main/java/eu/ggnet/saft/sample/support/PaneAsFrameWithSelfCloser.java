@@ -6,7 +6,6 @@ import javafx.scene.layout.BorderPane;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.ui.Frame;
-import eu.ggnet.saft.core.ui.Once;
 
 import static javafx.scene.text.Font.font;
 
@@ -15,7 +14,6 @@ import static javafx.scene.text.Font.font;
  * @author oliver.guenther
  */
 @Frame
-@Once
 public class PaneAsFrameWithSelfCloser extends BorderPane {
 
     public PaneAsFrameWithSelfCloser() {

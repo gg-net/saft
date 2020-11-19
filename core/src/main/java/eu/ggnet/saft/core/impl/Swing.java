@@ -6,27 +6,29 @@
 package eu.ggnet.saft.core.impl;
 
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.ui.SwingSaft;
+import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.*;
 
 import static eu.ggnet.saft.core.ui.builder.UiParameter.Type.*;
@@ -190,57 +192,27 @@ public class Swing extends AbstractCore implements Core<Window> {
     }
 
     private void registerActiveAndToFront(String key, Window w) {
+        log().debug("registerActiveAndToFront(key={})", key);
         ONCES_ACTIVE.put(key, w);
+        w.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                log().debug("windowClosing() once closeing " + key + ", removing from active map");
+                ONCES_ACTIVE.remove(key);
+            }
+        });
         w.toFront();
     }
 
-    private <X, Y extends X> void blub(Class<X> c, Supplier<Y> s) {
-
-    }
-
-    // TODO: Reconsider ob cores doch nur 1-2 nicht compilesafe methoden für register haben
     // TODO: Baue noch was ein, das wenn show (also das Runable aufgerufen wird, das bist etwas im der ONCES_ACTIVE map ankommt, es nicht noch ein 2 mal gestartet wird.
     // TODO: Registiere einen window closing adapter, der wenn es geclosed wird, es aus et active List rausgeschmissen wird.
     @Override
-    public <U extends Pane> void registerOnceFx(String key, Supplier<U> paneSupplier) throws NullPointerException {
+    public void registerOnce(String key, Core.In<?, ?> in) {
         Objects.requireNonNull(key, "key must not be null");
         if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
-        Objects.requireNonNull(paneSupplier, "paneSupplier must not be null");
-        ONCES_BUILDER.put(key, new Runnable() {
-            @Override
-            public void run() {
-                show(new PreBuilder(saft).frame(true), Optional.empty(), new Core.In<>(Pane.class, paneSupplier));
-                //.thenAccept(w -> registerActiveAndToFront(key, w));
-            }
-        });
-    }
-
-    @Override
-    public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException {
-        Objects.requireNonNull(key, "key must not be null");
-        if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException {
-        Objects.requireNonNull(key, "key must not be null");
-        if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException {
-        Objects.requireNonNull(key, "key must not be null");
-        if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException {
-        Objects.requireNonNull(key, "key must not be null");
-        if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Objects.requireNonNull(in, "in must not be null");
+        log().debug("registerOnce(key={})", key);
+        ONCES_BUILDER.put(key, () -> show(new PreBuilder(saft).frame(true), Optional.empty(), in).thenAccept(w -> registerActiveAndToFront(key, w)));
     }
 
     @Override
@@ -249,13 +221,14 @@ public class Swing extends AbstractCore implements Core<Window> {
         if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
         if ( !ONCES_BUILDER.containsKey(key) ) return false;
         if ( ONCES_ACTIVE.containsKey(key) && ONCES_ACTIVE.get(key).isVisible() ) {
-            log.debug("showOnce(key={}) is visible", key);
+            log.debug("showOnce(key={}) visible, focusing.", key);
             EventQueue.invokeLater(() -> {
                 Window window = ONCES_ACTIVE.get(key);
                 if ( window instanceof JFrame ) ((JFrame)window).setExtendedState(JFrame.NORMAL);
                 window.toFront();
             });
         } else {
+            log.debug("showOnce(key={}) not yet visible, creating.", key);
             ONCES_BUILDER.get(key).run();
         }
         return true;

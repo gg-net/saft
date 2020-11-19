@@ -16,19 +16,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javax.swing.JPanel;
-
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.ui.FxSaft;
+import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.*;
 
 /**
@@ -45,6 +43,16 @@ public class Fx extends AbstractCore implements Core<Stage> {
     private final List<WeakReference<Stage>> allStages = new ArrayList<>();
 
     private final Logger log = LoggerFactory.getLogger(Fx.class);
+
+    /**
+     * Contains all active once windows.
+     */
+    private final Map<String, Stage> ONCES_ACTIVE = new HashMap<>();
+
+    /**
+     * Contains all wrapped builders to return the window for future usage.
+     */
+    private final Map<String, Runnable> ONCES_BUILDER = new HashMap<>();
 
     /**
      * Ceates a new Fx Core, should only be used in Saft.
@@ -242,44 +250,57 @@ public class Fx extends AbstractCore implements Core<Stage> {
         }
     }
 
-    @Override
-    public <U extends Pane> void registerOnceFx(String key, Supplier<U> paneSupplier) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    private void registerActiveAndToFront(String key, Stage s) {
+        log().debug("registerActiveAndToFront(key={})", key);
+        ONCES_ACTIVE.put(key, s);
+        s.setOnCloseRequest((t) -> {
+            log().debug("closeRequest() once closeing {}, removing from active map", key);
+            ONCES_ACTIVE.remove(key);
+        });
+        s.toFront();
     }
 
     @Override
-    public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public void registerOnce(String key, Core.In<?, ?> in) {
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
+        Objects.requireNonNull(in, "in must not be null");
+        if ( javafx.scene.control.Dialog.class.isAssignableFrom(in.clazz()) ) throw new IllegalArgumentException("Dialog ist not supported for registeronce");
+        log().debug("registerOnce(key={})", key);
+        ONCES_BUILDER.put(key, () -> show(new PreBuilder(saft).frame(true), Optional.empty(), in).thenAccept(w -> registerActiveAndToFront(key, w)));
     }
 
     @Override
     public boolean showOnce(String key) throws NullPointerException {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        Objects.requireNonNull(key, "key must not be null");
+        if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
+        if ( !ONCES_BUILDER.containsKey(key) ) return false;
+        if ( ONCES_ACTIVE.containsKey(key) && ONCES_ACTIVE.get(key).isShowing() ) {
+            log().debug("showOnce(key={}) visible, focusing", key);
+            Platform.runLater(() -> {
+                Stage stage = ONCES_ACTIVE.get(key);
+                stage.setIconified(false);
+                stage.requestFocus();
+                stage.toFront();
+            });
+        } else {
+            log.debug("showOnce(key={}) not yet visible, creating.", key);
+            ONCES_BUILDER.get(key).run();
+        }
+        return true;
     }
 
     @Override
     public <R, S extends R> CompletableFuture<Stage> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
-        return prepareShowEval(prebuilder, preProducer, in).thenApply((UiParameter p) -> p.stage().get());
+        return prepareShowEval(prebuilder, preProducer, in)
+                .thenApply((UiParameter p) -> showJavaFx(p))
+                .thenApply((UiParameter p) -> p.stage().get());
     }
 
     @Override
     public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
         return new Result<>(prepareShowEval(prebuilder, preProducer, in)
+                .thenApply((UiParameter p) -> showAndWaitJavaFx(p))
                 .thenApplyAsync((UiParameter p) -> BuilderUtil.waitAndProduceResult(p), saft.executorService()));
     }
 
@@ -300,7 +321,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
                         .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
                         .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
-                        .thenApply(p -> showAndWaitJavaFx(p))
                         .handle(saft.handler());
 
             case DIALOG:
@@ -319,7 +339,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         .thenApply(BuilderUtil::constructJavaFx)
-                        .thenApply(p -> showAndWaitJavaFx(p))
                         .handle(saft.handler());
 
             case FXML:
@@ -329,7 +348,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         .thenApply(BuilderUtil::constructJavaFx)
-                        .thenApply(p -> showAndWaitJavaFx(p))
                         .handle(saft.handler());
 
             default:
@@ -339,7 +357,14 @@ public class Fx extends AbstractCore implements Core<Stage> {
     }
 
     private UiParameter showAndWaitJavaFx(UiParameter in) {
-        in.stage().get().showAndWait();
+        // Dialog has no stage set
+        in.stage().ifPresent(Stage::showAndWait);
+        return in;
+    }
+
+    private UiParameter showJavaFx(UiParameter in) {
+        // Dialog has no stage set
+        in.stage().ifPresent(Stage::show);
         return in;
     }
 

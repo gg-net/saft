@@ -17,13 +17,12 @@
 package eu.ggnet.saft.sample;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 import javafx.scene.control.Alert;
-import javafx.scene.layout.BorderPane;
 import javafx.stage.Modality;
 
 import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.sample.support.*;
 
 import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
@@ -34,11 +33,15 @@ import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
  */
 public class ShowCaseUniversal {
 
-    public final static String ONCE = "Once";
+    public final static String ONCE_JPANEL_CLASS = "ONCE_JP_C";
 
-    public final static String ONCE_WITH_SELF_CLOSER = "Once with SeflCloser";
+    public final static String ONCE_JPANEL_SUPPLIER = "ONCE_JP_S";
 
-    public final static String ONCE_FXML = "Once Fxml";
+    public final static String ONCE_PANE_CLASS = "ONCE_P_C";
+
+    public final static String ONCE_PANE_SUPPLIER = "ONCE_P_S";
+
+    public final static String ONCE_FXML = "ONCE_FXML";
 
     private final static String[] NAMES = {"Hans", "Klaus", "Horst", "Charlotte", "Caroline", "Ivet"};
 
@@ -74,28 +77,24 @@ public class ShowCaseUniversal {
         public final List<Sitem> items;
     }
 
-    protected final List<Smenu> MENUS;
-
-    public ShowCaseUniversal() {
 //        UiCore.global().registerOnceFx(ONCE, () -> new PaneAsFrame());
 //        UiCore.global().registerOnceFx(ONCE_WITH_SELF_CLOSER, PaneAsFrameWithSelfCloser.class);
 //        UiCore.global().registerOnceFxml(ONCE_FXML, BasicApplicationController.class);
+    // @RequestScoped, e.g. to observer events
+//        class PaneSupplier implements Supplier<BorderPane> {
+//
+//            /*
+//            @Inject
+//            Remoteconnector mc
+//             */
+//            @Override
+//            public BorderPane get() {
+//                return null;
+//            }
+//
+//        }
 
-        // @RequestScoped, e.g. to observer events
-        class PaneSupplier implements Supplier<BorderPane> {
-
-            /*
-            @Inject
-            Remoteconnector mc
-             */
-            @Override
-            public BorderPane get() {
-                return null;
-            }
-
-        }
-
-        /*
+    /*
         Some Ideas
         - button ist eine referenz zum parent
         - Im injectfall muss eine Referenz zu Instance<Object> mit dazu. Damit am Ende Dinge in eval und show auf Cdi Features zurückgreifen können.
@@ -115,18 +114,36 @@ public class ShowCaseUniversal {
         Review UiCore.shutdown. e.g. Do we want to shutdwown the executorservice if we shutdown one saft.
 
 
-         */
-        MENUS = Arrays.asList(
+     */
+    private static Smenu menu(String label, Sitem... items) {
+        return new Smenu(label, items);
+    }
+
+    private static Sitem item(String key, Runnable value) {
+        return new Sitem(key, value);
+    }
+
+    public static void registerGlobals() {
+        UiCore.global().registerOnceSwing(ONCE_JPANEL_CLASS, PanelAsOnceFrame.class);
+        UiCore.global().registerOnceSwing(ONCE_JPANEL_SUPPLIER, () -> new PanelAsOnceFrame());
+        UiCore.global().registerOnceFx(ONCE_PANE_CLASS, PaneAsFrameWithSelfCloser.class);
+        UiCore.global().registerOnceFx(ONCE_PANE_SUPPLIER, () -> new PaneAsFrameWithSelfCloser());
+        UiCore.global().registerOnceFxml(ONCE_FXML, BasicApplicationController.class);
+    }
+
+    public static List<Smenu> menu() {
+        return Arrays.asList(
                 menu("SwingDialogs",
-                        item("Once", () -> Ui.build().swing().show(() -> new PanelOnceDialog())),
-                        item("Multiple : 1 via Supplier", () -> Ui.build().title("UnitViewer: 1").swing().show(() -> new UnitViewer())),
-                        item("Multiple : 2 via Class", () -> Ui.build().title("UnitViewer: 2").swing().show(UnitViewer.class)),
-                        item("Multiple : 3 , with precall", () -> Ui.build().swing().show(() -> "Das ist der Riesentext für Unit 3", () -> new UnitViewer())),
-                        item("SelfCloser", () -> Ui.build().swing().show(() -> new PanelWithSelfCloser()))
+                        item("JPanel via Supplier", () -> Ui.build().title("UnitViewer: 1").swing().show(() -> new UnitViewer())),
+                        item("JPanel via Class", () -> Ui.build().title("UnitViewer: 2").swing().show(UnitViewer.class)),
+                        item("JPanel , with precall", () -> Ui.build().swing().show(() -> "Das ist der Riesentext für Unit 3", () -> new UnitViewer())),
+                        item("JPanel with SelfCloser", () -> Ui.build().swing().show(() -> new PanelWithSelfCloser()))
                 ),
                 menu("SwingFrames",
-                        item("Once Frame with ClosedListener via Supplier", () -> Ui.build().swing().show(() -> new PanelAsFrame())),
-                        item("Once Frame with ClosedListener via Class", () -> Ui.build().swing().show(PanelAsFrame.class))
+                        item("Once via Class", () -> UiCore.global().showOnce(ONCE_JPANEL_CLASS)),
+                        item("Once via Supplier", () -> UiCore.global().showOnce(ONCE_JPANEL_SUPPLIER)),
+                        item("Frame with ClosedListener via Supplier", () -> Ui.build().swing().show(() -> new PanelAsFrame())),
+                        item("Frame with ClosedListener via Class", () -> Ui.build().swing().show(PanelAsFrame.class))
                 ),
                 menu("JavaFxDialogs",
                         item("Once + Store Location", () -> Ui.build().fx().show(() -> new SimplePane())),
@@ -161,23 +178,14 @@ public class ShowCaseUniversal {
                 ),
                 menu("JavaFxFrames",
                         item("Frame", () -> Ui.build().fx().show(() -> new PaneAsFrame())),
-                        item("Once With Self Closer via Supplier", () -> Ui.build().fx().show(() -> new PaneAsFrameWithSelfCloser())),
-                        item("Once With Self Closer via Class", () -> Ui.build().fx().show(PaneAsFrameWithSelfCloser.class)),
-                        item("Once Fxml", () -> Ui.build().fxml().show(BasicApplicationController.class))
+                        item("Frame With Self Closer via Supplier", () -> Ui.build().fx().show(() -> new PaneAsFrameWithSelfCloser())),
+                        item("Frame With Self Closer via Class", () -> Ui.build().fx().show(PaneAsFrameWithSelfCloser.class)),
+                        item("Frame Fxml", () -> Ui.build().fxml().show(BasicApplicationController.class)),
+                        item("Once Pane via Class", () -> UiCore.global().showOnce(ONCE_PANE_CLASS)),
+                        item("Once Pane via Supplier", () -> UiCore.global().showOnce(ONCE_PANE_SUPPLIER)),
+                        item("Once Fxml", () -> UiCore.global().showOnce(ONCE_FXML))
                 )
         );
-    }
-
-    private Smenu menu(String label, Sitem... items) {
-        return new Smenu(label, items);
-    }
-
-    private Sitem item(String key, Runnable value) {
-        return new Sitem(key, value);
-    }
-
-    public List<Smenu> menu() {
-        return MENUS;
     }
 
 }

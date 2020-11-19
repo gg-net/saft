@@ -20,6 +20,7 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.impl.Core.In;
 import eu.ggnet.saft.core.impl.*;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.GluonSupport;
@@ -192,7 +193,7 @@ public class Saft {
      */
     public void registerOnceFx(String key, Supplier<? extends Pane> paneSupplier) throws NullPointerException, IllegalArgumentException {
         if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
-        core().registerOnceFx(key, paneSupplier);
+        core().registerOnce(key, new In<>(Pane.class, paneSupplier));
     }
 
     /**
@@ -206,7 +207,7 @@ public class Saft {
      */
     public void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException, IllegalArgumentException {
         if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
-        core().registerOnceFx(key, paneClass);
+        core().registerOnce(key, new In<>(paneClass));
     }
 
     /**
@@ -219,7 +220,7 @@ public class Saft {
      */
     public void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException, IllegalArgumentException {
         if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
-        core().registerOnceSwing(key, panelSupplier);
+        core().registerOnce(key, new In<>(JPanel.class, panelSupplier));
     }
 
     /**
@@ -233,7 +234,7 @@ public class Saft {
      */
     public void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException, IllegalArgumentException {
         if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
-        core().registerOnceSwing(key, panelClass);
+        core().registerOnce(key, new In<>(panelClass));
     }
 
     /**
@@ -246,7 +247,7 @@ public class Saft {
      */
     public void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException, IllegalArgumentException {
         if ( !core().isActiv() ) throw new IllegalArgumentException("core is not active");
-        core().registerOnceFxml(key, controllerClass);
+        core().registerOnce(key, new In<>(controllerClass));
     }
 
     /**

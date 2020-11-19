@@ -12,11 +12,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javax.swing.JPanel;
-
-import javafx.scene.layout.Pane;
-
-import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 import eu.ggnet.saft.core.ui.builder.Result;
@@ -37,6 +32,18 @@ public interface Core<T> {
 
         private final Class<R> clazz;
 
+        /**
+         * TODO:
+         * Dokument me.
+         * Jeder Core sollte (muss) mindestens folgende classes und unterclases supporten
+         * - javafx Pane
+         * - swing JPanel
+         * - saft FxController
+         * - javafx Dialog
+         *
+         * @param clazz    The type of implementation.
+         * @param supplier
+         */
         public In(Class<R> clazz, Supplier<S> supplier) {
             this.supplier = Objects.requireNonNull(supplier, "supplier must not be null");
             this.clazz = Objects.requireNonNull(clazz, "clazz must not be null");
@@ -117,52 +124,14 @@ public interface Core<T> {
     boolean isActiv();
 
     /**
-     * Registers a Supplier with a key in the core for once useage.
+     * Register a ui element to be show only once via a supplied key.
      *
-     * @param <U>
-     * @param key          the unique key for usage with {@link #showOnce(java.lang.String) }.
-     * @param paneSupplier the supplier of the pane
-     * @throws NullPointerException if the key was null or blank or the supplier was null.
+     * @param key the key identifing the once element, must not be null
+     * @param in  the in of class token and optional supplier, must not be null
+     * @throws NullPointerException     if key or in are null
+     * @throws IllegalArgumentException if supplied in is not supported.
      */
-    <U extends Pane> void registerOnceFx(String key, Supplier<U> paneSupplier) throws NullPointerException;
-
-    /**
-     * Registers a pane class with a key in the core for once useage.
-     * Will be created via reflections. Intended usage pattern is in the cdi environment.
-     *
-     * @param key       the unique key for usage with {@link #showOnce(java.lang.String) }.
-     * @param paneClass the class of the pane.
-     * @throws NullPointerException if the key was null or blank or the controllerClass was null.
-     */
-    void registerOnceFx(String key, Class<? extends Pane> paneClass) throws NullPointerException;
-
-    /**
-     * Registers a Supplier with a key in the core for once useage.
-     *
-     * @param key           the unique key for usage with {@link #showOnce(java.lang.String) }.
-     * @param panelSupplier the supplier for the panel
-     * @throws NullPointerException if the key was null or blank or the supplier was null.
-     */
-    void registerOnceSwing(String key, Supplier<? extends JPanel> panelSupplier) throws NullPointerException;
-
-    /**
-     * Registers a panel class with a key in the core for once useage.
-     * Will be created via reflections. Intended usage pattern is in the cdi environment.
-     *
-     * @param key        the unique key for usage with {@link #showOnce(java.lang.String) }.
-     * @param panelClass the class of the panel.
-     * @throws NullPointerException
-     */
-    void registerOnceSwing(String key, Class<? extends JPanel> panelClass) throws NullPointerException;
-
-    /**
-     * Registers an FxController with a key in the core for once useage.
-     *
-     * @param key             the unique key for usage with {@link #showOnce(java.lang.String) }.
-     * @param controllerClass the fx controller class
-     * @throws NullPointerException if the key was null or blank or the controllerClass was null.
-     */
-    void registerOnceFxml(String key, Class<? extends FxController> controllerClass) throws NullPointerException;
+    public void registerOnce(String key, Core.In<?, ?> in) throws NullPointerException, IllegalArgumentException;
 
     /**
      * Shows a before registerd once element either creating it or refocusing, if still acitve.

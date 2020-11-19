@@ -37,7 +37,7 @@ public class ShowCaseSwing {
 
         public SwingPanel() {
             MainPanelAddButtons main = new MainPanelAddButtons();
-            for (Smenu smenu : new ShowCaseUniversal().menu()) {
+            for (Smenu smenu : ShowCaseUniversal.menu()) {
                 JMenu submenu = new JMenu(smenu.name);
                 for (Sitem item : smenu.items) {
                     JMenuItem menuItem = new JMenuItem(item.key);
@@ -53,6 +53,7 @@ public class ShowCaseSwing {
 
     public static void main(String[] args) {
         UiCore.startSwing(() -> new SwingPanel());
+        ShowCaseUniversal.registerGlobals();
     }
 
 }

@@ -25,7 +25,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
 
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.ui.Once;
 import eu.ggnet.saft.core.ui.ResultProducer;
 
 import static javafx.geometry.Pos.CENTER_RIGHT;
@@ -34,7 +33,6 @@ import static javafx.geometry.Pos.CENTER_RIGHT;
  *
  * @author oliver.guenther
  */
-@Once
 public class OnceInputPane extends BorderPane implements ResultProducer<String>, Consumer<String> {
 
     private TextField tf;

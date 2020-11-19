@@ -4,7 +4,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
 import eu.ggnet.saft.core.ui.Frame;
-import eu.ggnet.saft.core.ui.Once;
 
 import static javafx.scene.text.Font.font;
 
@@ -13,7 +12,6 @@ import static javafx.scene.text.Font.font;
  * @author oliver.guenther
  */
 @Frame
-@Once
 public class PaneAsFrame extends BorderPane {
 
     public PaneAsFrame() {
