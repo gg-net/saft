@@ -7,6 +7,9 @@ package eu.ggnet.saft.sample.support;
 
 import java.util.function.Consumer;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import eu.ggnet.saft.core.ui.StoreLocation;
 
 /**
@@ -15,6 +18,9 @@ import eu.ggnet.saft.core.ui.StoreLocation;
  */
 @StoreLocation
 public class UnitViewer extends javax.swing.JPanel implements Consumer<String> {
+
+    @Inject
+    private CdiInput cdiInput;
 
     /**
      * Creates new form UnitViewer
@@ -25,12 +31,19 @@ public class UnitViewer extends javax.swing.JPanel implements Consumer<String> {
 
     public UnitViewer(String text) {
         initComponents();
-        textArea.setText(text);
+        accept(text);
     }
 
     @Override
-    public void accept(String t) {
-        textArea.setText(t);
+    public void accept(String text) {
+        if ( cdiInput != null ) textArea.setText(text + "\n" + cdiInput.msg());
+        else textArea.setText(text);
+
+    }
+
+    @PostConstruct
+    private void postConst() {
+        accept("");
     }
 
     /**

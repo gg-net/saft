@@ -21,10 +21,11 @@ import java.awt.BorderLayout;
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.se.SeContainer;
 import javax.enterprise.inject.se.SeContainerInitializer;
+import javax.inject.Inject;
 import javax.swing.*;
 
-import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.Title;
 import eu.ggnet.saft.sample.support.*;
 import eu.ggnet.saft.sample.support.ShowCaseUniversal.Sitem;
@@ -35,6 +36,12 @@ import eu.ggnet.saft.sample.support.ShowCaseUniversal.Smenu;
  * @author oliver.guenther
  */
 public class ShowCaseCdiSwing {
+
+    @Inject
+    private Saft saft;
+
+    @Inject
+    private Instance<Object> instance;
 
     @Title("ShowCase Swing")
     public static class SwingPanel extends JPanel {
@@ -56,11 +63,15 @@ public class ShowCaseCdiSwing {
     }
 
     public void start(final SeContainer container) {
-        UiCore.startSwing(() -> new SwingPanel());
+        System.out.println("Saft :" + saft);
+        JFrame mainWindow = UiUtil.startSwing(() -> new SwingPanel());
+        saft.init(new Swing(saft, mainWindow, (Class<?> param) -> {
+            System.out.println("using initializer for " + param);
+            return instance.select(param).get();
+        }));
+        UiCore.initGlobal(saft);
         UiCore.global().addOnShutdown(() -> {
             if ( container.isRunning() ) {
-                // Shutdown the global executor.
-//            container.getBeanManager().createInstance().select(ExecutorManager.class).get().shutdown();
                 container.close();
             }
         });

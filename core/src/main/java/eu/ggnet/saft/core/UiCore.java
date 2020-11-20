@@ -2,8 +2,6 @@ package eu.ggnet.saft.core;
 
 import java.awt.Component;
 import java.awt.Window;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -36,20 +34,6 @@ public class UiCore {
     private final static Logger L = LoggerFactory.getLogger(UiCore.class);
 
     private static final Set<Runnable> ON_SHUTDOWN = new HashSet<>();
-
-    /**
-     *
-     * @deprecated Remove after builder optimisation
-     */
-    @Deprecated
-    private static JFrame mainFrame = null; // Frame in Swing Mode
-
-    /**
-     *
-     * @deprecated Remove after builder optimisation
-     */
-    @Deprecated
-    private static Stage mainStage = null; // Frame in Fx Mode
 
     /**
      *
@@ -91,7 +75,7 @@ public class UiCore {
      * @return the global saft.
      */
     // TODO: Reconsider, if an autoinit is something wanted. There may be cases, like ui elements displayed before the Saft core is up. A fail first might help solve these.
-    public static Saft global() {
+    public static synchronized Saft global() {
         if ( saft == null ) {
             L.info("Initialising Saft in classic mode using defaults.");
             // init defaults.
@@ -130,24 +114,12 @@ public class UiCore {
     }
 
     /**
-     * interim Mode, Saft connects to a running environment.
+     * Shortcut for UiCore.global().init(new Swing(UiCore.global(), mainView));
      *
      * @param mainView the mainView to continue on.
      */
     public static void continueSwing(JFrame mainView) {
-        global().init(Swing.class, mainView);
-        mainFrame = mainView;
-
-        // TODO: This must be moved to saft
-        mainView.addWindowListener(new WindowAdapter() {
-
-            @Override
-            public void windowClosed(WindowEvent e) {
-                global().shutdown();
-            }
-
-        });
-        postStartUp();
+        global().init(new Swing(global(), mainView));
     }
 
     /**
@@ -197,8 +169,7 @@ public class UiCore {
      * @param builder      the build for the main ui.
      */
     public static <T extends Parent> void startJavaFx(final Stage primaryStage, final Callable<T> builder) {
-        global().init(Fx.class, primaryStage);
-        mainStage = primaryStage;
+        global().init(new Fx(global(), primaryStage));
         UiUtil.dispatchFx(() -> {
             Parent p = builder.call();
             Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
@@ -216,7 +187,6 @@ public class UiCore {
             });
             return null;
         });
-        postStartUp();
     }
 
     /**
@@ -231,12 +201,10 @@ public class UiCore {
      * @param primaryStage the primaryStage for the application, not yet visible.
      */
     public static void contiuneJavaFx(final Stage primaryStage) {
-        global().init(Fx.class, primaryStage);
-        mainStage = primaryStage;
+        global().init(new Fx(global(), primaryStage));
         primaryStage.setOnCloseRequest((e) -> {
             global().shutdown();
         });
-        postStartUp();
     }
 
     /**
@@ -246,7 +214,7 @@ public class UiCore {
      * @param <T>   type restriction.
      * @param scene the first and only scene of gluon.
      */
-    // TODO: Muss complett nach gluon. 
+    // TODO: Muss complett nach gluon.
     public static <T extends Parent> void continueGluon(final Scene scene) {
         if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
 
@@ -263,13 +231,11 @@ public class UiCore {
 
         if ( !UiCore.global().gluonSupport().isPresent() )
             throw new IllegalStateException("Trying to active gluon mode, but no local Service implementation of GluonSupport found. Is the dependency saft-gluon available ?");
-        mainStage = ((Stage)scene.getWindow());
-        L.info("Starting SAFT in Gloun Mode, using MainStage {}", mainStage);
+        L.info("Starting SAFT in Gloun Mode, using MainStage");
         gluon = true;
-        mainStage.setOnCloseRequest((e) -> {
-            global().shutdown();
-        });
-        postStartUp();
+//        mainStage.setOnCloseRequest((e) -> {
+//            global().shutdown();
+//        });
     }
 
     /**
@@ -280,7 +246,7 @@ public class UiCore {
      */
     @Deprecated
     public static boolean isFx() {
-        return (mainStage != null);
+        return global().core(Fx.class).isActiv();
     }
 
     /**
@@ -302,18 +268,7 @@ public class UiCore {
      */
     @Deprecated
     public static boolean isSwing() {
-        return (mainFrame != null);
-    }
-
-    /**
-     * This to be done after a contiue or start, but for every ui toolkit.
-     */
-    private static void postStartUp() {
-        // TODO: This is a global activity. Probably remove, or consider some final global saft handling.
-        Thread.setDefaultUncaughtExceptionHandler((Thread t, Throwable e) -> {
-            L.warn("Exception occured on {}", t, e);
-            Ui.handle(e);
-        });
+        return global().core(Swing.class).isActiv();
     }
 
 }

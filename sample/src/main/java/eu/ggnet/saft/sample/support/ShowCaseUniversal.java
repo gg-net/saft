@@ -23,7 +23,6 @@ import javafx.stage.Modality;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.sample.support.*;
 
 import static javafx.scene.control.Alert.AlertType.CONFIRMATION;
 

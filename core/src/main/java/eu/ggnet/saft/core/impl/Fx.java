@@ -5,21 +5,25 @@
  */
 package eu.ggnet.saft.core.impl;
 
-import java.awt.Component;
-import java.awt.EventQueue;
+import java.awt.*;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.List;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.swing.JComponent;
+
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +48,9 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     private final Logger log = LoggerFactory.getLogger(Fx.class);
 
+    // TODO: Implement a cleanup for all references. Good candidate for WeakReferneces on Key and Value.
+    private final Map<Component, SwingNode> JAVAFX_PARENT_HELPER = new HashMap<>();
+
     /**
      * Contains all active once windows.
      */
@@ -54,14 +61,27 @@ public class Fx extends AbstractCore implements Core<Stage> {
      */
     private final Map<String, Runnable> ONCES_BUILDER = new HashMap<>();
 
+    private final Callback<Class<?>, Object> INSTANCE_INITIALZER;
+
     /**
      * Ceates a new Fx Core, should only be used in Saft.
      *
-     * @param mainParent the mainParent, if null core is dead.
+     * @param saft       the saft using this core.
+     * @param mainParent the mainParent.
      */
-    Fx(Saft saft, Stage mainParent) {
-        this.saft = saft;
+    public Fx(Saft saft, Stage mainParent) {
+        this(saft, mainParent, null);
+    }
+
+    public Fx(Saft saft, Stage mainParent, Callback<Class<?>, Object> initialzier) {
+        this.saft = Objects.requireNonNull(saft, "saft must not be null");
         this.mainParent = mainParent;
+        this.INSTANCE_INITIALZER = initialzier;
+    }
+
+    @Override
+    protected Optional<Callback<Class<?>, Object>> initializer() {
+        return Optional.ofNullable(INSTANCE_INITIALZER);
     }
 
     @Override
@@ -135,13 +155,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
         return true;
     }
 
-    // TODO: Implement a cleanup for all references. Good candidate for WeakReferneces on Key and Value.
-    private final Map<Component, SwingNode> JAVAFX_PARENT_HELPER = new HashMap<>();
-
-    public void mapParent(Component c, SwingNode n) {
-        JAVAFX_PARENT_HELPER.put(c, n);
-    }
-
     /**
      * Returns the Stage containing the swingnode with the component or null if not found.
      *
@@ -149,7 +162,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
      * @return the stage or null
      */
     // TODO: Look into the future if we need the stage or can use the window.
-    public Stage find(Component c) {
+    private Stage find(Component c) {
         log.debug("find({})", c);
         SwingNode sn = deepfind(Objects.requireNonNull(c, "Component for find is null"));
         if ( sn == null ) return null;
@@ -319,7 +332,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), EventQueue::invokeLater)
                         .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
-                        .thenApplyAsync(BuilderUtil::wrapJPanel, EventQueue::invokeLater)
+                        .thenApplyAsync(p -> wrapJPanel(p), EventQueue::invokeLater)
                         .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
                         .handle(saft.handler());
 
@@ -365,6 +378,32 @@ public class Fx extends AbstractCore implements Core<Stage> {
     private UiParameter showJavaFx(UiParameter in) {
         // Dialog has no stage set
         in.stage().ifPresent(Stage::show);
+        return in;
+    }
+
+    /**
+     * Call from EventQueue: Wraps the expected uiparameter.jpanel in the expected pane with a swingnode as children.
+     * Also updates the global parent mapping and the prefered size of the pane
+     *
+     * @param in the uiparamter
+     * @return the uiparamter
+     */
+    private UiParameter wrapJPanel(UiParameter in) {
+        Pane pane = in.pane().orElseThrow(() -> new NoSuchElementException("Pane in UiParameter is null"));
+        JComponent jpanel = in.jPanel().orElseThrow(() -> new NoSuchElementException("JPanel in UiParameter is null"));
+        if ( pane.getChildren().isEmpty() ) throw new IllegalStateException("Supplied Pane has no children, but a SwingNode is expected");
+        SwingNode sn = pane.getChildren().stream()
+                .filter(n -> n instanceof SwingNode)
+                .map(n -> (SwingNode)n)
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException("No Node of the supplied Pane is of type SwingNode"));
+        sn.setContent(jpanel);
+        JAVAFX_PARENT_HELPER.put(jpanel, sn);
+
+        Dimension preferredSize = jpanel.getPreferredSize();
+        log().debug("wrapJPanel(in): setting in.pane().prefSize from in.jPanel().preferredSize={}", preferredSize);
+        pane.setPrefHeight(preferredSize.getHeight());
+        pane.setPrefWidth(preferredSize.getWidth());
         return in;
     }
 

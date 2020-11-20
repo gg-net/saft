@@ -17,7 +17,6 @@
 package eu.ggnet.saft.core.ui.builder;
 
 import java.awt.Dialog.ModalityType;
-import java.awt.Dimension;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -41,7 +40,6 @@ import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
@@ -346,55 +344,9 @@ public final class BuilderUtil {
         return in.toBuilder().pane(p).build();
     }
 
-    /**
-     * Call from EventQueue: Wraps the expected uiparameter.jpanel in the expected pane with a swingnode as children.
-     * Also updates the global parent mapping and the prefered size of the pane
-     *
-     * @param in the uiparamter
-     * @return the uiparamter
-     */
-    public static UiParameter wrapJPanel(UiParameter in) {
-        Pane pane = in.pane().orElseThrow(() -> new NoSuchElementException("Pane in UiParameter is null"));
-        JComponent jpanel = in.jPanel().orElseThrow(() -> new NoSuchElementException("JPanel in UiParameter is null"));
-        if ( pane.getChildren().isEmpty() ) throw new IllegalStateException("Supplied Pane has no children, but a SwingNode is expected");
-        SwingNode sn = pane.getChildren().stream()
-                .filter(n -> n instanceof SwingNode)
-                .map(n -> (SwingNode)n)
-                .findAny()
-                .orElseThrow(() -> new IllegalStateException("No Node of the supplied Pane is of type SwingNode"));
-        sn.setContent(jpanel);
-        in.saft().core(Fx.class).mapParent(jpanel, sn);
-
-        Dimension preferredSize = jpanel.getPreferredSize();
-        L.debug("wrapJPanel(in): setting in.pane().prefSize from in.jPanel().preferredSize={}", preferredSize);
-        pane.setPrefHeight(preferredSize.getHeight());
-        pane.setPrefWidth(preferredSize.getWidth());
-        return in;
-    }
-
     // Call only from Swing EventQueue
     public static UiParameter createJFXPanel(UiParameter in) {
         return in.toBuilder().jPanel(new JFXPanel()).build();
-    }
-
-    /**
-     * Plafrom.runlater() : Wraps a pane into a jfxpanel, which must have been set on the in.getPanel.
-     *
-     * @param in
-     * @return modified in.
-     */
-    public static UiParameter wrapPane(UiParameter in) {
-        if ( !(in.jPanel().get() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
-        JFXPanel fxp = (JFXPanel)in.jPanel().get();
-        if ( in.pane().get().getScene() != null ) {
-            L.debug("wrapPane(in): in.pane().getScene() is not null, probally a javafx dialog to wrap, reusing");
-            fxp.setScene(in.pane().get().getScene());
-        } else {
-            L.debug("wrapPane(in): in.pane().getScene() is null, creating");
-            fxp.setScene(new Scene(in.pane().get(), Color.TRANSPARENT));
-        }
-        in.saft().core(Swing.class).mapParent(fxp);
-        return in;
     }
 
     public static UiParameter produceFxml(UiParameter in) {

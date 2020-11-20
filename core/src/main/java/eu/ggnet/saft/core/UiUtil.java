@@ -5,9 +5,19 @@
  */
 package eu.ggnet.saft.core;
 
+import java.awt.Component;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Optional;
 import java.util.concurrent.*;
 
+import javax.swing.JFrame;
+
 import javafx.application.Platform;
+import javafx.beans.property.StringProperty;
+
+import eu.ggnet.saft.core.ui.SwingSaft;
+import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.core.ui.builder.BuilderUtil;
 
 /**
  * Ui Utils.
@@ -91,6 +101,34 @@ public class UiUtil {
             er.run();
             return null;
         });
+    }
+
+    // TODO: Not nice, recosider name.
+    public static <T extends Component> JFrame startSwing(final Callable<T> builder) throws RuntimeException {
+        try {
+            return SwingSaft.dispatch(() -> {
+                T p = builder.call();
+                JFrame frame = new JFrame();
+                Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
+                if ( optionalTitleProperty.isPresent() ) {
+                    optionalTitleProperty.get().addListener((ob, o, n) -> {
+                        frame.setTitle(n);
+                        frame.setName(n);
+                    });
+                } else if ( p.getClass().getAnnotation(Title.class) != null ) {
+                    frame.setTitle(p.getClass().getAnnotation(Title.class).value());
+                    frame.setName(p.getClass().getAnnotation(Title.class).value());
+                }
+                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                frame.getContentPane().add(p);
+                frame.pack();
+                frame.setLocationByPlatform(true);
+                frame.setVisible(true);
+                return frame;
+            });
+        } catch (InterruptedException | InvocationTargetException | ExecutionException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
 }

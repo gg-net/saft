@@ -22,6 +22,7 @@ import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.util.Callback;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,7 +46,7 @@ public class Swing extends AbstractCore implements Core<Window> {
 
     private final Saft saft;
 
-    private final JFrame mainParent;
+    private final JFrame mainWindow;
 
     private final Logger log = LoggerFactory.getLogger(Swing.class);
 
@@ -62,37 +63,34 @@ public class Swing extends AbstractCore implements Core<Window> {
      */
     private final Map<String, Runnable> ONCES_BUILDER = new HashMap<>();
 
-    /**
-     * Registers a jfx panel in the ui parent helper.
-     * Needed for finding parents in javafx/swing mixed environments.
-     *
-     * @param fxp the jfxpanel
-     */
-    //TODO: Findout, if this can be keept more private
-    public void mapParent(JFXPanel fxp) {
-        SWING_PARENT_HELPER.put(fxp.getScene(), fxp);
+    private final Callback<Class<?>, Object> INSTANCE_INITIALZER;
+
+    public Swing(Saft saft, JFrame mainParent) {
+        this(saft, mainParent, null);
     }
 
-    /**
-     * Returns the Swing Window in Swing Mode from a wrapped JavaFx Node.
-     *
-     * @param p the node
-     * @return a window
-     */
-    //TODO: Findout, if this can be keept more private
-    public Optional<Window> windowAncestor(Node p) {
-        if ( p == null ) return Optional.empty();
-        log.debug("windowAncestor(node) node.getScene()={}, SWING_PARENT_HELPER.keySet()={}", p.getScene(), SWING_PARENT_HELPER.keySet());
-        return SwingSaft.windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
-    }
-
-    Swing(Saft saft, JFrame mainParent) {
+    public Swing(final Saft saft, JFrame mainWindow, Callback<Class<?>, Object> initialzier) {
         // TODO: Global activity. reconsider.
         new JFXPanel(); // Start the Fx platform.
         Platform.setImplicitExit(false);
 
-        this.saft = saft;
-        this.mainParent = mainParent;
+        this.saft = Objects.requireNonNull(saft, "saft must not be null");
+        this.mainWindow = mainWindow;
+        this.INSTANCE_INITIALZER = initialzier;
+
+        mainWindow.addWindowListener(new WindowAdapter() {
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+                saft.shutdown();
+            }
+
+        });
+    }
+
+    @Override
+    protected Optional<Callback<Class<?>, Object>> initializer() {
+        return Optional.ofNullable(INSTANCE_INITIALZER);
     }
 
     @Override
@@ -134,7 +132,7 @@ public class Swing extends AbstractCore implements Core<Window> {
 
     @Override
     public Optional<Window> unwrapMain() {
-        return Optional.of(mainParent);
+        return Optional.of(mainWindow);
     }
 
     @Override
@@ -189,19 +187,6 @@ public class Swing extends AbstractCore implements Core<Window> {
             w.setLocation(i, i);
             i = i + 20;
         }
-    }
-
-    private void registerActiveAndToFront(String key, Window w) {
-        log().debug("registerActiveAndToFront(key={})", key);
-        ONCES_ACTIVE.put(key, w);
-        w.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                log().debug("windowClosing() once closeing " + key + ", removing from active map");
-                ONCES_ACTIVE.remove(key);
-            }
-        });
-        w.toFront();
     }
 
     // TODO: Baue noch was ein, das wenn show (also das Runable aufgerufen wird, das bist etwas im der ONCES_ACTIVE map ankommt, es nicht noch ein 2 mal gestartet wird.
@@ -262,7 +247,7 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         .thenApply(BuilderUtil::modifyDialog)
                         .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater)
+                        .thenApplyAsync(p -> wrapPane(p), Platform::runLater)
                         .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
                         .handle(saft.handler());
 
@@ -283,7 +268,7 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         //                        .thenApplyAsync(i -> i, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
                         .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater)
+                        .thenApplyAsync(p -> wrapPane(p), Platform::runLater)
                         .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
                         .handle(saft.handler());
 
@@ -295,7 +280,7 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         //                        .thenApplyAsync(i -> i, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
                         .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::wrapPane, Platform::runLater)
+                        .thenApplyAsync(p -> wrapPane(p), Platform::runLater)
                         .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
                         .handle(saft.handler());
 
@@ -303,6 +288,45 @@ public class Swing extends AbstractCore implements Core<Window> {
                 throw new IllegalArgumentException(type + " not implemented");
 
         }
+    }
+
+    private UiParameter wrapPane(UiParameter in) {
+        if ( !(in.jPanel().get() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
+        JFXPanel fxp = (JFXPanel)in.jPanel().get();
+        if ( in.pane().get().getScene() != null ) {
+            log().debug("wrapPane(in): in.pane().getScene() is not null, probally a javafx dialog to wrap, reusing");
+            fxp.setScene(in.pane().get().getScene());
+        } else {
+            log().debug("wrapPane(in): in.pane().getScene() is null, creating");
+            fxp.setScene(new Scene(in.pane().get(), javafx.scene.paint.Color.TRANSPARENT));
+        }
+        SWING_PARENT_HELPER.put(fxp.getScene(), fxp);
+        return in;
+    }
+
+    /**
+     * Returns the Swing Window in Swing Mode from a wrapped JavaFx Node.
+     *
+     * @param p the node
+     * @return a window
+     */
+    private Optional<Window> windowAncestor(Node p) {
+        if ( p == null ) return Optional.empty();
+        log.debug("windowAncestor(node) node.getScene()={}, SWING_PARENT_HELPER.keySet()={}", p.getScene(), SWING_PARENT_HELPER.keySet());
+        return SwingSaft.windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
+    }
+
+    private void registerActiveAndToFront(String key, Window w) {
+        log().debug("registerActiveAndToFront(key={})", key);
+        ONCES_ACTIVE.put(key, w);
+        w.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                log().debug("windowClosing() once closeing " + key + ", removing from active map");
+                ONCES_ACTIVE.remove(key);
+            }
+        });
+        w.toFront();
     }
 
 }

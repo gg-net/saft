@@ -1,8 +1,12 @@
 package eu.ggnet.saft.sample.support;
 
-import eu.ggnet.saft.core.ui.StoreLocation;
-import eu.ggnet.saft.core.ui.FxController;
-import eu.ggnet.saft.core.ui.Frame;
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import javafx.fxml.FXML;
+import javafx.scene.control.TextArea;
+
+import eu.ggnet.saft.core.ui.*;
 
 /**
  * FXML Controller class
@@ -12,5 +16,22 @@ import eu.ggnet.saft.core.ui.Frame;
 @Frame
 @StoreLocation
 public class BasicApplicationController implements FxController {
+
+    @FXML
+    private TextArea textArea;
+
+    @Inject
+    private CdiInput cdiInput;
+
+    @FXML
+    private void initialize() {
+        System.out.println("initialize() cdiInput set ? " + (cdiInput != null) + " textArea set ?" + (textArea != null));
+        if ( cdiInput != null ) textArea.setText(cdiInput.msg());
+    }
+
+    @PostConstruct
+    private void postCdi() {
+        System.out.println("postCdi() cdiInput set ? " + (cdiInput != null) + " textArea set ?" + (textArea != null));
+    }
 
 }

@@ -6,6 +6,7 @@
 package eu.ggnet.saft.core.impl;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
@@ -17,6 +18,7 @@ import javax.swing.JPanel;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.layout.Pane;
+import javafx.util.Callback;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,18 +37,21 @@ import static eu.ggnet.saft.core.ui.builder.UiParameter.Type.*;
  *
  * @author oliver.guenther
  */
-public class AbstractCore {
+public abstract class AbstractCore {
 
     // TODO: later use optional inject logger.
     protected Logger log() {
         return LoggerFactory.getLogger(AbstractCore.class);
     }
 
+    protected abstract Optional<Callback<Class<?>, Object>> initializer();
+
     // TODO: keep as instance method, for future cdi usage.
     protected Object createInstance(Core.In<?, ?> in) {
         Core.In<Object, Object> i2 = (Core.In<Object, Object>)in;
         return i2.supplier().map(Supplier::get).orElseGet(() -> {
             try {
+                if ( initializer().isPresent() ) return initializer().get().call(i2.clazz());
                 return i2.clazz().newInstance();
             } catch (InstantiationException | IllegalAccessException ex) {
                 throw new RuntimeException("Error during " + i2.clazz().getName() + ".newInstance(), probablly no zero argument constructor available", ex);
@@ -83,7 +88,9 @@ public class AbstractCore {
             throw new IllegalArgumentException("produceFxml(" + in + ") used illegal, as selected Type must be " + FXML + " but was " + selectType(in));
         try {
             Class<FxController> controllerClazz = (Class<FxController>)in.clazz();  // Cast is a shortcut.
-            FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(loadView(controllerClazz), "No View for " + controllerClazz));
+            FXMLLoader loader = initializer().isPresent()
+                    ? new FXMLLoader(Objects.requireNonNull(loadView(controllerClazz), "fxml must not be null"), null, null, initializer().get(), StandardCharsets.UTF_8)
+                    : new FXMLLoader(Objects.requireNonNull(loadView(controllerClazz), "No View for " + controllerClazz));
             loader.load();
             Objects.requireNonNull(loader.getController(), "No controller based on " + controllerClazz + ". Controller set in Fxml ?");
             Pane pane = loader.getRoot();

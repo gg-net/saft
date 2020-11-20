@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import java.net.*?>
-<?import java.util.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.paint.*?>
-<?import javafx.scene.text.*?>
+<?import java.net.URL?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.ggnet.saft.sample.support.BasicApplicationController">
+<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.ggnet.saft.sample.support.BasicApplicationController">
     <children>
         <MenuBar VBox.vgrow="NEVER">
             <menus>
@@ -49,15 +51,15 @@
                 </Menu>
             </menus>
         </MenuBar>
-        <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="-1.0" prefWidth="-1.0" VBox.vgrow="ALWAYS">
-            <children>
-                <Label alignment="CENTER" layoutX="155.0" layoutY="177.0" style="&#10;" text="Drag components from Library here…" textAlignment="CENTER" textFill="#9f9f9f" wrapText="false">
-                    <font>
-                        <Font size="18.0" />
-                    </font>
-                </Label>
-            </children>
-        </AnchorPane>
+      <BorderPane VBox.vgrow="ALWAYS">
+         <center>
+            <TextArea fx:id="textArea" prefHeight="200.0" prefWidth="200.0" text="No Text set" BorderPane.alignment="CENTER">
+               <font>
+                  <Font size="22.0" />
+               </font>
+            </TextArea>
+         </center>
+      </BorderPane>
     </children>
     <stylesheets>
         <URL value="@BasicApplicationView.css" />

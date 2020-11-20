@@ -21,8 +21,9 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.impl.Core;
 import eu.ggnet.saft.core.impl.Core.In;
-import eu.ggnet.saft.core.impl.*;
+import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.*;
 import eu.ggnet.saft.core.ui.exception.*;
@@ -35,11 +36,90 @@ import eu.ggnet.saft.core.ui.exception.*;
  */
 public class Saft {
 
-    private final static Logger L = LoggerFactory.getLogger(Saft.class);
+    private final static Core<Object> DEAD_CORE = new Core<Object>() {
+        private final Logger log = LoggerFactory.getLogger(Core.class);
+
+        @Override
+        public void parentIfPresent(UiParent parent, Consumer<Object> consumer) {
+            log.warn("parentIfPresent() call on dead core");
+        }
+
+        @Override
+        public void parentIfPresent(Optional<UiParent> parent, Consumer<Object> consumer) {
+            log.warn("parentIfPresent() call on dead core");
+        }
+
+        @Override
+        public void parentIfPresent(Consumer<Object> consumer) {
+            log.warn("parentIfPresent() call on dead core");
+        }
+
+        @Override
+        public Optional<Object> unwrap(UiParent parent) {
+            log.warn("unwrap() call on dead core");
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Object> unwrap(Optional<UiParent> parent) {
+            log.warn("unwrap() call on dead core");
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Object> unwrapMain() {
+            log.warn("unwrapMain() call on dead core");
+            return Optional.empty();
+        }
+
+        @Override
+        public void shutdown() {
+            log.warn("shutdown() call on dead core");
+        }
+
+        @Override
+        public void add(Object window) {
+            log.warn("add() call on dead core");
+        }
+
+        @Override
+        public boolean isActiv() {
+            return false;
+        }
+
+        @Override
+        public void relocate() {
+            log.warn("relocate() call on dead core");
+        }
+
+        @Override
+        public void closeOf(UiParent parent) {
+            log.warn("closeOf() call on dead core");
+        }
+
+        @Override
+        public void registerOnce(String key, In<?, ?> in) throws NullPointerException, IllegalArgumentException {
+            throw new IllegalStateException("registerOnce() call on dead core");
+        }
+
+        @Override
+        public boolean showOnce(String key) throws NullPointerException {
+            throw new IllegalStateException("registerOnce() call on dead core");
+        }
+
+        @Override
+        public <R, S extends R> CompletableFuture<Object> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
+            throw new IllegalStateException("registerOnce() call on dead core");
+        }
+
+        @Override
+        public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
+            throw new IllegalStateException("registerOnce() call on dead core");
+        }
+
+    };
 
     public final static String HOME = "Home";
-
-    private final static DefaultCoreFactory DEFAULT_CORE_FACTORY = new DefaultCoreFactory();
 
     private final LocationStorage locationStorage;
 
@@ -59,11 +139,11 @@ public class Saft {
     // This implementation only handles parents in swing mode. in Fx mode it's displayed anythere.
     private BiConsumer<Optional<UiParent>, Throwable> exceptionConsumerFinal = (Optional<UiParent> parent, Throwable b) -> {
         if ( b instanceof CancellationException || b.getCause() instanceof CancellationException ) {
-            L.debug("FinalExceptionConsumer catches CancellationException, which is ignored by default");
+            log().debug("FinalExceptionConsumer catches CancellationException, which is ignored by default");
             return;
         }
 
-        Swing sc = Saft.this.core(Swing.class);
+        Core<Window> sc = Saft.this.core(Swing.class);
         Window p = sc.unwrap(parent).orElse(sc.unwrapMain().orElse(null));
 
         Runnable r = () -> {
@@ -75,15 +155,17 @@ public class Saft {
     };
 
     /**
-     * Default Constructor, ready for own implementations.
-     * To ensure that no one will make an instance of Saft by error, the constructor is package private.
-     * In the classic mode, use {@link UiCore#initGlobal()} and {@link UiCore#global() }.
-     * <p>
+     * Default Constructor, ready for own implementations.To ensure that no one will make an instance of Saft by error, the constructor is package private.In
+     * the classic mode, use {@link UiCore#initGlobal()} and {@link UiCore#global()}
+     * .<p>
      * If more that one instance is needed (using multiple cdi container in one vm for example) extend Saft.
      * For transition purposes the {@link UiCore#initGlobal(eu.ggnet.saft.core.Saft) } is designed.
      * </p>
+     *
+     * @param locationStorage
+     * @param executorService
      */
-    Saft(LocationStorage locationStorage, ExecutorService executorService) {
+    public Saft(LocationStorage locationStorage, ExecutorService executorService) {
         this.locationStorage = Objects.requireNonNull(locationStorage, "LocationStorage must not be null");
         this.executorService = Objects.requireNonNull(executorService, "ExecutorService must not be null");
     }
@@ -95,22 +177,18 @@ public class Saft {
      * @param typeClass
      * @return
      */
-    public <T extends Core<V>, V> T core(Class<T> typeClass) {
+    public <T extends Core<V>, V> Core<V> core(Class<T> typeClass) {
         Objects.requireNonNull(typeClass, "typeClass must not be null");
         if ( core == null ) {
-            L.warn("core({}) called in, but core is not yet set. Returning dead core");
-            // TODO: Implement ServiceLoader for different cores later.
-
-            return DEFAULT_CORE_FACTORY.dead(typeClass);
+            log().warn("core({}) called in, but core is not yet set. Returning dead core");
+            return (Core<V>)DEAD_CORE;
         }
         if ( typeClass.isAssignableFrom(core.getClass()) ) {
             return (T)core;
         }
 
-        L.warn("core({}) called in, but core is {}. Returning dead core", core.getClass().getName());
-
-        // TODO: Implement ServiceLoader for different cores later.
-        return DEFAULT_CORE_FACTORY.dead(typeClass);
+        log().warn("core(typeClass={}) called, but core is {}. Returning dead core", typeClass, core.getClass().getName());
+        return (Core<V>)DEAD_CORE;
     }
 
     /**
@@ -119,9 +197,7 @@ public class Saft {
      * @return
      */
     public Core<?> core() {
-        if ( core == null ) {
-            return DEFAULT_CORE_FACTORY.dead();
-        }
+        if ( core == null ) return DEAD_CORE;
         return core;
     }
 
@@ -130,19 +206,16 @@ public class Saft {
      * May only be called once. But Saft builder can be used before.
      *
      * @param <T>
-     * @param typeClass  must not be null.
-     * @param mainParent must not be null.
-     * @throws NullPointerException if typeclass or mainParen are null
+     * @param core must not be null.
+     * @throws NullPointerException  if typeclass or mainParen are null
+     * @throws IllegalStateException if core is allready initialised
      */
-    public <T extends Core<V>, V> void init(Class<T> typeClass, V mainParent) throws NullPointerException {
-        Objects.requireNonNull(typeClass, "typeClass must not be null");
-        Objects.requireNonNull(mainParent, "mainParent must not be null");
-        if ( core != null ) throw new IllegalStateException("Core is allready initialized. Second call not allowed");
-        // TODO: Implement ServiceLoader for different cores later.
+    public <T extends Core<V>, V> void init(T core) throws NullPointerException, IllegalStateException {
+        Objects.requireNonNull(core, "core must not be null");
+        if ( this.core != null ) throw new IllegalStateException("Core is allready initialized. Second call not allowed");
+        this.core = core;
+        log().info("init() complete with core " + core.getClass().getName());
 
-        if ( core == null ) core = DEFAULT_CORE_FACTORY.create(this, typeClass, mainParent);
-        if ( core == null ) throw new IllegalStateException("No CoreFactory produced a core for type " + typeClass.getName());
-        L.info("init() complete with core " + core.getClass().getName());
         // TODO: All Knowledge of continue and start must be merged here.
     }
 
@@ -404,22 +477,27 @@ public class Saft {
 
     public void addOnShutdown(Runnable runnable) {
         Objects.requireNonNull(runnable, "runnable must not be null");
-        L.debug("addOnShutdown({})", runnable);
+        log().debug("addOnShutdown({})", runnable);
         onShutdown.add(runnable);
     }
 
     public void shutdown() {
         if ( !shuttingDown.compareAndSet(false, true) ) {
-            L.debug("shutdown() called after shutdown. Ignored");
+            log().debug("shutdown() called after shutdown. Ignored");
             return;
         }
-        L.info("shutdown()");
-        L.debug("shutdown() running onShutdown");
+        log().info("shutdown()");
+        log().debug("shutdown() running onShutdown");
         onShutdown.forEach(Runnable::run);
-        L.debug("shutdown() shutdown the executor service");
+        log().debug("shutdown() shutdown the executor service");
         // TODO: Reconsider, the executorservice could be global in a multisaft environment.
         executorService().shutdownNow();
         core().shutdown();
+    }
+
+    protected Logger log() {
+        // TODO: Consider Posibility of different loggers/Safts in one vm (jpro.one idea)
+        return LoggerFactory.getLogger(Saft.class);
     }
 
 }
