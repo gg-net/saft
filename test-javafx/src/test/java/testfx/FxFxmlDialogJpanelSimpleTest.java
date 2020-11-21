@@ -37,7 +37,6 @@ import eu.ggnet.saft.core.UiCore;
 
 import testfx.support.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.testfx.assertions.api.Assertions.assertThat;
 
 /**
@@ -59,7 +58,7 @@ public class FxFxmlDialogJpanelSimpleTest {
         control.clear();
         for (char c : text.toCharArray()) {
             control.appendText(Character.toString(c));
-            Thread.sleep(250);
+            Thread.sleep(100);
         }
     }
 

@@ -32,13 +32,13 @@ public class GluonDialogBuilder {
 
     // See eval methods of Ui.build().dialog()
     public <T, V extends Dialog<T>> Result<T> eval(Callable<V> dialogProducer) {
-        return new Result<>(internalShow(null, dialogProducer)
+        return new Result<>(UiCore.global(), internalShow(null, dialogProducer)
                 .thenApplyAsync(GluonBuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
     }
 
     // See eval methods of Ui.build().dialog()
     public <T, P, V extends Dialog<T> & Consumer<P>> Result<T> eval(Callable<P> preProducer, Callable<V> dialogProducer) {
-        return new Result<>(internalShow(preProducer, dialogProducer)
+        return new Result<>(UiCore.global(), internalShow(preProducer, dialogProducer)
                 .thenApplyAsync(GluonBuilderUtil::waitAndProduceResult, UiCore.getExecutor()));
 
     }

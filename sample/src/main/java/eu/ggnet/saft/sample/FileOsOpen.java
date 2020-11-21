@@ -32,7 +32,7 @@ public class FileOsOpen {
     }
 
     public static Result<File> open(String title) {
-        return new Result<>(CompletableFuture.supplyAsync(() -> {
+        return new Result<>(UiCore.global(), CompletableFuture.supplyAsync(() -> {
             FileChooser fileChooser = new FileChooser();
             if ( title == null ) fileChooser.setTitle("Open File");
             else fileChooser.setTitle(title);
