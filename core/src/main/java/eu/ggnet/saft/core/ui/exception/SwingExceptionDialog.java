@@ -1,12 +1,22 @@
 package eu.ggnet.saft.core.ui.exception;
 
 import java.awt.Window;
+import java.io.*;
 
 /**
  *
  * @author oliver.guenther
  */
 public class SwingExceptionDialog extends javax.swing.JDialog {
+
+    public static void show(Window parent, String head, Throwable b) {
+        new SwingExceptionDialog(parent)
+                .head(head)
+                .message(extractDeepestMessage(b))
+                .overview(toMultilineStacktraceMessages(b))
+                .details(toStackStrace(b))
+                .showDialog();
+    }
 
     public static void show(Window parent, String head, String messsage, String overview, String details) {
         new SwingExceptionDialog(parent)
@@ -15,6 +25,45 @@ public class SwingExceptionDialog extends javax.swing.JDialog {
                 .overview(overview)
                 .details(details)
                 .showDialog();
+    }
+
+    /**
+     * Extract the deepest Throwable and return its message.
+     *
+     * @param ex the exception to parse the stack trace.
+     * @return the simple class name and the message of the deepest throwable.
+     */
+    private static String extractDeepestMessage(Throwable ex) {
+        if ( ex == null ) return "";
+        if ( ex.getCause() == null ) return ex.getClass().getSimpleName() + ": " + ex.getLocalizedMessage();
+        return extractDeepestMessage(ex.getCause());
+    }
+
+    /**
+     * Returns all stack trace class simple names and messages as a multiline string.
+     *
+     * @param ex the exception to start with.
+     * @return all messages and class names.
+     */
+    private static String toMultilineStacktraceMessages(Throwable ex) {
+        if ( ex == null ) return "";
+        if ( ex.getCause() == null ) return ex.getClass().getSimpleName() + ":" + ex.getLocalizedMessage();
+        return ex.getClass().getSimpleName() + ":" + ex.getLocalizedMessage() + "\n" + toMultilineStacktraceMessages(ex.getCause());
+    }
+
+    /**
+     * Converts exception stack trace as string
+     *
+     * @param ex the stack trace
+     * @return {@link Throwable#printStackTrace()} as string.
+     */
+    private static String toStackStrace(Throwable ex) {
+        try (StringWriter sw = new StringWriter()) {
+            ex.printStackTrace(new PrintWriter(sw));
+            return sw.toString();
+        } catch (IOException e) {
+            return e.getMessage();
+        }
     }
 
     /**

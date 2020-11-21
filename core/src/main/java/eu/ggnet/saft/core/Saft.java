@@ -6,7 +6,7 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
-import java.awt.Window;
+import java.awt.EventQueue;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,8 +26,10 @@ import eu.ggnet.saft.core.impl.Core;
 import eu.ggnet.saft.core.impl.Core.In;
 import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.*;
-import eu.ggnet.saft.core.ui.builder.*;
-import eu.ggnet.saft.core.ui.exception.*;
+import eu.ggnet.saft.core.ui.builder.PreBuilder;
+import eu.ggnet.saft.core.ui.builder.Result;
+import eu.ggnet.saft.core.ui.exception.AndFinallyHandler;
+import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
 
 /**
  * The core of saft, everything that is keept in a singleton way, is registered or held here.
@@ -121,8 +123,6 @@ public class Saft {
 
     private final ExecutorService executorService;
 
-    private Optional<GluonSupport> gluonSupport = Optional.empty();
-
     private final Map<Class<? extends Throwable>, BiConsumer<Optional<UiParent>, ? extends Throwable>> exceptionConsumers = new HashMap<>();
 
     private Core<?> core = null;
@@ -131,23 +131,23 @@ public class Saft {
 
     private final Set<Runnable> onShutdown = new HashSet<>();
 
-    // TODO: Implement a default implementation. Do this after the change in the builder.
     // This implementation only handles parents in swing mode. in Fx mode it's displayed anythere.
-    private BiConsumer<Optional<UiParent>, Throwable> exceptionConsumerFinal = (Optional<UiParent> parent, Throwable b) -> {
-        if ( b instanceof CancellationException || b.getCause() instanceof CancellationException ) {
-            log().debug("FinalExceptionConsumer catches CancellationException, which is ignored by default");
+    private BiConsumer<Optional<UiParent>, Throwable> exceptionConsumerFinal = (Optional<UiParent> parent, Throwable throwable) -> {
+        if ( throwable == null ) return;
+        if ( throwable instanceof CancellationException ) {
+            log().debug("FinalExceptionConsumer catches CancellationException({}), which is ignored by default", throwable.getMessage());
+            return;
+        }
+        if ( throwable instanceof CancellationException || throwable.getCause() instanceof CancellationException ) {
+            log().debug("FinalExceptionConsumer catches CancellationException({}), which is ignored by default", throwable.getCause().getMessage());
             return;
         }
 
-        Core<Window> sc = Saft.this.core(Swing.class);
-        Window p = sc.unwrap(parent).orElse(sc.unwrapMain().orElse(null));
+        EventQueue.invokeLater(() -> SwingExceptionDialog.show(
+                Saft.this.core(Swing.class).unwrap(parent).orElse(Saft.this.core(Swing.class).unwrapMain().orElse(null)),
+                "Systemfehler",
+                throwable));
 
-        Runnable r = () -> {
-            SwingExceptionDialog.show(p, "Systemfehler", ExceptionUtil.extractDeepestMessage(b),
-                    ExceptionUtil.toMultilineStacktraceMessages(b), ExceptionUtil.toStackStrace(b));
-        };
-
-        SwingSaft.run(r);
     };
 
     /**
@@ -231,25 +231,6 @@ public class Saft {
      */
     public ExecutorService executorService() {
         return executorService;
-    }
-
-    /**
-     * Returns a gluon support if gluon is enabled.
-     *
-     * @return a gluon support if gluon is enabled.
-     */
-    public Optional<GluonSupport> gluonSupport() {
-        return gluonSupport;
-    }
-
-    /**
-     * Setting the gluon support.
-     * By setting the gluon support, gluon is enabled in saft.
-     *
-     * @param gluonSupport the gluon support.
-     */
-    public void gluonSupport(GluonSupport gluonSupport) {
-        this.gluonSupport = Optional.ofNullable(gluonSupport);
     }
 
     public PreBuilder build() {
@@ -374,8 +355,6 @@ public class Saft {
      */
     // TODO: Reconsider at the end, if this method still makes sense
     public void closeWindowOf(Component c) {
-        // TODO: Remember this later
-        // if ( UiCore.isGluon() ) throw new IllegalStateException("closeWindowOf call with a swing component, not allowed in gluon model");
         core().closeOf(UiParent.of(c));
     }
 
@@ -386,11 +365,6 @@ public class Saft {
      */
     // TODO: Reconsider at the end, if this method still makes sense
     public void closeWindowOf(Node n) {
-        // TODO: Remember this later
-//        if ( UiCore.isGluon() ) {
-//            L.debug("closeWindowOf({}) gluon mode", n);
-//            UiCore.global().gluonSupport().ifPresent(g -> g.closeViewOrDialogOf(n));
-//        } else {
         core().closeOf(UiParent.of(n));
     }
 
@@ -402,15 +376,27 @@ public class Saft {
      */
     public void handle(Optional<UiParent> parent, Throwable exception) {
         for (Class<? extends Throwable> clazz : exceptionConsumers.keySet()) {
-            if ( ExceptionUtil.containsInStacktrace(clazz, exception) ) {
+            if ( containsInStacktrace(clazz, exception) ) {
                 // The cast is needed, cause of the different generic types in the map. But it is safe because of the way the map is filled. See the register methods.
                 BiConsumer<Optional<UiParent>, Throwable> consumer = (BiConsumer<Optional<UiParent>, Throwable>)exceptionConsumers.get(clazz);
-                Throwable extractedException = ExceptionUtil.extractFromStraktrace(clazz, exception);
+                Throwable extractedException = extractFromStraktrace(clazz, exception);
                 consumer.accept(parent, extractedException);
                 return;
             }
         }
         exceptionConsumerFinal.accept(parent, exception);
+    }
+
+    private boolean containsInStacktrace(Class<?> clazz, Throwable ex) {
+        if ( ex == null ) return false;
+        if ( ex.getClass().equals(clazz) ) return true;
+        return containsInStacktrace(clazz, ex.getCause());
+    }
+
+    private <T extends Throwable> T extractFromStraktrace(Class<T> clazz, Throwable ex) {
+        if ( ex == null ) throw new NullPointerException("No Class in Stacktrace : " + clazz);
+        if ( ex.getClass().equals(clazz) ) return (T)ex;
+        return extractFromStraktrace(clazz, ex.getCause());
     }
 
     public void handle(Node javafxParentAnchor, Throwable exception) {

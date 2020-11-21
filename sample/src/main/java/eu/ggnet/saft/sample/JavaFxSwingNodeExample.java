@@ -17,8 +17,10 @@
 package eu.ggnet.saft.sample;
 
 import java.awt.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.*;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -29,8 +31,6 @@ import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.Stage;
-
-import eu.ggnet.saft.core.ui.SwingSaft;
 
 /**
  *
@@ -61,7 +61,7 @@ public class JavaFxSwingNodeExample {
             bp.setTop(new Label("Oben"));
             SwingNode snq = new SwingNode();
 
-            C c = SwingSaft.dispatch(() -> {
+            C c = dispatch(() -> {
 
                 JPanel p1 = new JPanel(new BorderLayout());
                 JButton b1 = new JButton("Der Siwng Knopf");
@@ -117,6 +117,25 @@ public class JavaFxSwingNodeExample {
 
     public static void main(String[] args) {
         JavaFxSwingNode.main(args);
+    }
+
+    /**
+     * Executes the supplied callable on the EventQueue.
+     * If this method is called from the EventQueue, the same thread is used, otherwise its dispaced to the EventQueue.
+     *
+     * @param <T>      the type parameter
+     * @param callable the callable to be dispached
+     * @return the result of the callable
+     * @throws ExecutionException        see {@link Future#get() }
+     * @throws InterruptedException      See {@link Future#get() }
+     * @throws InvocationTargetException See {@link Future#get() }
+     */
+    //HINT: Internal
+    public static <T> T dispatch(Callable<T> callable) throws ExecutionException, InterruptedException, InvocationTargetException {
+        FutureTask<T> task = new FutureTask(callable);
+        if ( EventQueue.isDispatchThread() ) task.run();
+        else EventQueue.invokeLater(task);
+        return task.get();
     }
 
 }

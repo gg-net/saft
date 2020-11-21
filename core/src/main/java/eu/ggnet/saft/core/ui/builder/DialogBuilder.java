@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.impl.Core;
-import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
+import eu.ggnet.saft.core.impl.UiParameter.Type;
 
 /**
  *

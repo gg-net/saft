@@ -19,7 +19,6 @@ import static eu.ggnet.saft.core.ui.AlertType.INFO;
  *
  * @author oliver.guenther
  */
-// TODO: Don't know if it was used ever @EqualsAndHashCode
 public class AlertBuilder {
 
     private final static Logger L = LoggerFactory.getLogger(AlertBuilder.class);

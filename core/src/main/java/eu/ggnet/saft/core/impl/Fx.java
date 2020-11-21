@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
 
@@ -21,6 +22,7 @@ import javafx.beans.property.StringProperty;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -29,7 +31,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.ui.AlertType;
+import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.*;
 
 /**
@@ -233,7 +237,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     @Override
     public void closeOf(UiParent parent) {
-        unwrap(parent).ifPresent(s -> FxSaft.run(() -> s.close()));
+        unwrap(parent).ifPresent(s -> run(() -> s.close()));
     }
 
     @Override
@@ -329,7 +333,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
     public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
         return new Result<>(prepareShowEval(prebuilder, preProducer, in)
                 .thenApply((UiParameter p) -> showAndWaitJavaFx(p))
-                .thenApplyAsync((UiParameter p) -> BuilderUtil.waitAndProduceResult(p), saft.executorService()));
+                .thenApplyAsync((UiParameter p) -> waitAndProduceResult(p), saft.executorService()));
     }
 
     private <R, S extends R> CompletableFuture<UiParameter> prepareShowEval(PreBuilder preBuilder, Optional<Callable<?>> optPreProducer, Core.In<R, S> in) {
@@ -346,7 +350,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> produceJPanel(in, p), EventQueue::invokeLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
+                        .thenApplyAsync(p -> createSwingNode(p), Platform::runLater)
                         .thenApplyAsync(p -> wrapJPanel(p), EventQueue::invokeLater)
                         .thenApplyAsync(p -> constructJavaFx(p), Platform::runLater)
                         .handle(saft.handler());
@@ -445,9 +449,9 @@ public class Fx extends AbstractCore implements Core<Stage> {
             });
         });
 
-        stage.getIcons().addAll(BuilderUtil.loadJavaFxImages(in.extractReferenceClass()));
+        stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
         in.saft().core(Fx.class).add(stage);
-        if ( in.isStoreLocation() ) BuilderUtil.registerAndSetStoreLocation(in.extractReferenceClass(), stage);
+        if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
         in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed()));
         stage.setScene(new Scene(pane));
         return in.toBuilder().stage(stage).build();
@@ -467,6 +471,31 @@ public class Fx extends AbstractCore implements Core<Stage> {
         in.getClosedListenerImplemetation().ifPresent(elem -> dialog.setOnCloseRequest(e -> elem.closed()));
         dialog.showAndWait();
         return in;
+    }
+
+    /**
+     * Call from Platform: creates a SwingNode in a BorderPane and sets the pane on in
+     *
+     * @param in the uiparameter
+     * @return the modified uiparameter
+     */
+    private UiParameter createSwingNode(UiParameter in) {
+        SwingNode sn = new SwingNode();
+        BorderPane p = new BorderPane(sn);
+        return in.toBuilder().pane(p).build();
+    }
+
+    private void registerAndSetStoreLocation(Class<?> key, javafx.stage.Stage window) {
+        UiCore.global().locationStorage().loadLocation(key, window);
+        window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> UiCore.global().locationStorage().storeLocation(key, window));
+    }
+
+    private java.util.List<javafx.scene.image.Image> loadJavaFxImages(Class<?> reference) {
+        return IconConfig.possibleIcons(reference).stream()
+                .map(n -> reference.getResourceAsStream(n))
+                .filter(u -> u != null)
+                .map(r -> new javafx.scene.image.Image(r))
+                .collect(Collectors.toList());
     }
 
     /**
@@ -494,4 +523,16 @@ public class Fx extends AbstractCore implements Core<Stage> {
             saft.handle(ex);
         }
     }
+
+    // Internal api
+    /**
+     * Run on the application thread, but looking into if we are on it already.
+     *
+     * @param r a runnable.
+     */
+    private void run(Runnable r) {
+        if ( Platform.isFxApplicationThread() ) r.run();
+        else Platform.runLater(r);
+    }
+
 }

@@ -8,6 +8,7 @@ package eu.ggnet.saft.gluon.internal;
 import java.lang.reflect.Field;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.*;
 import java.util.function.Consumer;
 
 import javafx.application.Platform;
@@ -18,11 +19,9 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.UiUtil;
 import eu.ggnet.saft.core.ui.AlertType;
-import eu.ggnet.saft.core.ui.FxSaft;
-import eu.ggnet.saft.core.ui.builder.GluonSupport;
-import eu.ggnet.saft.core.ui.builder.UiParameter;
+import eu.ggnet.saft.gluon.GluonSupport;
+import eu.ggnet.saft.core.impl.UiParameter;
 
 import com.gluonhq.charm.glisten.application.MobileApplication;
 import com.gluonhq.charm.glisten.control.Dialog;
@@ -68,7 +67,7 @@ public class GluonSupportService implements GluonSupport {
 
     @Override
     public void showAlert(String title, String message, AlertType type) {
-        UiUtil.dispatchFx(() -> {
+        dispatchFx(() -> {
             Dialog<Void> d = new Dialog<>(title, message);
             switch (type) {
                 case ERROR:
@@ -86,6 +85,26 @@ public class GluonSupportService implements GluonSupport {
             return d.showAndWait();
         });
 
+    }
+
+    private <T> T dispatchFx(Callable<T> callable) throws RuntimeException {
+        try {
+            FutureTask<T> futureTask = new FutureTask<>(callable);
+            final CountDownLatch cdl = new CountDownLatch(1);
+            if ( Platform.isFxApplicationThread() ) {
+                futureTask.run();
+                cdl.countDown();
+            } else {
+                Platform.runLater(() -> {
+                    futureTask.run();
+                    cdl.countDown();
+                });
+            }
+            cdl.await();
+            return futureTask.get();
+        } catch (InterruptedException | ExecutionException ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     @Override

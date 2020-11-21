@@ -53,9 +53,10 @@ public class GluonDialogBuilder {
                 // no breakIfOnceAndActive is needed here.
                 .thenApply(GluonBuilderUtil::consumePreResult);
 
-        if ( !UiCore.isGluon() ) {
-            throw new UnsupportedOperationException("GlounDialog in Swingmode or FXMode is not yet implemented");
-        }
+        // TODO: Wenn geht das eh in den core.
+//        if ( !UiCore.isGluon() ) {
+//            throw new UnsupportedOperationException("GlounDialog in Swingmode or FXMode is not yet implemented");
+//        }
         return uniChain
                 .thenApplyAsync(GluonBuilderUtil::constructGluonDialog, Platform::runLater);
     }

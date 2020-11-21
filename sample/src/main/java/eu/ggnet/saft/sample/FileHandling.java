@@ -15,7 +15,7 @@ public class FileHandling {
         UiCore.startSwing(() -> new MainPanel());
 
         Ui.exec(() -> {
-            Ui.fileChooser().open().opt().ifPresent(f -> System.out.println("Ok pressed, File: " + f.getAbsolutePath()));
+            FileOsOpen.open(null).opt().ifPresent(f -> System.out.println("Ok pressed, File: " + f.getAbsolutePath()));
         });
 
     }

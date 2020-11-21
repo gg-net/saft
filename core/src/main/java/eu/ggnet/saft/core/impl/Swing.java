@@ -5,19 +5,23 @@
  */
 package eu.ggnet.saft.core.impl;
 
+import java.awt.Dialog.ModalityType;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 import javax.swing.*;
 
 import javafx.application.Platform;
+import javafx.beans.property.StringProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -26,11 +30,12 @@ import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.ui.AlertType;
+import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.*;
 
-import static eu.ggnet.saft.core.ui.builder.UiParameter.Type.*;
+import static eu.ggnet.saft.core.impl.UiParameter.Type.*;
 
 /**
  *
@@ -157,10 +162,15 @@ public class Swing extends AbstractCore implements Core<Window> {
 
     @Override
     public void closeOf(UiParent parent) {
-        unwrap(parent).ifPresent(p -> SwingSaft.run(() -> {
+        unwrap(parent).ifPresent(p -> run(() -> {
             p.setVisible(false);
             p.dispose();
         }));
+    }
+
+    private void run(Runnable runnable) {
+        if ( EventQueue.isDispatchThread() ) runnable.run();
+        else EventQueue.invokeLater(runnable);
     }
 
     @Override
@@ -221,7 +231,7 @@ public class Swing extends AbstractCore implements Core<Window> {
     @Override
     public <T, R, S extends R> Result<T> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in) {
         return new Result<>(prepareShowEval(prebuilder, preProducer, in)
-                .thenApplyAsync((UiParameter p) -> BuilderUtil.waitAndProduceResult(p), saft.executorService()));
+                .thenApplyAsync((UiParameter p) -> waitAndProduceResult(p), saft.executorService()));
     }
 
     @Override
@@ -246,10 +256,10 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> produceDialog(in, p), Platform::runLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
-                        .thenApply(BuilderUtil::modifyDialog)
-                        .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
+                        .thenApply(p -> modifyDialog(p))
+                        .thenApplyAsync(p -> createJFXPanel(p), EventQueue::invokeLater)
                         .thenApplyAsync(p -> wrapPane(p), Platform::runLater)
-                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
+                        .thenApplyAsync(p -> constructSwing(p), EventQueue::invokeLater)
                         .handle(saft.handler());
 
             case SWING:
@@ -258,7 +268,7 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> produceJPanel(in, p), EventQueue::invokeLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), EventQueue::invokeLater)
-                        .thenApply(BuilderUtil::constructSwing)
+                        .thenApplyAsync(p -> constructSwing(p), EventQueue::invokeLater)
                         .handle(saft.handler());
 
             case FX:
@@ -268,9 +278,9 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         //                        .thenApplyAsync(i -> i, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
-                        .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
+                        .thenApplyAsync(p -> createJFXPanel(p), EventQueue::invokeLater)
                         .thenApplyAsync(p -> wrapPane(p), Platform::runLater)
-                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
+                        .thenApplyAsync(p -> constructSwing(p), EventQueue::invokeLater)
                         .handle(saft.handler());
 
             case FXML:
@@ -280,9 +290,9 @@ public class Swing extends AbstractCore implements Core<Window> {
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
                         //                        .thenApplyAsync(i -> i, saft.executorService()) // Make sure we are not switching from Swing to JavaFx directly, which sometimes fails.
-                        .thenApplyAsync(BuilderUtil::createJFXPanel, EventQueue::invokeLater)
+                        .thenApplyAsync(p -> createJFXPanel(p), EventQueue::invokeLater)
                         .thenApplyAsync(p -> wrapPane(p), Platform::runLater)
-                        .thenApplyAsync(BuilderUtil::constructSwing, EventQueue::invokeLater)
+                        .thenApplyAsync(p -> constructSwing(p), EventQueue::invokeLater)
                         .handle(saft.handler());
 
             default:
@@ -305,6 +315,133 @@ public class Swing extends AbstractCore implements Core<Window> {
         return in;
     }
 
+    private UiParameter constructSwing(UiParameter in) {
+        try {
+            L.debug("constructSwing");
+            JComponent component = in.jPanel().get(); // Must be set at this point.
+
+            // TODO: look into the util methods if the saft.core(Swing.class).parentIfPresent(...) can be used.
+            Window parent = in.saft().core(Swing.class).unwrap(in.uiParent()).orElse(in.saft().core(Swing.class).unwrapMain().orElse(null));
+
+            final Window window = in.extractFrame()
+                    ? newJFrame(in.toTitleProperty(), component)
+                    : newJDailog(parent, in.toTitleProperty(), component, in.asSwingModality());
+            setWindowProperties(in, window, in.extractReferenceClass(), parent, in.extractReferenceClass(), in.toKey());
+            in.getClosedListenerImplemetation().ifPresent(elem -> window.addWindowListener(new WindowAdapter() {
+
+                @Override
+                public void windowClosed(WindowEvent e) {
+                    elem.closed();
+                }
+
+            }));
+            window.setVisible(true);
+            L.debug("constructSwing.setVisible(true)");
+            return in.toBuilder().window(window).build();
+        } catch (IOException e) {
+            throw new CompletionException(e);
+        }
+    }
+
+    /**
+     * New jframe based on parameters.
+     *
+     * @param titleProperty
+     * @param component
+     * @return
+     */
+    private JFrame newJFrame(StringProperty titleProperty, JComponent component) {
+        JFrame jframe = new JFrame();
+        jframe.setName(titleProperty.get());
+        jframe.setTitle(titleProperty.get());
+        titleProperty.addListener((ObservableValue<? extends String> ob, String o, String n) -> {
+            jframe.setName(n);
+            jframe.setTitle(n);
+        });
+        jframe.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        jframe.getContentPane().add(component);
+        return jframe;
+    }
+
+    /**
+     * New JDialog based on parameters.
+     *
+     * @param swingParent
+     * @param titleProperty
+     * @param component
+     * @param modalityType
+     * @return
+     */
+    private JDialog newJDailog(Window swingParent, StringProperty titleProperty, JComponent component, ModalityType modalityType) {
+        JDialog dialog = new JDialog(swingParent);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setModalityType(modalityType);
+        // Parse the Title somehow usefull.
+        dialog.setName(titleProperty.get());
+        dialog.setTitle(titleProperty.get());
+        titleProperty.addListener((ObservableValue<? extends String> ob, String o, String n) -> {
+            dialog.setName(n);
+            dialog.setTitle(n);
+        });
+        dialog.getContentPane().add(component);
+        return dialog;
+    }
+
+    /**
+     * Sets default values.
+     *
+     * @param <T>
+     * @param window                the window to modify
+     * @param iconReferenzClass     reference class for icons. see SwingSaft.loadIcons.
+     * @param relativeLocationAnker anker for relative location placement, propably also the parent.
+     * @param storeLocationClass    class inspected if it has the StoreLocation annotation, probally the panel, pane or controller class.
+     * @param windowKey             a string representtation for the internal window manager. Something like controller.getClass + optional id.
+     * @return the window instance.
+     * @throws IOException If icons could not be loaded.
+     */
+    private <T extends Window> T setWindowProperties(UiParameter in, T window, Class<?> iconReferenzClass, Window relativeLocationAnker, Class<?> storeLocationClass, String windowKey) throws IOException { // IO Exeception based on loadIcons
+        window.setIconImages(loadAwtImages(iconReferenzClass));
+        window.pack();
+        window.setLocationRelativeTo(relativeLocationAnker);
+        if ( in.isStoreLocation() ) UiCore.global().locationStorage().loadLocation(storeLocationClass, window);
+        in.saft().core(Swing.class).add(window);
+        // Removes on close.
+        window.addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosed(WindowEvent e) {
+                // Store location.
+                if ( in.isStoreLocation() ) UiCore.global().locationStorage().storeLocation(storeLocationClass, window);
+            }
+        });
+        return window;
+    }
+
+    private java.util.List<java.awt.Image> loadAwtImages(Class<?> reference) throws IOException {
+        java.awt.Toolkit toolkit = java.awt.Toolkit.getDefaultToolkit();
+        return IconConfig.possibleIcons(reference).stream()
+                .map(n -> reference.getResource(n))
+                .filter(u -> u != null)
+                .map(t -> toolkit.getImage(t))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Modifies the Dialog to be used in a swingOrMain environment.
+     *
+     * @param in
+     * @return
+     */
+    private UiParameter modifyDialog(UiParameter in) {
+        javafx.scene.control.Dialog dialog = in.dialog().get();
+        // Activates the closing of any surounding swing element.
+        dialog.setOnCloseRequest((event) -> {
+            L.debug("handle(event.getSource()={}) dialog.getScene() is set ? {}", event.getSource(), dialog.getDialogPane().getScene() != null);
+            Ui.closeWindowOf(((javafx.scene.control.Dialog)event.getSource()).getDialogPane());
+        });
+
+        return in;
+    }
+
     /**
      * Returns the Swing Window in Swing Mode from a wrapped JavaFx Node.
      *
@@ -314,7 +451,25 @@ public class Swing extends AbstractCore implements Core<Window> {
     private Optional<Window> windowAncestor(Node p) {
         if ( p == null ) return Optional.empty();
         L.debug("windowAncestor(node) node.getScene()={}, SWING_PARENT_HELPER.keySet()={}", p.getScene(), SWING_PARENT_HELPER.keySet());
-        return SwingSaft.windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
+        return windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
+    }
+
+    /**
+     * Special form of {@link SwingUtilities#getWindowAncestor(java.awt.Component) }, as it also verifies if the supplied parameter is of type Window and if
+     * true returns it.
+     *
+     * @param c the component
+     * @return a window.
+     */
+    private Optional<Window> windowAncestor(Component c) {
+        L.debug("windowAncestor({})", c);
+        if ( c == null ) return Optional.empty();
+        if ( c instanceof Window ) return Optional.of((Window)c);
+        return Optional.ofNullable(SwingUtilities.getWindowAncestor(c));
+    }
+
+    private UiParameter createJFXPanel(UiParameter in) {
+        return in.toBuilder().jPanel(new JFXPanel()).build();
     }
 
     private void registerActiveAndToFront(String key, Window w) {

@@ -53,11 +53,11 @@ public class Result<T> {
         } catch (InterruptedException ex) {
             Ui.handle(ex);
         } catch (CancellationException ex) {
-            L.debug("Cancelation, retruning empty");
+            L.debug("Cancelation({}), retruning empty", ex.getMessage());
             return Optional.empty();
         } catch (ExecutionException ex) {
             if ( ex.getCause() instanceof CancellationException ) {
-                L.debug(ex.getCause() + ", retruning empty");
+                L.debug("Cancelation({}), retruning empty", ex.getMessage());
                 return Optional.empty();
             }
             Ui.handle(ex);

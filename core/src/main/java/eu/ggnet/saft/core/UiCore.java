@@ -2,18 +2,14 @@ package eu.ggnet.saft.core;
 
 import java.awt.Component;
 import java.awt.Window;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Objects;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import javax.swing.JFrame;
 
-import javafx.beans.property.StringProperty;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import org.slf4j.Logger;
@@ -21,8 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.impl.Fx;
 import eu.ggnet.saft.core.impl.Swing;
-import eu.ggnet.saft.core.ui.*;
-import eu.ggnet.saft.core.ui.builder.BuilderUtil;
+import eu.ggnet.saft.core.ui.LocationStorage;
 
 /**
  * The Core of the Saft UI, containing methods for startup or registering things.
@@ -33,29 +28,7 @@ public class UiCore {
 
     private final static Logger L = LoggerFactory.getLogger(UiCore.class);
 
-    private static final Set<Runnable> ON_SHUTDOWN = new HashSet<>();
-
-    /**
-     *
-     * @deprecated Remove after builder optimisation
-     */
-    @Deprecated
-    private static boolean gluon = false; // Special FX Gloun mode. See https://gluonhq.com/products/mobile/
-
-    private static AtomicBoolean shuttingDown = new AtomicBoolean(false); // Shut down handler.
-
     private static Saft saft;
-
-    /**
-     * Running means, that one startXXX oder contiuneXXX method was called.
-     *
-     * @return true, if running.
-     * @deprecated Use UiCore.global().core().isActive() in classic mode or @Inject Saft saft; and saft.core().isActive();
-     */
-    private static boolean isRunning() {
-        if ( saft == null ) return false;
-        return saft.core().isActiv();
-    }
 
     /**
      * Initialise the global with the supplied saft.
@@ -123,152 +96,42 @@ public class UiCore {
     }
 
     /**
-     * Starts the Core in Swing mode, may only be called once.
+     * Old Startup of Swing, must be run in the EventQueue thread.
      *
      * @param <T>     type parameter
      * @param builder the builder for swing.
+     * @deprecated use continueSwing(UiUtil.startup(builder)); or even better UiCore.global().init(new Swing(UiCore.global(), UiUtil.startup(builder)));
      */
-    public static <T extends Component> void startSwing(final Callable<T> builder) {
-        try {
-            continueSwing(SwingSaft.dispatch(() -> {
-                T p = builder.call();
-                JFrame frame = new JFrame();
-                Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
-                if ( optionalTitleProperty.isPresent() ) {
-                    optionalTitleProperty.get().addListener((ob, o, n) -> {
-                        frame.setTitle(n);
-                        frame.setName(n);
-                    });
-                } else if ( p.getClass().getAnnotation(Title.class) != null ) {
-                    frame.setTitle(p.getClass().getAnnotation(Title.class).value());
-                    frame.setName(p.getClass().getAnnotation(Title.class).value());
-                }
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                frame.getContentPane().add(p);
-                frame.pack();
-                frame.setLocationByPlatform(true);
-                frame.setVisible(true);
-                return frame;
-            }));
-        } catch (InterruptedException | InvocationTargetException | ExecutionException ex) {
-            global().handle(ex);
-        }
+    @Deprecated
+    public static <T extends Component> void startSwing(final Supplier<T> builder) {
+        continueSwing(UiUtil.startup(builder));
     }
 
     /**
-     * Starts the Ui in JavaFx variant.
-     * <p>
-     * This also assumes two things:
-     * <ul>
-     * <li>The JavaFX Platform is already running (as a Stage already exists), most likely created through default lifecycle of javaFx</li>
-     * <li>This Stage will always be open or the final to be closed, so implicitExit is ok</li>
-     * </ul>
-     *
-     * @param <T>          type restriction.
-     * @param primaryStage the primaryStage for the application, not yet visible.
-     * @param builder      the build for the main ui.
-     */
-    public static <T extends Parent> void startJavaFx(final Stage primaryStage, final Callable<T> builder) {
-        global().init(new Fx(global(), primaryStage));
-        UiUtil.dispatchFx(() -> {
-            Parent p = builder.call();
-            Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
-            if ( optionalTitleProperty.isPresent() ) {
-                primaryStage.titleProperty().bind(optionalTitleProperty.get());
-            } else if ( p.getClass().getAnnotation(Title.class) != null ) {
-                primaryStage.setTitle(p.getClass().getAnnotation(Title.class).value());
-            }
-            primaryStage.setScene(new Scene(p));
-            primaryStage.centerOnScreen();
-            primaryStage.sizeToScene();
-            primaryStage.show();
-            primaryStage.setOnCloseRequest((e) -> {
-                global().shutdown();
-            });
-            return null;
-        });
-    }
-
-    /**
-     * Contiues the Ui in JavaFx variant.
-     * <p>
-     * This also assumes two things:
-     * <ul>
-     * <li>The JavaFX Platform is already running (as a Stage already exists), most likely created through default lifecycle of javaFx</li>
-     * <li>This Stage will always be open or the final to be closed, so implicitExit is ok</li>
-     * </ul>
+     * Shortcut for UiCore.global().init(new Fx(UiCore.global(), primaryStage));
      *
      * @param primaryStage the primaryStage for the application, not yet visible.
      */
-    public static void contiuneJavaFx(final Stage primaryStage) {
+    public static void continueJavaFx(final Stage primaryStage) {
         global().init(new Fx(global(), primaryStage));
-        primaryStage.setOnCloseRequest((e) -> {
-            global().shutdown();
-        });
-    }
-
-    /**
-     * Contiunes the Ui in the Gloun mode with JavaFx.
-     * This metod is intended to be used in the MobileApplication.postInit(Scene)
-     *
-     * @param <T>   type restriction.
-     * @param scene the first and only scene of gluon.
-     */
-    // TODO: Muss complett nach gluon.
-    public static <T extends Parent> void continueGluon(final Scene scene) {
-        if ( isRunning() ) throw new IllegalStateException("UiCore is already initialised and running");
-
-        try {
-            String clazzName = "eu.ggnet.saft.gluon.Gi";
-            String methodName = "startUp";
-            L.debug("continueGluon(): trying to start gluon specific code: reflective call to {}.{}", clazzName, methodName);
-            Class<?> clazz = Class.forName(clazzName);
-            Method method = clazz.getMethod(methodName);
-            method.invoke(null);
-        } catch (ClassNotFoundException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | InvocationTargetException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        if ( !UiCore.global().gluonSupport().isPresent() )
-            throw new IllegalStateException("Trying to active gluon mode, but no local Service implementation of GluonSupport found. Is the dependency saft-gluon available ?");
-        L.info("Starting SAFT in Gloun Mode, using MainStage");
-        gluon = true;
-//        mainStage.setOnCloseRequest((e) -> {
+        // TODO: Docu, that the shutdown must be done in the Application.stop()
+//        primaryStage.setOnCloseRequest((e) -> {
 //            global().shutdown();
 //        });
     }
 
     /**
-     * Fx mode.
+     * Old Startup of Java FX, must be run in the Platform thread.
      *
-     * @return true if in fx mode.
-     * @deprecated Only used in builder, will be removed before release.
+     * @param <T>          type restriction.
+     * @param primaryStage the primaryStage for the application, not yet visible.
+     * @param builder      the build for the main ui.
+     * @deprecated Use continueJavaFx(UiUtil.startup(primaryStage, builder)); or better UiCore.global().init(new Fx(UiCore.global(),
+     * UiUtil.startup(primaryStage, builder)));
      */
     @Deprecated
-    public static boolean isFx() {
-        return global().core(Fx.class).isActiv();
-    }
-
-    /**
-     * Returns true if Saft is running in a special fx mode, modified for gluon mobile. (https://gluonhq.com/products/mobile/)
-     *
-     * @return true if in gluon mode.
-     * @deprecated Only used in builder, will be removed before release.
-     */
-    @Deprecated
-    public static boolean isGluon() {
-        return gluon;
-    }
-
-    /**
-     * Returns true if in swing mode.
-     *
-     * @return true if in swing mode
-     * @deprecated Only used in builder, will be removed before release.
-     */
-    @Deprecated
-    public static boolean isSwing() {
-        return global().core(Swing.class).isActiv();
+    public static <T extends Parent> void startJavaFx(final Stage primaryStage, final Supplier<T> builder) {
+        continueJavaFx(UiUtil.startup(primaryStage, builder));
     }
 
 }

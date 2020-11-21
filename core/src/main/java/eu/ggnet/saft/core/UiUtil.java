@@ -6,26 +6,24 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
-import java.util.Objects;
+import java.io.IOException;
 import java.util.Optional;
-import java.util.concurrent.*;
-import java.util.function.Consumer;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
 import javax.swing.JFrame;
 
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import org.slf4j.LoggerFactory;
-
-import eu.ggnet.saft.core.impl.Core;
+import eu.ggnet.saft.core.impl.AbstractCore;
+import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.Title;
-import eu.ggnet.saft.core.ui.UiParent;
-import eu.ggnet.saft.core.ui.builder.BuilderUtil;
 
 /**
  * Ui Utils.
@@ -54,31 +52,29 @@ public class UiUtil {
     }
 
     /**
-     * Dispatches the Callable to the Platform Ui Thread. If this method is called on the javafx ui thread, the supplied callable is called,
-     * otherwise the exection on Platform.runLater ist synchrnized via a latch. This Method is blocking.
+     * Constructs (loads) an FXML and controller pair, finding all elements base on the class and calling load, so direct calls to getRoot() or getController()
+     * are possible. Might be run on the Platfrom thread depending on the used widgets (e.g. If webview is used, it must be run on the ui thread.)
+     * Resources are discovered as described in {@link FxSaft#loadView(java.lang.Class) }.
      *
-     * @param <T>      Return type of callable
-     * @param callable the callable to dispatch
-     * @return the result of the callable
-     * @throws RuntimeException wraps InterruptedException of {@link CountDownLatch#await() } and ExecutionException of {@link FutureTask#get() }
+     * @param <T>             type parameter
+     * @param <R>             type parameter
+     * @param controllerClazz the controller class.
+     * @return a loaded loader.
+     * @throws IllegalArgumentException see {@link FxSaft#loadView(java.lang.Class) }
+     * @throws IllegalStateException    see {@link FxSaft#loadView(java.lang.Class) }
+     * @throws NullPointerException     see {@link FxSaft#loadView(java.lang.Class) }
+     * @throws RuntimeException         wrapped IOException of {@link FXMLLoader#load() }.
      */
-    public static <T> T dispatchFx(Callable<T> callable) throws RuntimeException {
+    // HINT: internal use
+    public static <T, R extends FxController> FXMLLoader constructFxml(Class<R> controllerClazz) throws IllegalArgumentException, NullPointerException, IllegalStateException, RuntimeException {
+        if ( !Platform.isFxApplicationThread() )
+            throw new IllegalStateException("Method constructFxml is not called from the JavaFx Ui Thread, illegal (e.g. construct of WebView fails on other threads)");
+        FXMLLoader loader = new FXMLLoader(AbstractCore.loadView(controllerClazz));
         try {
-            FutureTask<T> futureTask = new FutureTask<>(callable);
-            final CountDownLatch cdl = new CountDownLatch(1);
-            if ( Platform.isFxApplicationThread() ) {
-                futureTask.run();
-                cdl.countDown();
-            } else {
-                Platform.runLater(() -> {
-                    futureTask.run();
-                    cdl.countDown();
-                });
-            }
-            cdl.await();
-            return futureTask.get();
-        } catch (InterruptedException | ExecutionException ex) {
-            throw new RuntimeException(ex);
+            loader.load();
+            return loader;
+        } catch (IOException ex) {
+            throw new RuntimeException("Exception during constructFxml", ex);
         }
     }
 
@@ -122,7 +118,7 @@ public class UiUtil {
     public static <T extends Component> JFrame startup(final Supplier<T> builder) throws RuntimeException {
         T p = builder.get();
         JFrame frame = new JFrame();
-        Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
+        Optional<StringProperty> optionalTitleProperty = AbstractCore.findTitleProperty(p);
         if ( optionalTitleProperty.isPresent() ) {
             optionalTitleProperty.get().addListener((ob, o, n) -> {
                 frame.setTitle(n);
@@ -150,7 +146,7 @@ public class UiUtil {
      */
     public static <T extends Parent> Stage startup(final Stage primaryStage, final Supplier<T> builder) {
         Parent p = builder.get();
-        Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
+        Optional<StringProperty> optionalTitleProperty = AbstractCore.findTitleProperty(p);
         if ( optionalTitleProperty.isPresent() ) {
             primaryStage.titleProperty().bind(optionalTitleProperty.get());
         } else if ( p.getClass().getAnnotation(Title.class) != null ) {
@@ -161,25 +157,6 @@ public class UiUtil {
         primaryStage.sizeToScene();
         primaryStage.show();
         return primaryStage;
-    }
-
-    /**
-     * Suppling unwrapped parent or main to the consumer.if parent not null and the relevant window exists (has been created vie saft) -> this to the consumer
-     * else if main parent is set -> this to the consumer
-     * else don't call the consumer
-     *
-     * @param <T>
-     * @param core
-     * @param parent
-     * @param consumer
-     */
-    public static <T> void parentIfPresent(Core<T> core, UiParent parent, Consumer<T> consumer) {
-        Objects.requireNonNull(consumer, "consumer must not be null");
-        Objects.requireNonNull(core, "core must not be null");
-        Optional<T> optWindow = core.unwrap(parent);
-        if ( optWindow.isPresent() ) consumer.accept(optWindow.get());
-        else if ( core.unwrapMain().isPresent() ) consumer.accept(core.unwrapMain().get());
-        else LoggerFactory.getLogger(UiUtil.class).debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
     }
 
 }

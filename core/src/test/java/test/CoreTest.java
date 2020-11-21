@@ -12,7 +12,7 @@ import javafx.util.Callback;
 import eu.ggnet.saft.core.impl.AbstractCore;
 import eu.ggnet.saft.core.impl.Core.In;
 import eu.ggnet.saft.core.ui.FxController;
-import eu.ggnet.saft.core.ui.builder.UiParameter.Type;
+import eu.ggnet.saft.core.impl.UiParameter.Type;
 
 import static java.util.Optional.empty;
 

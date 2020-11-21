@@ -14,12 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package eu.ggnet.saft.core.ui.builder;
+package eu.ggnet.saft.core.impl;
 
 import java.awt.Dialog;
 import java.awt.Window;
 import java.util.Optional;
-import java.util.function.Consumer;
 
 import javax.swing.JComponent;
 
@@ -34,6 +33,7 @@ import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.ui.builder.PreBuilder;
 
 /**
  * Internal Parameter class.
@@ -217,14 +217,6 @@ public abstract class UiParameter {
             return Optional.of((ClosedListener)type().selectRelevantInstance(this));
         }
         return Optional.empty();
-    }
-
-    @Deprecated // In Swing schon manuel gemacht.
-    public final UiParameter optionalConsumePreResult() {
-        if ( !preResult().isPresent() ) return this;
-        if ( !(type().selectRelevantInstance(this) instanceof Consumer) ) return this;
-        ((Consumer)type().selectRelevantInstance(this)).accept(preResult().get());
-        return this;
     }
 
     /**

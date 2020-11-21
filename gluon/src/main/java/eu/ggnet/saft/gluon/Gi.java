@@ -10,9 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.gluon.internal.GluonPreBuilder;
-import eu.ggnet.saft.gluon.internal.GluonSupportService;
 
 /**
  * Single entry point for all compile-safe gluon specific activities.
@@ -34,7 +32,8 @@ public class Gi {
         L.debug("startUp() called");
         if ( !RUNNING.compareAndSet(false, true) ) return;
         L.info("startUp(): First call, registering saft-gluon services in Dl");
-        UiCore.global().gluonSupport(new GluonSupportService());
+        // TODO: würde auch über neuen Gluon core gehandelt.
+//        UiCore.global().gluonSupport(new GluonSupportService());
         //       UiCore.overwriteFinalExceptionConsumer(new DefaultGluonFinalExceptionConsumer());
     }
 
