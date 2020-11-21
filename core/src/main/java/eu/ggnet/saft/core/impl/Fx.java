@@ -31,10 +31,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.core.ui.UiParent;
-import eu.ggnet.saft.core.ui.builder.*;
+import eu.ggnet.saft.core.ui.builder.PreBuilder;
+import eu.ggnet.saft.core.ui.builder.Result;
 
 /**
  *
@@ -331,7 +331,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     @Override
     public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
-        return new Result<>(prepareShowEval(prebuilder, preProducer, in)
+        return new Result<>(saft, prepareShowEval(prebuilder, preProducer, in)
                 .thenApply((UiParameter p) -> showAndWaitJavaFx(p))
                 .thenApplyAsync((UiParameter p) -> waitAndProduceResult(p), saft.executorService()));
     }
@@ -486,8 +486,8 @@ public class Fx extends AbstractCore implements Core<Stage> {
     }
 
     private void registerAndSetStoreLocation(Class<?> key, javafx.stage.Stage window) {
-        UiCore.global().locationStorage().loadLocation(key, window);
-        window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> UiCore.global().locationStorage().storeLocation(key, window));
+        saft.locationStorage().loadLocation(key, window);
+        window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> saft.locationStorage().storeLocation(key, window));
     }
 
     private java.util.List<javafx.scene.image.Image> loadJavaFxImages(Class<?> reference) {

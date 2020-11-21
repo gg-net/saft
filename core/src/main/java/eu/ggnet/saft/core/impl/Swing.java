@@ -30,10 +30,11 @@ import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.core.ui.UiParent;
-import eu.ggnet.saft.core.ui.builder.*;
+import eu.ggnet.saft.core.ui.builder.PreBuilder;
+import eu.ggnet.saft.core.ui.builder.Result;
 
 import static eu.ggnet.saft.core.impl.UiParameter.Type.*;
 
@@ -230,7 +231,7 @@ public class Swing extends AbstractCore implements Core<Window> {
 
     @Override
     public <T, R, S extends R> Result<T> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in) {
-        return new Result<>(prepareShowEval(prebuilder, preProducer, in)
+        return new Result<>(saft, prepareShowEval(prebuilder, preProducer, in)
                 .thenApplyAsync((UiParameter p) -> waitAndProduceResult(p), saft.executorService()));
     }
 
@@ -403,14 +404,14 @@ public class Swing extends AbstractCore implements Core<Window> {
         window.setIconImages(loadAwtImages(iconReferenzClass));
         window.pack();
         window.setLocationRelativeTo(relativeLocationAnker);
-        if ( in.isStoreLocation() ) UiCore.global().locationStorage().loadLocation(storeLocationClass, window);
+        if ( in.isStoreLocation() ) saft.locationStorage().loadLocation(storeLocationClass, window);
         in.saft().core(Swing.class).add(window);
         // Removes on close.
         window.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosed(WindowEvent e) {
                 // Store location.
-                if ( in.isStoreLocation() ) UiCore.global().locationStorage().storeLocation(storeLocationClass, window);
+                if ( in.isStoreLocation() ) saft.locationStorage().storeLocation(storeLocationClass, window);
             }
         });
         return window;
@@ -436,7 +437,7 @@ public class Swing extends AbstractCore implements Core<Window> {
         // Activates the closing of any surounding swing element.
         dialog.setOnCloseRequest((event) -> {
             L.debug("handle(event.getSource()={}) dialog.getScene() is set ? {}", event.getSource(), dialog.getDialogPane().getScene() != null);
-            Ui.closeWindowOf(((javafx.scene.control.Dialog)event.getSource()).getDialogPane());
+            closeOf(UiParent.of(((javafx.scene.control.Dialog)event.getSource()).getDialogPane()));
         });
 
         return in;

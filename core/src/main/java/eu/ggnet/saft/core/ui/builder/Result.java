@@ -22,7 +22,7 @@ import java.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.Ui;
+import eu.ggnet.saft.core.Saft;
 
 /**
  * Result handler for ui activity, implements optional and completableFuture.
@@ -35,7 +35,9 @@ public class Result<T> {
 
     private CompletableFuture<T> cf = null;
 
-    public Result(CompletableFuture<T> cf) {
+    private Saft saft;
+
+    public Result(Saft saft, CompletableFuture<T> cf) {
         this.cf = Objects.requireNonNull(cf);
     }
 
@@ -51,7 +53,7 @@ public class Result<T> {
         try {
             return Optional.of(cf.get());
         } catch (InterruptedException ex) {
-            Ui.handle(ex);
+            saft.handle(ex);
         } catch (CancellationException ex) {
             L.debug("Cancelation({}), retruning empty", ex.getMessage());
             return Optional.empty();
@@ -60,7 +62,7 @@ public class Result<T> {
                 L.debug("Cancelation({}), retruning empty", ex.getMessage());
                 return Optional.empty();
             }
-            Ui.handle(ex);
+            saft.handle(ex);
         }
         L.error("Impposible End, returning empty");
         return Optional.empty();

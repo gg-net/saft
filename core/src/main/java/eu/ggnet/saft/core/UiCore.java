@@ -48,7 +48,7 @@ public class UiCore {
      * @return the global saft.
      */
     // TODO: Reconsider, if an autoinit is something wanted. There may be cases, like ui elements displayed before the Saft core is up. A fail first might help solve these.
-    public static synchronized Saft global() {
+    public static Saft global() {
         if ( saft == null ) {
             L.info("Initialising Saft in classic mode using defaults.");
             // init defaults.
