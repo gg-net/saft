@@ -39,10 +39,7 @@ import static eu.ggnet.saft.core.ui.builder.UiParameter.Type.*;
  */
 public abstract class AbstractCore {
 
-    // TODO: later use optional inject logger.
-    protected Logger log() {
-        return LoggerFactory.getLogger(AbstractCore.class);
-    }
+    private final static Logger L = LoggerFactory.getLogger(AbstractCore.class);
 
     protected abstract Optional<Callback<Class<?>, Object>> initializer();
 
@@ -61,7 +58,7 @@ public abstract class AbstractCore {
     }
 
     protected UiParameter produceJPanel(Core.In<?, ?> in, UiParameter param) {
-        log().debug("produceJPanel(in={})", in);
+        L.debug("produceJPanel(in={})", in);
         if ( selectType(in) != SWING )
             throw new IllegalArgumentException("produceJPanel(" + in + ") used illegal, as selected Type must be " + SWING + " but was " + selectType(in));
         JPanel panel = (JPanel)createInstance(in); // Safe cast as of line above.
@@ -72,7 +69,7 @@ public abstract class AbstractCore {
     }
 
     protected UiParameter producePane(Core.In<?, ?> in, UiParameter param) {
-        log().debug("producePane(in={})", in);
+        L.debug("producePane(in={})", in);
         if ( selectType(in) != FX )
             throw new IllegalArgumentException("producePane(" + in + ") used illegal, as selected Type must be " + FX + " but was " + selectType(in));
         Pane pane = (Pane)createInstance(in);
@@ -83,7 +80,7 @@ public abstract class AbstractCore {
     }
 
     protected UiParameter produceFxml(Core.In<?, ?> in, UiParameter param) {
-        log().debug("produceFxml(in={})", in);
+        L.debug("produceFxml(in={})", in);
         if ( selectType(in) != FXML )
             throw new IllegalArgumentException("produceFxml(" + in + ") used illegal, as selected Type must be " + FXML + " but was " + selectType(in));
         try {
@@ -105,7 +102,7 @@ public abstract class AbstractCore {
     }
 
     protected UiParameter produceDialog(Core.In<?, ?> in, UiParameter parm) {
-        log().debug("produceDialog(in={})", in);
+        L.debug("produceDialog(in={})", in);
         if ( selectType(in) != DIALOG )
             throw new IllegalArgumentException("produceFxml(" + in + ") used illegal, as selected Type must be " + DIALOG + " but was " + selectType(in));
         javafx.scene.control.Dialog<?> dialog = (javafx.scene.control.Dialog<?>)createInstance(in);
@@ -134,7 +131,7 @@ public abstract class AbstractCore {
     }
 
     protected UiParameter init(PreBuilder preBuilder, UiParameter.Type type) {
-        log().debug("init(preBuilder={}, type={})", preBuilder, type);
+        L.debug("init(preBuilder={}, type={})", preBuilder, type);
         return UiParameter.fromPreBuilder(preBuilder).type(type).build();
     }
 

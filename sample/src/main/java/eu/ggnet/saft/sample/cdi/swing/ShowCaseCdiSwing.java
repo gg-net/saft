@@ -17,6 +17,7 @@
 package eu.ggnet.saft.sample.cdi.swing;
 
 import java.awt.BorderLayout;
+import java.awt.EventQueue;
 
 import javax.enterprise.inject.Instance;
 import javax.enterprise.inject.se.SeContainer;
@@ -40,9 +41,6 @@ public class ShowCaseCdiSwing {
     @Inject
     private Saft saft;
 
-    @Inject
-    private Instance<Object> instance;
-
     @Title("ShowCase Swing")
     public static class SwingPanel extends JPanel {
 
@@ -63,19 +61,16 @@ public class ShowCaseCdiSwing {
     }
 
     public void start(final SeContainer container) {
-        System.out.println("Saft :" + saft);
-        JFrame mainWindow = UiUtil.startSwing(() -> new SwingPanel());
-        saft.init(new Swing(saft, mainWindow, (Class<?> param) -> {
-            System.out.println("using initializer for " + param);
-            return instance.select(param).get();
-        }));
-        UiCore.initGlobal(saft);
-        UiCore.global().addOnShutdown(() -> {
-            if ( container.isRunning() ) {
-                container.close();
-            }
+        EventQueue.invokeLater(() -> {
+            saft.core(Swing.class).initMain(UiUtil.startup(() -> new SwingPanel()));
+            UiCore.initGlobal(saft);
+            UiCore.global().addOnShutdown(() -> {
+                if ( container.isRunning() ) {
+                    container.close();
+                }
+            });
+            ShowCaseUniversal.registerGlobals();
         });
-        ShowCaseUniversal.registerGlobals();
     }
 
     public static void main(String[] args) {

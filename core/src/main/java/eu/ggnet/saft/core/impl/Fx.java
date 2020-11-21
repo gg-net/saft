@@ -41,12 +41,12 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     private final Saft saft;
 
-    private final Stage mainParent;
+    private Stage mainStage;
 
     // TODO: Implement cyclic verification of null weak references and remove elements.
     private final List<WeakReference<Stage>> allStages = new ArrayList<>();
 
-    private final Logger log = LoggerFactory.getLogger(Fx.class);
+    private final static Logger L = LoggerFactory.getLogger(Fx.class);
 
     // TODO: Implement a cleanup for all references. Good candidate for WeakReferneces on Key and Value.
     private final Map<Component, SwingNode> JAVAFX_PARENT_HELPER = new HashMap<>();
@@ -63,6 +63,14 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     private final Callback<Class<?>, Object> INSTANCE_INITIALZER;
 
+    public Fx(Saft saft) {
+        this(saft, null, null);
+    }
+
+    public Fx(Saft saft, Callback<Class<?>, Object> initialzier) {
+        this(saft, null, initialzier);
+    }
+
     /**
      * Ceates a new Fx Core, should only be used in Saft.
      *
@@ -75,8 +83,18 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     public Fx(Saft saft, Stage mainParent, Callback<Class<?>, Object> initialzier) {
         this.saft = Objects.requireNonNull(saft, "saft must not be null");
-        this.mainParent = mainParent;
+        this.mainStage = mainParent;
         this.INSTANCE_INITIALZER = initialzier;
+    }
+
+    @Override
+    public void initMain(Stage stage) {
+        if ( this.mainStage != null ) throw new IllegalStateException("mainStage is allready set");
+        if ( stage == null ) throw new NullPointerException("stage must not be null");
+        L.debug("initMain(stage={})", stage.getClass().getName());
+        this.mainStage = stage;
+        // TODO: Doku, that in fx, it should be called in the Application stop method.
+        //  mainStage.setOnCloseRequest(t -> saft.shutdown());
     }
 
     @Override
@@ -95,7 +113,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
         Optional<Stage> optStage = unwrap(parent);
         if ( optStage.isPresent() ) consumer.accept(optStage.get());
         else if ( unwrapMain().isPresent() ) consumer.accept(unwrapMain().get());
-        else log.debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
+        else L.debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
     }
 
     @Override
@@ -117,11 +135,11 @@ public class Fx extends AbstractCore implements Core<Stage> {
             if ( scene == null ) return Optional.empty(); // The node was never added to a secen.
             javafx.stage.Window window = scene.getWindow();
             if ( window == null ) {
-                log.warn("unwrap() uiparent.node() was set, node had a scene but window was null");
+                L.warn("unwrap() uiparent.node() was set, node had a scene but window was null");
                 return Optional.empty();
             }
             if ( !(window instanceof Stage) ) {
-                log.warn("unwrap() uiparent.node() was set, node had a scene and window, but window was not of type stage");
+                L.warn("unwrap() uiparent.node() was set, node had a scene and window, but window was not of type stage");
                 return Optional.empty();
             }
             return Optional.of((Stage)window);
@@ -135,7 +153,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     @Override
     public Optional<Stage> unwrapMain() {
-        return Optional.of(mainParent);
+        return Optional.of(mainStage);
     }
 
     @Override
@@ -147,7 +165,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
     public void shutdown() {
         allStages.forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
         // TODO: This is a global call. In the multiple safts in one vm, this cannot be used. Some other semantic is needed.
-        getWindows().stream().filter(w -> w != mainParent).forEach(javafx.stage.Window::hide); // close/hide all free stages.
+        getWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
     }
 
     @Override
@@ -163,7 +181,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
      */
     // TODO: Look into the future if we need the stage or can use the window.
     private Stage find(Component c) {
-        log.debug("find({})", c);
+        L.debug("find({})", c);
         SwingNode sn = deepfind(Objects.requireNonNull(c, "Component for find is null"));
         if ( sn == null ) return null;
         javafx.stage.Window window = sn.getScene().getWindow();
@@ -172,7 +190,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
     }
 
     private SwingNode deepfind(Component c) {
-        log.debug("deep({})", c);
+        L.debug("deep({})", c);
         if ( c == null ) return null;
         if ( JAVAFX_PARENT_HELPER.containsKey(c) ) return JAVAFX_PARENT_HELPER.get(c);
         return deepfind(c.getParent());
@@ -207,7 +225,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         }
                     }
                 };
-                log.info("getWindows() ontime initial. Class StageHelper found, assuming JDK8");
+                L.info("getWindows() ontime initial. Class StageHelper found, assuming JDK8");
             } catch (ClassNotFoundException | NoSuchMethodException ex) {
                 try {
                     GetWindowsSupplier = new Supplier<List<javafx.stage.Window>>() {
@@ -223,7 +241,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                             }
                         }
                     };
-                    log.info("getWindows() ontime initial. Class StageHelper not found, so this must be JDK9 or newer");
+                    L.info("getWindows() ontime initial. Class StageHelper not found, so this must be JDK9 or newer");
                 } catch (NoSuchMethodException | SecurityException ex1) {
                     throw new RuntimeException("getWindows(): neither StageHelper.getStages nor Window.getWindows was found. Something weird happend, read the source", ex1);
                 }
@@ -242,7 +260,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
     public void relocate() {
         //TODO: Needs to be tested.
         unwrapMain().ifPresent(m -> {
-            log.debug("relocate() relocating mainParent {}", m);
+            L.debug("relocate() relocating mainParent {}", m);
             m.setX(20);
             m.setY(20);
             m.setWidth(800);
@@ -254,7 +272,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
         for (Iterator<Stage> iterator = allStages.stream().map(w -> w.get()).filter(w -> w != null).iterator();
                 iterator.hasNext();) {
             Stage w = iterator.next();
-            log.debug("relocate() relocating {}", w);
+            L.debug("relocate() relocating {}", w);
             w.setX(i);
             w.setY(i);
             w.setWidth(800);
@@ -264,10 +282,10 @@ public class Fx extends AbstractCore implements Core<Stage> {
     }
 
     private void registerActiveAndToFront(String key, Stage s) {
-        log().debug("registerActiveAndToFront(key={})", key);
+        L.debug("registerActiveAndToFront(key={})", key);
         ONCES_ACTIVE.put(key, s);
         s.setOnCloseRequest((t) -> {
-            log().debug("closeRequest() once closeing {}, removing from active map", key);
+            L.debug("closeRequest() once closeing {}, removing from active map", key);
             ONCES_ACTIVE.remove(key);
         });
         s.toFront();
@@ -279,7 +297,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
         if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
         Objects.requireNonNull(in, "in must not be null");
         if ( javafx.scene.control.Dialog.class.isAssignableFrom(in.clazz()) ) throw new IllegalArgumentException("Dialog ist not supported for registeronce");
-        log().debug("registerOnce(key={})", key);
+        L.debug("registerOnce(key={})", key);
         ONCES_BUILDER.put(key, () -> show(new PreBuilder(saft).frame(true), Optional.empty(), in).thenAccept(w -> registerActiveAndToFront(key, w)));
     }
 
@@ -289,7 +307,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
         if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
         if ( !ONCES_BUILDER.containsKey(key) ) return false;
         if ( ONCES_ACTIVE.containsKey(key) && ONCES_ACTIVE.get(key).isShowing() ) {
-            log().debug("showOnce(key={}) visible, focusing", key);
+            L.debug("showOnce(key={}) visible, focusing", key);
             Platform.runLater(() -> {
                 Stage stage = ONCES_ACTIVE.get(key);
                 stage.setIconified(false);
@@ -297,7 +315,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                 stage.toFront();
             });
         } else {
-            log.debug("showOnce(key={}) not yet visible, creating.", key);
+            L.debug("showOnce(key={}) not yet visible, creating.", key);
             ONCES_BUILDER.get(key).run();
         }
         return true;
@@ -401,7 +419,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
         JAVAFX_PARENT_HELPER.put(jpanel, sn);
 
         Dimension preferredSize = jpanel.getPreferredSize();
-        log().debug("wrapJPanel(in): setting in.pane().prefSize from in.jPanel().preferredSize={}", preferredSize);
+        L.debug("wrapJPanel(in): setting in.pane().prefSize from in.jPanel().preferredSize={}", preferredSize);
         pane.setPrefHeight(preferredSize.getHeight());
         pane.setPrefWidth(preferredSize.getWidth());
         return in;

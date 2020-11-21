@@ -6,6 +6,9 @@ import javax.inject.Inject;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import eu.ggnet.saft.core.ui.*;
 
 /**
@@ -17,6 +20,8 @@ import eu.ggnet.saft.core.ui.*;
 @StoreLocation
 public class BasicApplicationController implements FxController {
 
+    private final static Logger L = LoggerFactory.getLogger(BasicApplicationController.class);
+
     @FXML
     private TextArea textArea;
 
@@ -25,13 +30,13 @@ public class BasicApplicationController implements FxController {
 
     @FXML
     private void initialize() {
-        System.out.println("initialize() cdiInput set ? " + (cdiInput != null) + " textArea set ?" + (textArea != null));
+        L.debug("initialize() cdiInput set ? (" + (cdiInput != null) + "), textArea set ? (" + (textArea != null) + ")");
         if ( cdiInput != null ) textArea.setText(cdiInput.msg());
     }
 
     @PostConstruct
     private void postCdi() {
-        System.out.println("postCdi() cdiInput set ? " + (cdiInput != null) + " textArea set ?" + (textArea != null));
+        L.debug("postCdi() cdiInput set ? (" + (cdiInput != null) + ") textArea set ? (" + (textArea != null) + ")");
     }
 
 }

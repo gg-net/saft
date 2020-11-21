@@ -40,6 +40,11 @@ public class Saft {
         private final Logger log = LoggerFactory.getLogger(Core.class);
 
         @Override
+        public void initMain(Object window) throws NullPointerException, IllegalStateException {
+            log.warn("initMain() call on dead core");
+        }
+
+        @Override
         public void parentIfPresent(UiParent parent, Consumer<Object> consumer) {
             log.warn("parentIfPresent() call on dead core");
         }

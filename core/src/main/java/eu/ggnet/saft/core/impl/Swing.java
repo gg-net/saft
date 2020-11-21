@@ -41,14 +41,14 @@ import static eu.ggnet.saft.core.ui.builder.UiParameter.Type.*;
 // TODO: GlobalWarning. The implementation has some global impact, which must be cleaned up in the final implementation
 public class Swing extends AbstractCore implements Core<Window> {
 
+    private final static Logger L = LoggerFactory.getLogger(Swing.class);
+
     // TODO: Implement cyclic verification of null weak references and remove elements.
     private final List<WeakReference<Window>> allWindows = new ArrayList<>();
 
     private final Saft saft;
 
-    private final JFrame mainWindow;
-
-    private final Logger log = LoggerFactory.getLogger(Swing.class);
+    private Window mainWindow;
 
     // TODO: Implement a cleanup for all references. Good candidate for WeakReferneces on Key and Value.
     private final Map<Scene, JFXPanel> SWING_PARENT_HELPER = new WeakHashMap<>();
@@ -69,15 +69,30 @@ public class Swing extends AbstractCore implements Core<Window> {
         this(saft, mainParent, null);
     }
 
+    public Swing(final Saft saft) {
+        this(saft, null, null);
+    }
+
+    public Swing(final Saft saft, Callback<Class<?>, Object> initialzier) {
+        this(saft, null, initialzier);
+    }
+
     public Swing(final Saft saft, JFrame mainWindow, Callback<Class<?>, Object> initialzier) {
         // TODO: Global activity. reconsider.
         new JFXPanel(); // Start the Fx platform.
         Platform.setImplicitExit(false);
 
         this.saft = Objects.requireNonNull(saft, "saft must not be null");
-        this.mainWindow = mainWindow;
         this.INSTANCE_INITIALZER = initialzier;
+        if ( mainWindow != null ) initMain(mainWindow);
+    }
 
+    @Override
+    public void initMain(Window window) {
+        if ( this.mainWindow != null ) throw new IllegalStateException("Main is allready set");
+        if ( window == null ) throw new NullPointerException("window must not be null");
+        L.debug("initMain(window={})", window.getClass().getName());
+        this.mainWindow = window;
         mainWindow.addWindowListener(new WindowAdapter() {
 
             @Override
@@ -99,7 +114,7 @@ public class Swing extends AbstractCore implements Core<Window> {
         Optional<Window> optWindow = unwrap(parent);
         if ( optWindow.isPresent() ) consumer.accept(optWindow.get());
         else if ( unwrapMain().isPresent() ) consumer.accept(unwrapMain().get());
-        else log.debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
+        else L.debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
     }
 
     @Override
@@ -132,7 +147,7 @@ public class Swing extends AbstractCore implements Core<Window> {
 
     @Override
     public Optional<Window> unwrapMain() {
-        return Optional.of(mainWindow);
+        return Optional.ofNullable(mainWindow);
     }
 
     @Override
@@ -172,7 +187,7 @@ public class Swing extends AbstractCore implements Core<Window> {
     @Override
     public void relocate() {
         unwrapMain().ifPresent(m -> {
-            log.debug("relocate() relocating mainParent {}", m);
+            L.debug("relocate() relocating mainParent {}", m);
             m.setSize(800, 600);
             m.setLocation(20, 20);
         });
@@ -182,7 +197,7 @@ public class Swing extends AbstractCore implements Core<Window> {
         for (Iterator<java.awt.Window> iterator = allWindows.stream().map(w -> w.get()).filter(w -> w != null).iterator();
                 iterator.hasNext();) {
             Window w = iterator.next();
-            log.debug("relocate() relocating {}", w);
+            L.debug("relocate() relocating {}", w);
             w.setSize(800, 600);
             w.setLocation(i, i);
             i = i + 20;
@@ -196,7 +211,7 @@ public class Swing extends AbstractCore implements Core<Window> {
         Objects.requireNonNull(key, "key must not be null");
         if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
         Objects.requireNonNull(in, "in must not be null");
-        log().debug("registerOnce(key={})", key);
+        L.debug("registerOnce(key={})", key);
         ONCES_BUILDER.put(key, () -> show(new PreBuilder(saft).frame(true), Optional.empty(), in).thenAccept(w -> registerActiveAndToFront(key, w)));
     }
 
@@ -206,14 +221,14 @@ public class Swing extends AbstractCore implements Core<Window> {
         if ( key.trim().isEmpty() ) throw new NullPointerException("key must not be blank");
         if ( !ONCES_BUILDER.containsKey(key) ) return false;
         if ( ONCES_ACTIVE.containsKey(key) && ONCES_ACTIVE.get(key).isVisible() ) {
-            log.debug("showOnce(key={}) visible, focusing.", key);
+            L.debug("showOnce(key={}) visible, focusing.", key);
             EventQueue.invokeLater(() -> {
                 Window window = ONCES_ACTIVE.get(key);
                 if ( window instanceof JFrame ) ((JFrame)window).setExtendedState(JFrame.NORMAL);
                 window.toFront();
             });
         } else {
-            log.debug("showOnce(key={}) not yet visible, creating.", key);
+            L.debug("showOnce(key={}) not yet visible, creating.", key);
             ONCES_BUILDER.get(key).run();
         }
         return true;
@@ -294,10 +309,10 @@ public class Swing extends AbstractCore implements Core<Window> {
         if ( !(in.jPanel().get() instanceof JFXPanel) ) throw new IllegalArgumentException("JPanel not instance of JFXPanel : " + in);
         JFXPanel fxp = (JFXPanel)in.jPanel().get();
         if ( in.pane().get().getScene() != null ) {
-            log().debug("wrapPane(in): in.pane().getScene() is not null, probally a javafx dialog to wrap, reusing");
+            L.debug("wrapPane(in): in.pane().getScene() is not null, probally a javafx dialog to wrap, reusing");
             fxp.setScene(in.pane().get().getScene());
         } else {
-            log().debug("wrapPane(in): in.pane().getScene() is null, creating");
+            L.debug("wrapPane(in): in.pane().getScene() is null, creating");
             fxp.setScene(new Scene(in.pane().get(), javafx.scene.paint.Color.TRANSPARENT));
         }
         SWING_PARENT_HELPER.put(fxp.getScene(), fxp);
@@ -312,17 +327,17 @@ public class Swing extends AbstractCore implements Core<Window> {
      */
     private Optional<Window> windowAncestor(Node p) {
         if ( p == null ) return Optional.empty();
-        log.debug("windowAncestor(node) node.getScene()={}, SWING_PARENT_HELPER.keySet()={}", p.getScene(), SWING_PARENT_HELPER.keySet());
+        L.debug("windowAncestor(node) node.getScene()={}, SWING_PARENT_HELPER.keySet()={}", p.getScene(), SWING_PARENT_HELPER.keySet());
         return SwingSaft.windowAncestor(SWING_PARENT_HELPER.get(p.getScene()));
     }
 
     private void registerActiveAndToFront(String key, Window w) {
-        log().debug("registerActiveAndToFront(key={})", key);
+        L.debug("registerActiveAndToFront(key={})", key);
         ONCES_ACTIVE.put(key, w);
         w.addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                log().debug("windowClosing() once closeing " + key + ", removing from active map");
+                L.debug("windowClosing() once closeing " + key + ", removing from active map");
                 ONCES_ACTIVE.remove(key);
             }
         });

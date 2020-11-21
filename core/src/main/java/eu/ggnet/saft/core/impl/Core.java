@@ -70,6 +70,17 @@ public interface Core<T> {
     }
 
     /**
+     * Set the main window once.
+     * Saft works without the main window (e.g. Application in the tray), but it's highly advisable to set it.
+     * It can only be set once.
+     *
+     * @param window the window to be set.
+     * @throws NullPointerException  if window is null.
+     * @throws IllegalStateException if window was set allready.
+     */
+    void initMain(T window) throws NullPointerException, IllegalStateException;
+
+    /**
      * Suppling unwrapped parent or main to the consumer.
      * if parent not null and the relevant window exists (has been created vie saft) -> this to the consumer
      * else if main parent is set -> this to the consumer

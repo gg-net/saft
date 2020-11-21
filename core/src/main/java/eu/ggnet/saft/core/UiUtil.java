@@ -6,16 +6,18 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.function.Supplier;
 
 import javax.swing.JFrame;
 
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
 
-import eu.ggnet.saft.core.ui.SwingSaft;
 import eu.ggnet.saft.core.ui.Title;
 import eu.ggnet.saft.core.ui.builder.BuilderUtil;
 
@@ -103,32 +105,56 @@ public class UiUtil {
         });
     }
 
-    // TODO: Not nice, recosider name.
-    public static <T extends Component> JFrame startSwing(final Callable<T> builder) throws RuntimeException {
-        try {
-            return SwingSaft.dispatch(() -> {
-                T p = builder.call();
-                JFrame frame = new JFrame();
-                Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
-                if ( optionalTitleProperty.isPresent() ) {
-                    optionalTitleProperty.get().addListener((ob, o, n) -> {
-                        frame.setTitle(n);
-                        frame.setName(n);
-                    });
-                } else if ( p.getClass().getAnnotation(Title.class) != null ) {
-                    frame.setTitle(p.getClass().getAnnotation(Title.class).value());
-                    frame.setName(p.getClass().getAnnotation(Title.class).value());
-                }
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                frame.getContentPane().add(p);
-                frame.pack();
-                frame.setLocationByPlatform(true);
-                frame.setVisible(true);
-                return frame;
+    /**
+     * Startup helper to do some typical work.
+     *
+     * @param <T>
+     * @param builder
+     * @return
+     * @throws RuntimeException
+     */
+    public static <T extends Component> JFrame startup(final Supplier<T> builder) throws RuntimeException {
+        T p = builder.get();
+        JFrame frame = new JFrame();
+        Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
+        if ( optionalTitleProperty.isPresent() ) {
+            optionalTitleProperty.get().addListener((ob, o, n) -> {
+                frame.setTitle(n);
+                frame.setName(n);
             });
-        } catch (InterruptedException | InvocationTargetException | ExecutionException ex) {
-            throw new RuntimeException(ex);
+        } else if ( p.getClass().getAnnotation(Title.class) != null ) {
+            frame.setTitle(p.getClass().getAnnotation(Title.class).value());
+            frame.setName(p.getClass().getAnnotation(Title.class).value());
         }
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        frame.getContentPane().add(p);
+        frame.pack();
+        frame.setLocationByPlatform(true);
+        frame.setVisible(true);
+        return frame;
+    }
+
+    /**
+     * Statup helper to do some typical work on the primary stage.
+     *
+     * @param <T>
+     * @param primaryStage
+     * @param builder
+     * @return
+     */
+    public static <T extends Parent> Stage startup(final Stage primaryStage, final Supplier<T> builder) {
+        Parent p = builder.get();
+        Optional<StringProperty> optionalTitleProperty = BuilderUtil.findTitleProperty(p);
+        if ( optionalTitleProperty.isPresent() ) {
+            primaryStage.titleProperty().bind(optionalTitleProperty.get());
+        } else if ( p.getClass().getAnnotation(Title.class) != null ) {
+            primaryStage.setTitle(p.getClass().getAnnotation(Title.class).value());
+        }
+        primaryStage.setScene(new Scene(p));
+        primaryStage.centerOnScreen();
+        primaryStage.sizeToScene();
+        primaryStage.show();
+        return primaryStage;
     }
 
 }
