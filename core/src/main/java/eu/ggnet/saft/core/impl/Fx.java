@@ -7,12 +7,9 @@ package eu.ggnet.saft.core.impl;
 
 import java.awt.*;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.swing.JComponent;
@@ -31,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
+import eu.ggnet.saft.core.UiUtil;
 import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
@@ -149,7 +147,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
     public void shutdown() {
         allStages.forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
         // TODO: This is a global call. In the multiple safts in one vm, this cannot be used. Some other semantic is needed.
-        getWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
+        UiUtil.findAllOpenFxWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
     }
 
     @Override
@@ -178,61 +176,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
         if ( c == null ) return null;
         if ( JAVAFX_PARENT_HELPER.containsKey(c) ) return JAVAFX_PARENT_HELPER.get(c);
         return deepfind(c.getParent());
-    }
-
-    // public final static Map<String, WeakReference<Stage>> ACTIVE_STAGES = new ConcurrentHashMap<>();
-    private static Supplier<List<javafx.stage.Window>> GetWindowsSupplier = null; // Will be set via getWindows.
-
-    /**
-     * Reflexive Method to get all open windows in any JDK from 8 upwards.
-     * In JDK8 the only way to get all open Windows/Stages was via the unoffical API com.sun.javafx.stage.StageHelper.getStages()
-     * Form JDK9 upwards there is the offical API Window.getWindows().
-     * Both methos are implemented here via reflections.
-     *
-     * @return a List containing all open Windows.
-     */
-    // Hint: internal use
-    // TODO: It is a util method. maybe move to UiUtil
-    private List<javafx.stage.Window> getWindows() {
-        if ( GetWindowsSupplier == null ) {
-            try {
-                GetWindowsSupplier = new Supplier<List<javafx.stage.Window>>() {
-
-                    private final Method methodGetStages = Class.forName("com.sun.javafx.stage.StageHelper").getMethod("getStages");
-
-                    @Override
-                    public List<javafx.stage.Window> get() {
-                        try {
-                            return new ArrayList<>((List<javafx.stage.Window>)methodGetStages.invoke(null));
-                        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                            throw new RuntimeException("getWindows(): com.sun.jacafx.stage.StageHelper.getStages was found, but faild. Should never happen", ex);
-                        }
-                    }
-                };
-                L.info("getWindows() ontime initial. Class StageHelper found, assuming JDK8");
-            } catch (ClassNotFoundException | NoSuchMethodException ex) {
-                try {
-                    GetWindowsSupplier = new Supplier<List<javafx.stage.Window>>() {
-
-                        private final Method methodGetStages = javafx.stage.Window.class.getMethod("getWindows");
-
-                        @Override
-                        public List<javafx.stage.Window> get() {
-                            try {
-                                return new ArrayList<>((List<javafx.stage.Window>)methodGetStages.invoke(null));
-                            } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException ex) {
-                                throw new RuntimeException("getWindows(): com.sun.jacafx.stage.StageHelper.getStages was found, but faild. Should never happen", ex);
-                            }
-                        }
-                    };
-                    L.info("getWindows() ontime initial. Class StageHelper not found, so this must be JDK9 or newer");
-                } catch (NoSuchMethodException | SecurityException ex1) {
-                    throw new RuntimeException("getWindows(): neither StageHelper.getStages nor Window.getWindows was found. Something weird happend, read the source", ex1);
-                }
-
-            }
-        };
-        return GetWindowsSupplier.get();
     }
 
     @Override
