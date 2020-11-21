@@ -6,8 +6,10 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.swing.JFrame;
@@ -18,7 +20,11 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
+import org.slf4j.LoggerFactory;
+
+import eu.ggnet.saft.core.impl.Core;
 import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.BuilderUtil;
 
 /**
@@ -49,7 +55,7 @@ public class UiUtil {
 
     /**
      * Dispatches the Callable to the Platform Ui Thread. If this method is called on the javafx ui thread, the supplied callable is called,
-     * otherwise the exection on Platform.runLater ist synchrnized via a latch.
+     * otherwise the exection on Platform.runLater ist synchrnized via a latch. This Method is blocking.
      *
      * @param <T>      Return type of callable
      * @param callable the callable to dispatch
@@ -155,6 +161,25 @@ public class UiUtil {
         primaryStage.sizeToScene();
         primaryStage.show();
         return primaryStage;
+    }
+
+    /**
+     * Suppling unwrapped parent or main to the consumer.if parent not null and the relevant window exists (has been created vie saft) -> this to the consumer
+     * else if main parent is set -> this to the consumer
+     * else don't call the consumer
+     *
+     * @param <T>
+     * @param core
+     * @param parent
+     * @param consumer
+     */
+    public static <T> void parentIfPresent(Core<T> core, UiParent parent, Consumer<T> consumer) {
+        Objects.requireNonNull(consumer, "consumer must not be null");
+        Objects.requireNonNull(core, "core must not be null");
+        Optional<T> optWindow = core.unwrap(parent);
+        if ( optWindow.isPresent() ) consumer.accept(optWindow.get());
+        else if ( core.unwrapMain().isPresent() ) consumer.accept(core.unwrapMain().get());
+        else LoggerFactory.getLogger(UiUtil.class).debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
     }
 
 }

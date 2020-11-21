@@ -1,19 +1,15 @@
 package eu.ggnet.saft.core.ui.builder;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutionException;
-
-import javax.swing.JOptionPane;
+import java.util.Optional;
 
 import javafx.scene.control.Alert;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.*;
-import eu.ggnet.saft.core.impl.Fx;
-import eu.ggnet.saft.core.impl.Swing;
-import eu.ggnet.saft.core.ui.*;
+import eu.ggnet.saft.core.Saft;
+import eu.ggnet.saft.core.ui.AlertType;
+import eu.ggnet.saft.core.ui.UiParent;
 
 import static eu.ggnet.saft.core.ui.AlertType.INFO;
 
@@ -31,7 +27,7 @@ public class AlertBuilder {
     /**
      * The title.
      */
-    private String title = "Information";
+    private String title = null;
 
     /**
      * The body or message.
@@ -99,27 +95,7 @@ public class AlertBuilder {
      * @param type the type of the alert.
      */
     public void show(AlertType type) {
-        try {
-            if ( UiCore.isGluon() ) {
-                UiCore.global().gluonSupport().get().showAlert(title, message, type);
-            } else if ( UiCore.isFx() ) {
-                UiUtil.dispatchFx(() -> {
-                    Alert alert = new Alert(type.getJavaFxType());
-                    saft.core(Fx.class).parentIfPresent(parent, p -> alert.initOwner(p));
-                    alert.setTitle(title);
-                    alert.setContentText(message);
-                    alert.showAndWait();
-                    return null;
-                });
-            } else {
-                SwingSaft.dispatch(() -> {
-                    JOptionPane.showMessageDialog(saft.core(Swing.class).unwrap(parent).orElse(saft.core(Swing.class).unwrapMain().orElse(null)), message, title, type.getOptionPaneType());
-                    return null;
-                });
-            }
-        } catch (ExecutionException | InterruptedException | InvocationTargetException ex) {
-            Ui.handle(ex);
-        }
+        saft.core().showAlert(message, Optional.ofNullable(parent), Optional.ofNullable(title), Optional.ofNullable(type));
     }
 
     @Override

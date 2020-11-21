@@ -9,14 +9,13 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import javax.swing.*;
 
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
@@ -28,8 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.SwingSaft;
-import eu.ggnet.saft.core.ui.UiParent;
+import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.*;
 
 import static eu.ggnet.saft.core.ui.builder.UiParameter.Type.*;
@@ -106,25 +104,6 @@ public class Swing extends AbstractCore implements Core<Window> {
     @Override
     protected Optional<Callback<Class<?>, Object>> initializer() {
         return Optional.ofNullable(INSTANCE_INITIALZER);
-    }
-
-    @Override
-    public void parentIfPresent(Optional<UiParent> parent, Consumer<Window> consumer) {
-        Objects.requireNonNull(consumer, "consumer must not be null");
-        Optional<Window> optWindow = unwrap(parent);
-        if ( optWindow.isPresent() ) consumer.accept(optWindow.get());
-        else if ( unwrapMain().isPresent() ) consumer.accept(unwrapMain().get());
-        else L.debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
-    }
-
-    @Override
-    public void parentIfPresent(UiParent parent, Consumer<Window> consumer) {
-        parentIfPresent(Optional.ofNullable(parent), consumer);
-    }
-
-    @Override
-    public void parentIfPresent(Consumer<Window> consumer) {
-        parentIfPresent(Optional.empty(), consumer);
     }
 
     @Override
@@ -245,6 +224,13 @@ public class Swing extends AbstractCore implements Core<Window> {
                 .thenApplyAsync((UiParameter p) -> BuilderUtil.waitAndProduceResult(p), saft.executorService()));
     }
 
+    @Override
+    public void showAlert(String message, Optional<UiParent> parent, Optional<String> title, Optional<AlertType> type) throws NullPointerException {
+        invokeAndWait(() -> {
+            JOptionPane.showMessageDialog(saft.core(Swing.class).unwrap(parent).orElse(saft.core(Swing.class).unwrapMain().orElse(null)), message, title.orElse("Information"), type.orElse(AlertType.INFO).getOptionPaneType());
+        });
+    }
+
     private <R, S extends R> CompletableFuture<UiParameter> prepareShowEval(PreBuilder preBuilder, Optional<Callable<?>> optPreProducer, Core.In<R, S> in) {
         Objects.requireNonNull(preBuilder, "preBuilder must not be null");
         Objects.requireNonNull(optPreProducer, "optPreProducer must not be null");
@@ -344,4 +330,12 @@ public class Swing extends AbstractCore implements Core<Window> {
         w.toFront();
     }
 
+    private void invokeAndWait(Runnable runnable) {
+        if ( EventQueue.isDispatchThread() ) runnable.run();
+        else try {
+            EventQueue.invokeAndWait(runnable);
+        } catch (InterruptedException | InvocationTargetException ex) {
+            saft.handle(ex);
+        }
+    }
 }

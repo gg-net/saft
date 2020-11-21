@@ -11,16 +11,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
+import java.util.concurrent.*;
 import java.util.function.Supplier;
 
 import javax.swing.JComponent;
 
 import javafx.application.Platform;
+import javafx.beans.property.StringProperty;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
 import javafx.util.Callback;
@@ -29,8 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.ui.FxSaft;
-import eu.ggnet.saft.core.ui.UiParent;
+import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.*;
 
 /**
@@ -100,25 +99,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
     @Override
     protected Optional<Callback<Class<?>, Object>> initializer() {
         return Optional.ofNullable(INSTANCE_INITIALZER);
-    }
-
-    @Override
-    public void parentIfPresent(UiParent parent, Consumer<Stage> consumer) {
-        parentIfPresent(Optional.ofNullable(parent), consumer);
-    }
-
-    @Override
-    public void parentIfPresent(Optional<UiParent> parent, Consumer<Stage> consumer) {
-        Objects.requireNonNull(consumer, "consumer must not be null");
-        Optional<Stage> optStage = unwrap(parent);
-        if ( optStage.isPresent() ) consumer.accept(optStage.get());
-        else if ( unwrapMain().isPresent() ) consumer.accept(unwrapMain().get());
-        else L.debug("parentIfPresent() neither supplied parent nor mainparent is set, consumer not called");
-    }
-
-    @Override
-    public void parentIfPresent(Consumer<Stage> consumer) {
-        parentIfPresent(Optional.empty(), consumer);
     }
 
     @Override
@@ -322,6 +302,23 @@ public class Fx extends AbstractCore implements Core<Stage> {
     }
 
     @Override
+    public void showAlert(String message, Optional<UiParent> uiparent, Optional<String> title, Optional<AlertType> type) throws NullPointerException {
+        Objects.requireNonNull(message, "message must not be null");
+        Objects.requireNonNull(uiparent, "uiparent must not be null");
+        Objects.requireNonNull(title, "title must not be null");
+        Objects.requireNonNull(type, "type must not be null");
+        runAndWait(() -> {
+            Alert alert = new Alert(type.orElse(AlertType.INFO).getJavaFxType());
+            Optional<Stage> owner = unwrap(uiparent);
+            if ( !owner.isPresent() ) owner = unwrapMain();
+            owner.ifPresent(s -> alert.initOwner(s));
+            alert.setTitle(title.orElse("Information"));
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
+
+    @Override
     public <R, S extends R> CompletableFuture<Stage> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
         return prepareShowEval(prebuilder, preProducer, in)
                 .thenApply((UiParameter p) -> showJavaFx(p))
@@ -351,7 +348,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), EventQueue::invokeLater)
                         .thenApplyAsync(BuilderUtil::createSwingNode, Platform::runLater)
                         .thenApplyAsync(p -> wrapJPanel(p), EventQueue::invokeLater)
-                        .thenApplyAsync(BuilderUtil::constructJavaFx, Platform::runLater)
+                        .thenApplyAsync(p -> constructJavaFx(p), Platform::runLater)
                         .handle(saft.handler());
 
             case DIALOG:
@@ -360,7 +357,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> produceDialog(in, p), Platform::runLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
-                        .thenApplyAsync(BuilderUtil::constructDialog, Platform::runLater)
+                        .thenApplyAsync(p -> constructDialog(p), Platform::runLater)
                         .handle(saft.handler());
 
             case FX:
@@ -369,7 +366,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> producePane(in, p), Platform::runLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
-                        .thenApply(BuilderUtil::constructJavaFx)
+                        .thenApply(p -> constructJavaFx(p))
                         .handle(saft.handler());
 
             case FXML:
@@ -378,7 +375,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
                         .thenApplyAsync(p -> produceFxml(in, p), Platform::runLater)
                         .thenApplyAsync(p -> optionalRunPreProducer(p, optPreProducer), saft.executorService())
                         .thenApplyAsync(p -> optionalConsumePreProducer(p), Platform::runLater)
-                        .thenApply(BuilderUtil::constructJavaFx)
+                        .thenApply(p -> constructJavaFx(p))
                         .handle(saft.handler());
 
             default:
@@ -425,4 +422,76 @@ public class Fx extends AbstractCore implements Core<Stage> {
         return in;
     }
 
+    private UiParameter constructJavaFx(UiParameter in) {
+        Pane pane = in.pane().get();
+        Stage stage = new Stage();
+
+        if ( !in.extractFrame() ) {
+            Optional<Stage> owner = unwrap(in.uiParent());
+            if ( !owner.isPresent() ) owner = unwrapMain();
+            owner.ifPresent(s -> stage.initOwner(s));
+        }
+        in.modality().ifPresent(m -> stage.initModality(m));
+
+        StringProperty titleProperty = in.toTitleProperty();
+        stage.titleProperty().set(titleProperty.get());
+        in.toTitleProperty().addListener((ob, o, n) -> Platform.runLater(() -> stage.titleProperty().set(n)));
+
+        in.showingProperty().ifPresent(s -> {
+            s.set(false);
+            stage.showingProperty().addListener((ob, o, n) -> s.set(n));
+            s.addListener((ob, o, n) -> {
+                if ( !n ) stage.close();
+            });
+        });
+
+        stage.getIcons().addAll(BuilderUtil.loadJavaFxImages(in.extractReferenceClass()));
+        in.saft().core(Fx.class).add(stage);
+        if ( in.isStoreLocation() ) BuilderUtil.registerAndSetStoreLocation(in.extractReferenceClass(), stage);
+        in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed()));
+        stage.setScene(new Scene(pane));
+        return in.toBuilder().stage(stage).build();
+    }
+
+    private UiParameter constructDialog(UiParameter in) {
+        javafx.scene.control.Dialog<?> dialog = in.dialog().get();
+        if ( !in.extractFrame() ) {
+            Optional<Stage> owner = unwrap(in.uiParent());
+            if ( !owner.isPresent() ) owner = unwrapMain();
+            owner.ifPresent(s -> dialog.initOwner(s));
+        }
+        in.modality().ifPresent(m -> dialog.initModality(m));
+        // in.toTitleProperty().addListener((ob, o, n) -> dialog.setTitle(n)); // In Dialog, we use the nativ implementation
+        // stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); // Not in dialog avialable.
+        if ( in.isStoreLocation() ) throw new IllegalArgumentException("Dialog with store location mode is not supported yet");
+        in.getClosedListenerImplemetation().ifPresent(elem -> dialog.setOnCloseRequest(e -> elem.closed()));
+        dialog.showAndWait();
+        return in;
+    }
+
+    /**
+     * Dispatches the Callable to the Platform Ui Thread. If this method is called on the javafx ui thread, the supplied callable is called,
+     * otherwise the exection on Platform.runLater ist synchrnized via a latch. This Method is blocking.
+     *
+     * @param <T>      Return type of callable
+     * @param callable the callable to dispatch
+     * @return the result of the callable
+     * @throws RuntimeException wraps InterruptedException of {@link CountDownLatch#await() } and ExecutionException of {@link FutureTask#get() }
+     */
+    private void runAndWait(Runnable runnable) throws RuntimeException {
+        if ( Platform.isFxApplicationThread() ) {
+            runnable.run();
+            return;
+        }
+        try {
+            final CountDownLatch cdl = new CountDownLatch(1);
+            Platform.runLater(() -> {
+                runnable.run();
+                cdl.countDown();
+            });
+            cdl.await();
+        } catch (InterruptedException ex) {
+            saft.handle(ex);
+        }
+    }
 }

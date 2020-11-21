@@ -12,6 +12,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.*;
 
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import javafx.scene.Node;
@@ -42,21 +43,6 @@ public class Saft {
         @Override
         public void initMain(Object window) throws NullPointerException, IllegalStateException {
             log.warn("initMain() call on dead core");
-        }
-
-        @Override
-        public void parentIfPresent(UiParent parent, Consumer<Object> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public void parentIfPresent(Optional<UiParent> parent, Consumer<Object> consumer) {
-            log.warn("parentIfPresent() call on dead core");
-        }
-
-        @Override
-        public void parentIfPresent(Consumer<Object> consumer) {
-            log.warn("parentIfPresent() call on dead core");
         }
 
         @Override
@@ -109,17 +95,22 @@ public class Saft {
 
         @Override
         public boolean showOnce(String key) throws NullPointerException {
-            throw new IllegalStateException("registerOnce() call on dead core");
+            throw new IllegalStateException("showOnce() call on dead core");
         }
 
         @Override
         public <R, S extends R> CompletableFuture<Object> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
-            throw new IllegalStateException("registerOnce() call on dead core");
+            throw new IllegalStateException("show() call on dead core");
         }
 
         @Override
         public <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, In<R, S> in) {
-            throw new IllegalStateException("registerOnce() call on dead core");
+            throw new IllegalStateException("eval() call on dead core");
+        }
+
+        @Override
+        public void showAlert(String message, Optional<UiParent> uiparent, Optional<String> title, Optional<AlertType> type) throws NullPointerException {
+            JOptionPane.showMessageDialog(null, "DeadCore Alert!\n" + message, "DeadCore Alert! " + title.orElse("No Title"), type.orElse(AlertType.WARNING).getOptionPaneType());
         }
 
     };

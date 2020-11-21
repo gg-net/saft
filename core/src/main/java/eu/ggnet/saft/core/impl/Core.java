@@ -9,9 +9,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 import eu.ggnet.saft.core.ui.builder.Result;
@@ -80,21 +80,6 @@ public interface Core<T> {
      */
     void initMain(T window) throws NullPointerException, IllegalStateException;
 
-    /**
-     * Suppling unwrapped parent or main to the consumer.
-     * if parent not null and the relevant window exists (has been created vie saft) -> this to the consumer
-     * else if main parent is set -> this to the consumer
-     * else don't call the consumer
-     *
-     * @param parent
-     * @param consumer
-     */
-    void parentIfPresent(UiParent parent, Consumer<T> consumer);
-
-    void parentIfPresent(Optional<UiParent> parent, Consumer<T> consumer);
-
-    void parentIfPresent(Consumer<T> consumer);
-
     Optional<T> unwrap(UiParent parent);
 
     Optional<T> unwrap(Optional<UiParent> parent);
@@ -152,6 +137,17 @@ public interface Core<T> {
      * @throws NullPointerException if the key was null or blank.
      */
     boolean showOnce(String key) throws NullPointerException;
+
+    /**
+     * Show an alert via a Gluon Dialog.
+     *
+     * @param message  the message, must not be null
+     * @param uiparent an optional parent, must not be null
+     * @param title    the optional title, not be null
+     * @param type     the optional type, not be null
+     * @throws NullPointerException if one parameter is null.
+     */
+    void showAlert(String message, Optional<UiParent> uiparent, Optional<String> title, Optional<AlertType> type) throws NullPointerException;
 
     <R, S extends R> CompletableFuture<T> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in);
 

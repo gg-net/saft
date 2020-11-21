@@ -28,26 +28,23 @@ import java.util.stream.Collectors;
 
 import javax.swing.*;
 
-import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.embed.swing.JFXPanel;
 import javafx.embed.swing.SwingNode;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Scene;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.image.Image;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import javafx.stage.Stage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Ui;
 import eu.ggnet.saft.core.UiCore;
-import eu.ggnet.saft.core.impl.Fx;
 import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.UiParameter.Builder;
@@ -297,36 +294,6 @@ public final class BuilderUtil {
 
         return in;
     }
-// HINT: Will be reimplemented in a completlly different way.
-//    static UiParameter breakIfOnceAndActive(UiParameter in) {
-//        // Look into existing Instances, if in once mode and push up to the front if exist.
-//        if ( UiCore.isGluon() ) return in; // Not implemented for gluon.
-//        if ( !in.extractOnce() ) return in;
-//        String key = in.toKey();
-//        if ( UiCore.isFx() && FxCore.ACTIVE_STAGES.containsKey(key) ) {
-//            Stage stage = FxCore.ACTIVE_STAGES.get(key).get();
-//            if ( stage == null || !stage.isShowing() ) FxCore.ACTIVE_STAGES.remove(key);
-//            else {
-//                FxSaft.run(() -> {
-//                    stage.setIconified(false);
-//                    stage.requestFocus();
-//                });
-//                throw new UiWorkflowBreak(Type.ONCE);
-//            }
-//        }
-//        if ( UiCore.isSwing() && SwingCore.ACTIVE_WINDOWS.containsKey(key) ) {
-//            Window window = SwingCore.ACTIVE_WINDOWS.get(key).get();
-//            if ( window == null || !window.isVisible() ) SwingCore.ACTIVE_WINDOWS.remove(key);
-//            else {
-//                SwingSaft.run(() -> {
-//                    if ( window instanceof JFrame ) ((JFrame)window).setExtendedState(JFrame.NORMAL);
-//                    window.toFront();
-//                });
-//                throw new UiWorkflowBreak(Type.ONCE);
-//            }
-//        }
-//        return in;
-//    }
 
     public static UiParameter consumePreResult(UiParameter in) {
         return in.optionalConsumePreResult();
@@ -366,52 +333,9 @@ public final class BuilderUtil {
         }
     }
 
-    private static void registerAndSetStoreLocation(Class<?> key, javafx.stage.Stage window) {
+    public static void registerAndSetStoreLocation(Class<?> key, javafx.stage.Stage window) {
         UiCore.global().locationStorage().loadLocation(key, window);
         window.addEventHandler(javafx.stage.WindowEvent.WINDOW_CLOSE_REQUEST, e -> UiCore.global().locationStorage().storeLocation(key, window));
-    }
-
-    public static UiParameter constructJavaFx(UiParameter in) {
-        Pane pane = in.pane().get();
-        Stage stage = new Stage();
-
-        if ( !in.extractFrame() ) {
-            in.saft().core(Fx.class).parentIfPresent(in.uiParent(), s -> stage.initOwner(s));
-        }
-        in.modality().ifPresent(m -> stage.initModality(m));
-
-        StringProperty titleProperty = in.toTitleProperty();
-        stage.titleProperty().set(titleProperty.get());
-        in.toTitleProperty().addListener((ob, o, n) -> Platform.runLater(() -> stage.titleProperty().set(n)));
-
-        in.showingProperty().ifPresent(s -> {
-            s.set(false);
-            stage.showingProperty().addListener((ob, o, n) -> s.set(n));
-            s.addListener((ob, o, n) -> {
-                if ( !n ) stage.close();
-            });
-        });
-
-        stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
-        in.saft().core(Fx.class).add(stage);
-        if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
-        in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed()));
-        stage.setScene(new Scene(pane));
-        return in.toBuilder().stage(stage).build();
-    }
-
-    public static UiParameter constructDialog(UiParameter in) {
-        Dialog<?> dialog = in.dialog().get();
-        if ( !in.extractFrame() ) {
-            in.saft().core(Fx.class).parentIfPresent(in.uiParent(), s -> dialog.initOwner(s));
-        }
-        in.modality().ifPresent(m -> dialog.initModality(m));
-        // in.toTitleProperty().addListener((ob, o, n) -> dialog.setTitle(n)); // In Dialog, we use the nativ implementation
-        // stage.getIcons().addAll(loadJavaFxImages(in.getRefernceClass())); // Not in dialog avialable.
-        if ( in.isStoreLocation() ) throw new IllegalArgumentException("Dialog with store location mode is not supported yet");
-        in.getClosedListenerImplemetation().ifPresent(elem -> dialog.setOnCloseRequest(e -> elem.closed()));
-        dialog.showAndWait();
-        return in;
     }
 
     public static UiParameter constructSwing(UiParameter in) {
@@ -446,6 +370,7 @@ public final class BuilderUtil {
         if ( !(in.type().selectRelevantInstance(in) instanceof ResultProducer || in.type().selectRelevantInstance(in) instanceof Dialog) ) {
             throw new IllegalStateException("Calling Produce Result on a none ResultProducer. Try show instead of eval. Type: " + in.type());
         }
+        // TODO: Extract to swing core.
         try {
             if ( UiCore.isSwing() ) BuilderUtil.wait(in.window().get()); // Only needed in Swing mode. In JavaFx the showAndWait() is allways used.
         } catch (InterruptedException | IllegalStateException | NullPointerException ex) {
@@ -457,12 +382,17 @@ public final class BuilderUtil {
             return result;
         } else {
             T result = ((Dialog<T>)in.type().selectRelevantInstance(in)).getResult();
-            if ( result == null ) throw new CancellationException();
+            if ( result == null ) {
+                throw new CancellationException("result == null");
+            }
+            if ( result == ButtonType.CANCEL || result == ButtonType.CLOSE || result == ButtonType.NO ) {
+                throw new CancellationException("result == " + result);
+            }
             return result;
         }
     }
 
-    private static java.util.List<java.awt.Image> loadAwtImages(Class<?> reference) throws IOException {
+    public static java.util.List<java.awt.Image> loadAwtImages(Class<?> reference) throws IOException {
         java.awt.Toolkit toolkit = java.awt.Toolkit.getDefaultToolkit();
         return IconConfig.possibleIcons(reference).stream()
                 .map(n -> reference.getResource(n))
@@ -471,7 +401,7 @@ public final class BuilderUtil {
                 .collect(Collectors.toList());
     }
 
-    private static java.util.List<Image> loadJavaFxImages(Class<?> reference) {
+    public static java.util.List<Image> loadJavaFxImages(Class<?> reference) {
         return IconConfig.possibleIcons(reference).stream()
                 .map(n -> reference.getResourceAsStream(n))
                 .filter(u -> u != null)
