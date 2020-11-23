@@ -166,6 +166,10 @@ public class Saft {
         this.executorService = Objects.requireNonNull(executorService, "ExecutorService must not be null");
     }
 
+    public Saft() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
     /**
      * Returns the subsystem of
      *
