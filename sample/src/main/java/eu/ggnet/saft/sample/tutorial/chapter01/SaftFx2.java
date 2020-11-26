@@ -1,7 +1,5 @@
 package eu.ggnet.saft.sample.tutorial.chapter01;
 
-import java.util.concurrent.Executors;
-
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -9,13 +7,13 @@ import javafx.stage.Stage;
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.impl.Fx;
 
-import eu.ggnet.saft.core.ui.LocationStorage;
+import static eu.ggnet.saft.core.UiCore.global;
 
 /**
  *
  * @author pascal.perau
  */
-public class SaftFx {
+public class SaftFx2 {
 
     public static class SaftFxApplication extends Application {
 
@@ -23,11 +21,9 @@ public class SaftFx {
 
         @Override
         public void start(Stage stage) throws Exception {
-            saft = new Saft(new LocationStorage(), Executors.newCachedThreadPool());
-            saft.init(new Fx(saft));
-            saft.core(Fx.class).initMain(stage);
-            
-            GettingStartedPane pane = new GettingStartedPane(saft);
+            global().init(new Fx(global(), stage));
+
+            GettingStartedPane pane = new GettingStartedPane(global());
             stage.setScene(new Scene(pane, 800, 600));
             stage.show();
         }
