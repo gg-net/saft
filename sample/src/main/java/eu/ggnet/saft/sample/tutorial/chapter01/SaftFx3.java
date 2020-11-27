@@ -19,8 +19,8 @@ public class SaftFx3 {
         @Override
         public void start(Stage stage) throws Exception {
             UiCore.continueJavaFx(stage);
-            
-            GettingStartedPane pane = new GettingStartedPane(global());
+
+            GettingStartedPane2 pane = new GettingStartedPane2();
             stage.setScene(new Scene(pane, 800, 600));
             stage.show();
         }

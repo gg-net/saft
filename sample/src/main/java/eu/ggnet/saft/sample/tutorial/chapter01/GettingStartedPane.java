@@ -4,6 +4,7 @@ import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.Modality;
 
 import eu.ggnet.saft.core.Saft;
 
@@ -20,22 +21,28 @@ public class GettingStartedPane extends BorderPane {
     public GettingStartedPane(Saft saft) {
         displayLabel.textProperty().bind(displayString);
 
-        Button bHello = new Button("Hello");
-        bHello.setOnAction(e -> displayString.set(displayString.get().concat(" Hallo")));
+        Button bHello = new Button("Hello world Saft!");
+        bHello.setOnAction(e -> displayString.set(displayString.get().concat(" Hello world Saft!")));
 
-        Button bWorld = new Button("world");
-        bWorld.setOnAction(e -> displayString.set(displayString.get().concat(" world")));
-
-        Button bSaft = new Button("Saft!");
-        bSaft.setOnAction(e -> displayString.set(displayString.get().concat(" Saft!")));
-
-        Button bElsewhere = new Button("Elsewhere!");
-        bElsewhere.setOnAction(e
+        Button bFree = new Button("no modality");
+        bFree.setOnAction(e
                 -> saft.build(this).fx()
-                        .show(() -> new AnchorPane(new Label(displayString.get())))
+                        .show(() -> new AnchorPane(new Label("You are free to use other windows as usual.")))
         );
 
-        HBox topBox = new HBox(5, bHello, bWorld, bSaft, bElsewhere);
+        Button bWinModal = new Button("window modality!");
+        bWinModal.setOnAction(e
+                -> saft.build(this).modality(Modality.WINDOW_MODAL).fx()
+                        .show(() -> new ModalityShowCasePane(saft, Modality.WINDOW_MODAL, new Label("Window modal windows will only block their parents usage.")))
+        );
+
+        Button bAppModal = new Button("application modality!");
+        bAppModal.setOnAction(e
+                -> saft.build(this).modality(Modality.APPLICATION_MODAL).fx()
+                        .show(() -> new ModalityShowCasePane(saft, Modality.APPLICATION_MODAL, new Label("Application modal windows block the entire application until the window is closed.")))
+        );
+
+        HBox topBox = new HBox(5, bHello, bFree, bWinModal, bAppModal);
 
         this.setTop(topBox);
         this.setCenter(displayLabel);
