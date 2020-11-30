@@ -31,14 +31,14 @@ import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.impl.UiParameter.Builder;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
-import eu.ggnet.saft.core.impl.UiParameter.Builder;
 
 import static eu.ggnet.saft.core.UiUtil.exceptionRun;
+import static eu.ggnet.saft.core.impl.UiParameter.Type.*;
 import static eu.ggnet.saft.core.ui.Bind.Type.SHOWING;
 import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
-import static eu.ggnet.saft.core.impl.UiParameter.Type.*;
 
 /**
  *
@@ -111,6 +111,7 @@ public abstract class AbstractCore {
      * <p>
      * A Controller class must end with Controller or Presenter and implement {@link FxController}.
      * The FXML file must be in the same package and may end with View.fxml or only the name either in bump writing or everything lowercase.
+     * If Icons are wanted, look into {@link IconConfig}.
      * <p>
      * Example: LoginHelper
      * <ul>
