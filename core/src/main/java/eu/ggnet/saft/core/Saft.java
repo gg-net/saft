@@ -1,7 +1,18 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core;
 
@@ -22,18 +33,15 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.impl.Core;
-import eu.ggnet.saft.core.impl.Core.In;
-import eu.ggnet.saft.core.impl.Swing;
+import eu.ggnet.saft.core.Core.In;
+import eu.ggnet.saft.core.impl.*;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 import eu.ggnet.saft.core.ui.builder.Result;
-import eu.ggnet.saft.core.ui.exception.AndFinallyHandler;
-import eu.ggnet.saft.core.ui.exception.SwingExceptionDialog;
 
 /**
  * The core of saft, everything that is keept in a singleton way, is registered or held here.
- * One Instance of Saft per Ui/Client. No static values. See the jpro.one runtime restrictions.
+ * One Instance of Saft per Ui/Client. No static values.
  *
  * @author oliver.guenther
  */
@@ -117,6 +125,9 @@ public class Saft {
 
     };
 
+    /**
+     * Default once Key for a home Ui.
+     */
     public final static String HOME = "Home";
 
     private final LocationStorage locationStorage;
@@ -151,33 +162,31 @@ public class Saft {
     };
 
     /**
-     * Default Constructor, ready for own implementations.To ensure that no one will make an instance of Saft by error, the constructor is package private.In
-     * the classic mode, use {@link UiCore#initGlobal()} and {@link UiCore#global()}
-     * .<p>
+     * Default Constructor, ready for own implementations. In
+     * global mode, use {@link UiCore#initGlobal(eu.ggnet.saft.core.Saft) } and {@link UiCore#global()}.
+     * <p>
      * If more that one instance is needed (using multiple cdi container in one vm for example) extend Saft.
      * For transition purposes the {@link UiCore#initGlobal(eu.ggnet.saft.core.Saft) } is designed.
      * </p>
      *
-     * @param locationStorage
-     * @param executorService
+     * @param locationStorage the locationstorage, must not be null.
+     * @param executorService the excutorservice, must not be null.
      */
     public Saft(LocationStorage locationStorage, ExecutorService executorService) {
         this.locationStorage = Objects.requireNonNull(locationStorage, "LocationStorage must not be null");
         this.executorService = Objects.requireNonNull(executorService, "ExecutorService must not be null");
     }
 
-    public Saft() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
     /**
-     * Returns the subsystem of
+     * Returns the core of the supplied type.If no core or a core of another type was initiated, a dead core is returned.
      *
-     * @param <T>
-     * @param typeClass
-     * @return
+     * @param <T>       type of the core
+     * @param <V>       type of the window
+     * @param typeClass core class token, must not be null.
+     * @return the core of the supplied type or a dead core.
+     * @throws NullPointerException if typeClass is null.
      */
-    public <T extends Core<V>, V> Core<V> core(Class<T> typeClass) {
+    public <T extends Core<V>, V> Core<V> core(Class<T> typeClass) throws NullPointerException {
         Objects.requireNonNull(typeClass, "typeClass must not be null");
         if ( core == null ) {
             log().warn("core({}) called in, but core is not yet set. Returning dead core");
@@ -192,9 +201,9 @@ public class Saft {
     }
 
     /**
-     * Returns subsystem core if active or a dead core.
+     * Returns the core if initiated or a dead core.
      *
-     * @return
+     * @return the core if initiated or a dead core
      */
     public Core<?> core() {
         if ( core == null ) return DEAD_CORE;
@@ -202,12 +211,14 @@ public class Saft {
     }
 
     /**
-     * Init Saft with the supplied core and first window.
-     * May only be called once. But Saft builder can be used before.
+     * Init Saft with the supplied core.
+     * May only be called once.
+     * But Saft builders can be used before.
      *
-     * @param <T>
+     * @param <T>  the type of the core
+     * @param <V>  the type of the window element of the core.
      * @param core must not be null.
-     * @throws NullPointerException  if typeclass or mainParen are null
+     * @throws NullPointerException  if core is null
      * @throws IllegalStateException if core is allready initialised
      */
     public <T extends Core<V>, V> void init(T core) throws NullPointerException, IllegalStateException {
@@ -215,8 +226,6 @@ public class Saft {
         if ( this.core != null ) throw new IllegalStateException("Core is allready initialized. Second call not allowed");
         this.core = core;
         log().info("init() complete with core " + core.getClass().getName());
-
-        // TODO: All Knowledge of continue and start must be merged here.
     }
 
     /**
@@ -233,32 +242,38 @@ public class Saft {
      *
      * @return the execturor service of saft.
      */
+    // Todo: The ExecutorService should not be stopable.
     public ExecutorService executorService() {
         return executorService;
     }
 
+    /**
+     * Saft Builder.
+     *
+     * @return the prebuilder.
+     */
     public PreBuilder build() {
         return new PreBuilder(this);
     }
 
     /**
-     * Returns a new Ui builder.
+     * Saft Builder with Swing parent.
      *
-     * @param swingParent optional swing parrent
-     * @return a new Ui builder.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @return the prebuilder.
      */
-    public PreBuilder build(Component swingParent) {
-        return new PreBuilder(this).parent(swingParent);
+    public PreBuilder build(Component parent) {
+        return new PreBuilder(this).parent(parent);
     }
 
     /**
-     * Returns a new Ui builder.
+     * Saft Builder with JavaFx parent.
      *
-     * @param javaFxParent optional javafx parrent
-     * @return a new Ui builder.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @return the prebuilder.
      */
-    public PreBuilder build(Parent javaFxParent) {
-        return new PreBuilder(this).parent(javaFxParent);
+    public PreBuilder build(Parent parent) {
+        return new PreBuilder(this).parent(parent);
     }
 
     /**
@@ -342,40 +357,27 @@ public class Saft {
     }
 
     /**
-     * Allows the closing of a window from within a Pane or Panel
-     * <pre>
-     * {@code
-     * JFrame f = new JFrame();
-     * JPanel p = new JPanel();
-     * JButton b = new Button("Close");
-     * p.add(b);
-     * f.getContentPane().get(p);
-     * b.addActionListener(() -> Ui.cloesWindowOf(p);
-     * f.setVisible(true);
-     * }
-     * </pre>.
+     * Allows the closing of a surrounding window from any enclosing Uielement.
      *
-     * @param c the component which is the closest to the window.
+     * @param c the component that is enclosed by the window.
      */
-    // TODO: Reconsider at the end, if this method still makes sense
     public void closeWindowOf(Component c) {
         core().closeOf(UiParent.of(c));
     }
 
     /**
-     * Closes the wrapping Window (or equivalent) of the supplied node.
+     * Allows the closing of a surrounding window from any enclosing Uielement.
      *
-     * @param n the node as refernece.
+     * @param n the node that is enclosed by the window.
      */
-    // TODO: Reconsider at the end, if this method still makes sense
     public void closeWindowOf(Node n) {
         core().closeOf(UiParent.of(n));
     }
 
     /**
-     * Tries to map any exception in the stacktrace to a registered exceptionhandler or uses the final exceptionconsumer.
+     * Handles the supplied exception via the registered exceptionhandlers and the final exceptionconsumer.
      *
-     * @param parent    an optional parent, if null main is used.
+     * @param parent    an optional uielement enclosed by the window which should be the parent, if null main is used.
      * @param exception the exception to handle, if null nothing happens.
      */
     public void handle(Optional<UiParent> parent, Throwable exception) {
@@ -391,52 +393,84 @@ public class Saft {
         exceptionConsumerFinal.accept(parent, exception);
     }
 
-    private boolean containsInStacktrace(Class<?> clazz, Throwable ex) {
-        if ( ex == null ) return false;
-        if ( ex.getClass().equals(clazz) ) return true;
-        return containsInStacktrace(clazz, ex.getCause());
-    }
-
-    private <T extends Throwable> T extractFromStraktrace(Class<T> clazz, Throwable ex) {
-        if ( ex == null ) throw new NullPointerException("No Class in Stacktrace : " + clazz);
-        if ( ex.getClass().equals(clazz) ) return (T)ex;
-        return extractFromStraktrace(clazz, ex.getCause());
-    }
-
+    /**
+     * Handles the supplied exception via the registered exceptionhandlers and the final exceptionconsumer.
+     *
+     * @param javafxParentAnchor an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @param exception          the exception to handle, if null nothing happens.
+     */
     public void handle(Node javafxParentAnchor, Throwable exception) {
         handle(Optional.of(UiParent.of(javafxParentAnchor)), exception);
     }
 
+    /**
+     * Handles the supplied exception via the registered exceptionhandlers and the final exceptionconsumer.
+     *
+     * @param swingParentAnchor an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @param exception         the exception to handle, if null nothing happens.
+     */
     public void handle(Component swingParentAnchor, Throwable exception) {
         handle(Optional.of(UiParent.of(swingParentAnchor)), exception);
     }
 
+    /**
+     * Handles the supplied exception via the registered exceptionhandlers and the final exceptionconsumer.
+     *
+     * @param exception the exception to handle, if null nothing happens.
+     */
     public void handle(Throwable exception) {
         handle(Optional.empty(), exception);
     }
 
     /**
-     * Returns a Handler to be used in {@link CompletableFuture#handle(java.util.function.BiFunction) }.
-     * Use the register methods to define how exception should be handled.
+     * Returns a Handler to be used in {@link CompletableFuture#handle(java.util.function.BiFunction) },
+     * which uses {@link Saft#handle(java.util.Optional, java.lang.Throwable) } for exception handling.
+     * In case of an exception, a {@link CancellationException} is thrown after the handling.
      *
-     * @param <Z>
-     * @param parent a ui parent to show there to display this.
+     * @param <Z>    type of incomming value.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
      * @return the BiFunction.
      */
     public <Z> BiFunction<Z, Throwable, Z> handler(Optional<UiParent> parent) {
         return new AndFinallyHandler<>(this, parent);
     }
 
+    /**
+     * Returns a Handler to be used in {@link CompletableFuture#handle(java.util.function.BiFunction) },
+     * which uses {@link Saft#handle(java.util.Optional, java.lang.Throwable) } for exception handling.
+     * In case of an exception, a {@link CancellationException} is thrown after the handling.
+     *
+     * @param <Z> type of incomming value.
+     * @return the BiFunction.
+     */
     public <Z> BiFunction<Z, Throwable, Z> handler() {
         return handler(Optional.empty());
     }
 
-    public <Z> BiFunction<Z, Throwable, Z> handler(Node javafxParentAnchor) {
-        return handler(Optional.of(UiParent.of(javafxParentAnchor)));
+    /**
+     * Returns a Handler to be used in {@link CompletableFuture#handle(java.util.function.BiFunction) },
+     * which uses {@link Saft#handle(java.util.Optional, java.lang.Throwable) } for exception handling.
+     * In case of an exception, a {@link CancellationException} is thrown after the handling.
+     *
+     * @param <Z>    type of incomming value.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @return the BiFunction.
+     */
+    public <Z> BiFunction<Z, Throwable, Z> handler(Node parent) {
+        return handler(Optional.of(UiParent.of(parent)));
     }
 
-    public <Z> BiFunction<Z, Throwable, Z> handler(Component swingParentAnchor) {
-        return handler(Optional.of(UiParent.of(swingParentAnchor)));
+    /**
+     * Returns a Handler to be used in {@link CompletableFuture#handle(java.util.function.BiFunction) },
+     * which uses {@link Saft#handle(java.util.Optional, java.lang.Throwable) } for exception handling.
+     * In case of an exception, a {@link CancellationException} is thrown after the handling.
+     *
+     * @param <Z>    type of incomming value.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @return the BiFunction.
+     */
+    public <Z> BiFunction<Z, Throwable, Z> handler(Component parent) {
+        return handler(Optional.of(UiParent.of(parent)));
     }
 
     /**
@@ -453,20 +487,30 @@ public class Saft {
 
     /**
      * Allows to overwrite the default final consumer of all exceptions.
-     * Make sure to ignore the {@link UiWorkflowBreak} wrapped into a {@link CompletionException}.
+     * Make sure to ignore the {@link CancellationException} as this is default cancel closing behavior of all windows created by the builders.
      *
-     * @param consumer the consumer, must not be null
+     * @param consumer the consumer to handle the exception, must not be null
+     * @throws NullPointerException if consumer is null.
      */
-    public void overwriteFinalExceptionConsumer(BiConsumer<Optional<UiParent>, Throwable> consumer) {
+    public void overwriteFinalExceptionConsumer(BiConsumer<Optional<UiParent>, Throwable> consumer) throws NullPointerException {
         exceptionConsumerFinal = Objects.requireNonNull(consumer, "Null for ExceptionConsumer not allowed");
     }
 
-    public void addOnShutdown(Runnable runnable) {
+    /**
+     * Register a shutdown listener.
+     *
+     * @param runnable a runable to be called on shutdown, must not be null.
+     * @throws NullPointerException if runnable is null.
+     */
+    public void addOnShutdown(Runnable runnable) throws NullPointerException {
         Objects.requireNonNull(runnable, "runnable must not be null");
         log().debug("addOnShutdown({})", runnable);
         onShutdown.add(runnable);
     }
 
+    /**
+     * Shutdown this saft.
+     */
     public void shutdown() {
         if ( !shuttingDown.compareAndSet(false, true) ) {
             log().debug("shutdown() called after shutdown. Ignored");
@@ -481,9 +525,21 @@ public class Saft {
         core().shutdown();
     }
 
-    protected Logger log() {
+    private Logger log() {
         // TODO: Consider Posibility of different loggers/Safts in one vm (jpro.one idea)
         return LoggerFactory.getLogger(Saft.class);
+    }
+
+    private boolean containsInStacktrace(Class<?> clazz, Throwable ex) {
+        if ( ex == null ) return false;
+        if ( ex.getClass().equals(clazz) ) return true;
+        return containsInStacktrace(clazz, ex.getCause());
+    }
+
+    private <T extends Throwable> T extractFromStraktrace(Class<T> clazz, Throwable ex) {
+        if ( ex == null ) throw new NullPointerException("No Class in Stacktrace : " + clazz);
+        if ( ex.getClass().equals(clazz) ) return (T)ex;
+        return extractFromStraktrace(clazz, ex.getCause());
     }
 
 }

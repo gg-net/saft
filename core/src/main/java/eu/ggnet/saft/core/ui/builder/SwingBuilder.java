@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2017 GG-Net GmbH
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core.ui.builder;
 
@@ -26,10 +26,10 @@ import javax.swing.JPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Core;
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.impl.Core;
-import eu.ggnet.saft.core.ui.ResultProducer;
 import eu.ggnet.saft.core.impl.UiParameter.Type;
+import eu.ggnet.saft.core.ui.ResultProducer;
 
 /*
     I - 4 Fälle:
@@ -76,13 +76,21 @@ public class SwingBuilder {
      * <p>
      * Case: Ia.
      *
-     * @param <V>                the type
+     * @param <V>                the type of the JPanel
      * @param swingPanelProducer the swingPanelProducer of the JPanel, must not be null and must not return null.
      */
     public <V extends JPanel> void show(Supplier<V> swingPanelProducer) {
         saft.core().show(preBuilder, Optional.empty(), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
     }
 
+    /**
+     * Creates the JPanel via the class token and shows it on the correct thread.
+     * <p>
+     * Case: Ia.
+     *
+     * @param <V>             the type of the JPanel
+     * @param swingPanelClass the class token, must not be null.
+     */
     public <V extends JPanel> void show(Class<V> swingPanelClass) {
         saft.core().show(preBuilder, Optional.empty(), new Core.In<>(swingPanelClass));
     }
@@ -93,7 +101,7 @@ public class SwingBuilder {
      * Case: Ib
      *
      * @param <P>                result type of the preProducer
-     * @param <V>                type parameter
+     * @param <V>                the type of the JPanel
      * @param preProducer        the preproducer, must not be null
      * @param swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      */
@@ -101,17 +109,27 @@ public class SwingBuilder {
         saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(JPanel.class, () -> swingPanelProducer.get()));
     }
 
+    /**
+     * Creates the JPanel via the class token, supplies the consumer part with the result of the preProducer and shows it.
+     * <p>
+     * Case: Ib
+     *
+     * @param <P>             result type of the preProducer
+     * @param <V>             the type of the JPanel
+     * @param preProducer     the preproducer, must not be null
+     * @param swingPanelClass the class token, must not be null.
+     */
     public <P, V extends JPanel & Consumer<P>> void show(Callable<P> preProducer, Class<V> swingPanelClass) {
         saft.core().show(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(swingPanelClass));
     }
 
     /**
-     * Creates the JPanel via the producer, shows it and returns the evaluated result as Optional.
+     * Creates the JPanel via the producer, shows it and returns the evaluated result.
      * <p>
      * Case: Ic
      *
      * @param <T>                type of the result
-     * @param <V>                type parameter
+     * @param <V>                the type of the JPanel
      * @param swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
@@ -119,17 +137,26 @@ public class SwingBuilder {
         return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(JPanel.class, swingPanelProducer));
     }
 
+    /**
+     * Creates the JPanel via the class token, shows it and returns the evaluated result.
+     * <p>
+     * Case: Ic
+     *
+     * @param <T>             type of the result
+     * @param <V>             the type of the JPanel
+     * @param swingPanelClass the class token, must not be null.
+     * @return the result of the evaluation, never null.
+     */
     public <T, V extends JPanel & ResultProducer<T>> Result<T> eval(Class<V> swingPanelClass) {
         return saft.core().eval(preBuilder, Optional.empty(), new Core.In<>(swingPanelClass));
     }
 
     /**
-     * Creates the JPanel via the producer, supplies the consumer part with the result of the preProducer, shows it and returns the evaluated result as
-     * Optional.
+     * Creates the JPanel via the producer, supplies the consumer part with the result of the preProducer, shows it and returns the evaluated result.
      *
      * @param <T>                type of the result
      * @param <P>                result type of the preProducer
-     * @param <V>                type parameter
+     * @param <V>                the type of the JPanel
      * @param preProducer        the preproducer, must not be null
      * @param swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
@@ -138,6 +165,16 @@ public class SwingBuilder {
         return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(JPanel.class, swingPanelProducer));
     }
 
+    /**
+     * Creates the JPanel via the class token, supplies the consumer part with the result of the preProducer, shows it and returns the evaluated result.
+     *
+     * @param <T>             type of the result
+     * @param <P>             result type of the preProducer
+     * @param <V>             the type of the JPanel
+     * @param preProducer     the preproducer, must not be null
+     * @param swingPanelClass the class token, must not be null.
+     * @return the result of the evaluation, never null.
+     */
     public <T, P, V extends JPanel & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Class<V> swingPanelClass) {
         return saft.core().eval(preBuilder, Optional.ofNullable(preProducer), new Core.In<>(swingPanelClass));
     }

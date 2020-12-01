@@ -10,6 +10,10 @@
     <name>GG-Net Saft Core</name>
     <packaging>jar</packaging>
 
+    <properties>
+        <netbeans.hint.licensePath>${project.basedir}/src/main/doc/licenseheader.txt</netbeans.hint.licensePath>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

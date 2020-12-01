@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2017 GG-Net GmbH
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core.ui.builder;
 
@@ -26,11 +26,12 @@ import javafx.scene.control.Dialog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Core;
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.impl.Core;
 import eu.ggnet.saft.core.impl.UiParameter.Type;
 
 /**
+ * Saft Dialog Builder.
  *
  * @author oliver.guenther
  */
@@ -44,16 +45,21 @@ public class DialogBuilder {
 
     private static final Type TYPE = Type.DIALOG;
 
+    /**
+     * Creates a new Dialogbuilder.
+     *
+     * @param pre the prebuilser, must not be null.
+     */
     public DialogBuilder(PreBuilder pre) {
         this.preBuilder = pre;
         saft = preBuilder.saft();
     }
 
     /**
-     * Creates the javafx Dialog via the producer, shows it and returns the evaluated result as Optional.
+     * Creates the javafx Dialog via the producer, shows it and returns the evaluated result.
      *
      * @param <T>            type of the result
-     * @param <V>            type of the result
+     * @param <V>            type of the dialog
      * @param dialogProducer the javafx Dialog producer, must not be null and must not return null.
      * @return the result of the evaluation, never null.
      */
@@ -62,12 +68,11 @@ public class DialogBuilder {
     }
 
     /**
-     * Creates the javafx Dialog via the producer, supplies the consumer part with the result of the preProducer, shows it and returns the evaluated result as
-     * Optional.
+     * Creates the javafx Dialog via the producer, supplies the consumer part with the result of the preProducer, shows it and returns the evaluated result.
      *
      * @param <T>            type of the result
      * @param <P>            result type of the preProducer
-     * @param <V>            type of the result
+     * @param <V>            type of the dialog
      * @param preProducer    the preproducer, must not be null
      * @param dialogProducer the javafx Dialog producer, must not be null and must not return null.
      * @return the result of the evaluation, never null.

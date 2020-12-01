@@ -1,7 +1,18 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core;
 
@@ -38,6 +49,7 @@ public class UiUtil {
 
     /**
      * A Runable implementation, that allows throwing an Exception.
+     * Needed for oneliner lambdas.
      *
      * @author oliver.guenther
      */
@@ -58,15 +70,15 @@ public class UiUtil {
     /**
      * Constructs (loads) an FXML and controller pair, finding all elements base on the class and calling load, so direct calls to getRoot() or getController()
      * are possible. Might be run on the Platfrom thread depending on the used widgets (e.g. If webview is used, it must be run on the ui thread.)
-     * Resources are discovered as described in {@link FxSaft#loadView(java.lang.Class) }.
+     * Resources are discovered as described in {@link AbstractCore#loadView(java.lang.Class) }.
      *
      * @param <T>             type parameter
      * @param <R>             type parameter
      * @param controllerClazz the controller class.
      * @return a loaded loader.
-     * @throws IllegalArgumentException see {@link FxSaft#loadView(java.lang.Class) }
-     * @throws IllegalStateException    see {@link FxSaft#loadView(java.lang.Class) }
-     * @throws NullPointerException     see {@link FxSaft#loadView(java.lang.Class) }
+     * @throws IllegalArgumentException see {@link AbstractCore#loadView(java.lang.Class) }
+     * @throws IllegalStateException    if not called on the Platform thread.
+     * @throws NullPointerException     see {@link AbstractCore#loadView(java.lang.Class) }
      * @throws RuntimeException         wrapped IOException of {@link FXMLLoader#load() }.
      */
     // HINT: internal use
@@ -112,15 +124,14 @@ public class UiUtil {
     }
 
     /**
-     * Startup helper to do some typical work.
+     * Startup helper for a Swing environment, to do some typical work.
      *
-     * @param <T>
-     * @param builder
-     * @return
-     * @throws RuntimeException
+     * @param <T>      type of the enclosing component.
+     * @param supplier the supplier of the uielement.
+     * @return the created Window.
      */
-    public static <T extends Component> JFrame startup(final Supplier<T> builder) throws RuntimeException {
-        T p = builder.get();
+    public static <T extends Component> JFrame startup(final Supplier<T> supplier) {
+        T p = supplier.get();
         JFrame frame = new JFrame();
         Optional<StringProperty> optionalTitleProperty = AbstractCore.findTitleProperty(p);
         if ( optionalTitleProperty.isPresent() ) {
@@ -141,15 +152,15 @@ public class UiUtil {
     }
 
     /**
-     * Statup helper to do some typical work on the primary stage.
+     * Statup helper for a JavaFx environment, to do some typical work on the primary stage.
      *
-     * @param <T>
-     * @param primaryStage
-     * @param builder
-     * @return
+     * @param <T>          type of the enclosing component.
+     * @param supplier     the supplier of the uielement.
+     * @param primaryStage the primary stage.
+     * @return the stage after adding the supplied uielement in a scene.
      */
-    public static <T extends Parent> Stage startup(final Stage primaryStage, final Supplier<T> builder) {
-        Parent p = builder.get();
+    public static <T extends Parent> Stage startup(final Stage primaryStage, final Supplier<T> supplier) {
+        Parent p = supplier.get();
         Optional<StringProperty> optionalTitleProperty = AbstractCore.findTitleProperty(p);
         if ( optionalTitleProperty.isPresent() ) {
             primaryStage.titleProperty().bind(optionalTitleProperty.get());
@@ -174,8 +185,6 @@ public class UiUtil {
      *
      * @return a List containing all open Windows.
      */
-    // Hint: internal use
-    // TODO: It is a util method. maybe move to UiUtil
     public static List<javafx.stage.Window> findAllOpenFxWindows() {
         if ( GetWindowsSupplier == null ) {
             try {

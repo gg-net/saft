@@ -1,8 +1,22 @@
+/*
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
+ */
 package eu.ggnet.saft.core.ui.builder;
 
 import java.util.Optional;
-
-import javafx.scene.control.Alert;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +28,7 @@ import eu.ggnet.saft.core.ui.UiParent;
 import static eu.ggnet.saft.core.ui.AlertType.INFO;
 
 /**
- * Fluent Alert Dialog , replacement for JOptionPane.
- * See {@link Alert} as starting point.
+ * Saft Alert Builder.
  *
  * @author oliver.guenther
  */
@@ -37,22 +50,33 @@ public class AlertBuilder {
 
     private final Saft saft;
 
+    /**
+     * Create Builder.
+     *
+     * @param pre the prebuidler, must not be null.
+     */
     public AlertBuilder(PreBuilder pre) {
         parent = pre.uiParent().orElse(null);
         saft = pre.saft();
         pre.title().ifPresent(v -> title = v);
     }
 
+    /**
+     * Fluen title setter.
+     *
+     * @param title the title to be set
+     * @return this alert builder for future fluent usage.
+     */
     public AlertBuilder title(String title) {
         this.title = title;
         return this;
     }
 
     /**
-     * Set the message of the alert.
+     * Fluent message setter.
      *
      * @param message the message
-     * @return the alert for fluent usage.
+     * @return this alert builder for future fluent usage.
      */
     public AlertBuilder message(String message) {
         this.message = message;
@@ -60,10 +84,10 @@ public class AlertBuilder {
     }
 
     /**
-     * Appends to the message prepended by a new line.
+     * Fluent message setter preprend by a new line.
      *
      * @param message the message to append
-     * @return the alert for fluent usage.
+     * @return this alert builder for future fluent usage.
      */
     public AlertBuilder nl(String message) {
         this.message += "\n" + message;
@@ -71,9 +95,9 @@ public class AlertBuilder {
     }
 
     /**
-     * Appends a new line to the message.
+     * Fluent new line setter.
      *
-     * @return the alert for fluent usage.
+     * @return this alert builder for future fluent usage.
      */
     public AlertBuilder nl() {
         this.message += "\n";
@@ -81,15 +105,14 @@ public class AlertBuilder {
     }
 
     /**
-     * Shows the final alert of type info.
+     * Shows the alert of type info.
      */
     public void show() {
         show(INFO);
     }
 
     /**
-     * Shows the final alert.
-     * For now the implementation is done with a JOptionPane.
+     * Shows the alert.
      *
      * @param type the type of the alert.
      */

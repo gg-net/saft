@@ -1,3 +1,19 @@
+/*
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
+ */
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
@@ -20,7 +36,7 @@ import eu.ggnet.saft.core.impl.Swing;
 import eu.ggnet.saft.core.ui.LocationStorage;
 
 /**
- * The Core of the Saft UI, containing methods for startup or registering things.
+ * Saft in global mode.
  *
  * @author oliver.guenther
  */
@@ -31,23 +47,25 @@ public class UiCore {
     private static Saft saft;
 
     /**
-     * Initialise the global with the supplied saft.
+     * Initialise the global saft with the supplied saft.
      * Transition method. If Saft is created by someone else, e.g. CDI, but there exists only one, it can be used to initialise the UiCore.
      *
-     * @param newSaft the saft.
+     * @param newSaft the saft, must not be null.
+     * @throws NullPointerException     if newSaft is null.
+     * @throws IllegalArgumentException if saft was allready initiated.
      */
-    public static void initGlobal(Saft newSaft) {
+    public static void initGlobal(Saft newSaft) throws NullPointerException, IllegalArgumentException {
         if ( saft != null ) throw new IllegalStateException("UiCore.global() already inited, call to initGlobal(Saft) not allowed.");
         L.info("Initialising Saft in classic mode using explizit instance: {}.", newSaft);
         saft = Objects.requireNonNull(newSaft, "Saft must not be null");
     }
 
     /**
-     * Returns the one instance, if running in the classic way.
+     * Returns the one global saft instance.
+     * If global saft is not initiated yet, it will be done with default values.
      *
      * @return the global saft.
      */
-    // TODO: Reconsider, if an autoinit is something wanted. There may be cases, like ui elements displayed before the Saft core is up. A fail first might help solve these.
     public static Saft global() {
         if ( saft == null ) {
             L.info("Initialising Saft in classic mode using defaults.");
@@ -79,6 +97,9 @@ public class UiCore {
     }
 
     /**
+     * Returns the global executor.
+     *
+     * @return the global executor.
      * @deprecated {@link Saft#executorService() }.
      */
     @Deprecated

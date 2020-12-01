@@ -1,10 +1,10 @@
 /*
- * Copyright (C) 2017 GG-Net GmbH
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -12,7 +12,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core.ui.builder;
 
@@ -23,11 +23,11 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Core;
 import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.impl.Core;
+import eu.ggnet.saft.core.impl.UiParameter.Type;
 import eu.ggnet.saft.core.ui.FxController;
 import eu.ggnet.saft.core.ui.ResultProducer;
-import eu.ggnet.saft.core.impl.UiParameter.Type;
 
 /*
     I - 4 Fälle:
@@ -49,8 +49,7 @@ import eu.ggnet.saft.core.impl.UiParameter.Type;
 
  */
 /**
- * Handles Swing elements on Saft.
- * This class has no impact how the emelemts are wrapped, only that the elements are based on Swing.
+ * The Saft Fxml Builder.
  *
  * @author oliver.guenther
  */
@@ -64,6 +63,11 @@ public class FxmlBuilder {
 
     private static final Type TYPE = Type.FXML;
 
+    /**
+     * Creates the builder.
+     *
+     * @param pre the prebuilder, must not be null.
+     */
     public FxmlBuilder(PreBuilder pre) {
         this.preBuilder = pre;
         this.saft = preBuilder.saft();
@@ -74,8 +78,8 @@ public class FxmlBuilder {
      * <p>
      * Case: Ia.
      *
-     * @param <V>                 the type
-     * @param fxmlControllerClass the swingPanelProducer of the JPanel, must not be null and must not return null.
+     * @param <V>                 the type of controller class.
+     * @param fxmlControllerClass the controller class, must not be null.
      */
     public <V extends FxController> void show(Class<V> fxmlControllerClass) {
         saft.core().show(preBuilder, Optional.empty(), new Core.In<>(fxmlControllerClass));
@@ -87,8 +91,8 @@ public class FxmlBuilder {
      * Case: Ib
      *
      * @param <P>                 result type of the preProducer
-     * @param <V>                 type parameter
-     * @param fxmlControllerClass the swingPanelProducer of the JPanel, must not be null and must not return null.
+     * @param <V>                 the type of controller class.
+     * @param fxmlControllerClass the controller class, must not be null.
      * @param preProducer         the preproducer, must not be null
      *                            javafxPaneProducer swingPanelProducer the swingPanelProducer, must not be null and must not return null.
      */
@@ -102,8 +106,8 @@ public class FxmlBuilder {
      * Case: Ic
      *
      * @param <T>                 type of the result
-     * @param <V>                 type parameter
-     * @param fxmlControllerClass the swingPanelProducer, must not be null and must not return null.
+     * @param <V>                 the type of controller class.
+     * @param fxmlControllerClass the controller class, must not be null.
      * @return the result of the evaluation, never null.
      */
     public <T, V extends FxController & ResultProducer<T>> Result<T> eval(Class<V> fxmlControllerClass) {
@@ -117,9 +121,9 @@ public class FxmlBuilder {
      *
      * @param <T>                 type of the result
      * @param <P>                 result type of the preProducer
-     * @param <V>                 type parameter
+     * @param <V>                 the type of controller class.
      * @param preProducer         the preproducer, must not be null
-     * @param fxmlControllerClass the swingPanelProducer, must not be null and must not return null.
+     * @param fxmlControllerClass the controller class, must not be null.
      * @return the result of the evaluation, never null.
      */
     public <T, P, V extends FxController & Consumer<P> & ResultProducer<T>> Result<T> eval(Callable<P> preProducer, Class<V> fxmlControllerClass) {

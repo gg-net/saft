@@ -1,9 +1,20 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
  */
-package eu.ggnet.saft.core.impl;
+package eu.ggnet.saft.core;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -17,15 +28,22 @@ import eu.ggnet.saft.core.ui.builder.PreBuilder;
 import eu.ggnet.saft.core.ui.builder.Result;
 
 /**
- *
- * T type of the ui window class (swing = JFrame, javafx = Stage).
- * All methods have an optional characteristic, meaning, they never fail,
+ * Core Interface, contains all Functions a Core must implement.
+ * <p>
+ * Most of the methods have an optional characteristic, meaning, they do not fail on a dead core.
  *
  * @author oliver.guenther
+ * @param <T> type of the ui window class (swing = JFrame, javafx = Stage).
  */
 public interface Core<T> {
 
     //The R and S construct is the only way to ensure, that the Suppliers result extends the class token.
+    /**
+     * Input helper class, to ensure a dependency between class tokens and suppliers.
+     *
+     * @param <R> type of the class.
+     * @param <S> type of the supplier, which extends the class type.
+     */
     public static class In<R, S extends R> {
 
         private final Supplier<S> supplier;
@@ -33,31 +51,50 @@ public interface Core<T> {
         private final Class<R> clazz;
 
         /**
-         * TODO:
-         * Dokument me.
-         * Jeder Core sollte (muss) mindestens folgende classes und unterclases supporten
-         * - javafx Pane
-         * - swing JPanel
-         * - saft FxController
-         * - javafx Dialog
+         * Input of a class and a supplier.
+         * Every Core must support for R and S:
+         * <ul>
+         * <li>javafx.scene.layout.Pane</li>
+         * <li>javax.swing.JPanel</li>
+         * <li>javafx.scene.control.Dialog<li>
+         * </ul>
          *
          * @param clazz    The type of implementation.
-         * @param supplier
+         * @param supplier The supplier to create the instance.
          */
         public In(Class<R> clazz, Supplier<S> supplier) {
             this.supplier = Objects.requireNonNull(supplier, "supplier must not be null");
             this.clazz = Objects.requireNonNull(clazz, "clazz must not be null");
         }
 
+        /**
+         * Input of a class only.
+         * Every Core must support all classes of {@link In } an:
+         * <ul>
+         * <li>eu.ggnet.saft.core.ui.FxController</li>
+         * </ul>
+         *
+         * @param clazz the type of the implementation.
+         */
         public In(Class<R> clazz) {
             this.supplier = null;
             this.clazz = Objects.requireNonNull(clazz, "clazz must not be null");
         }
 
+        /**
+         * Returns the type of implementation.
+         *
+         * @return the type of implementation.
+         */
         public Class<R> clazz() {
             return clazz;
         }
 
+        /**
+         * Returns an optional supplier.
+         *
+         * @return an optional supplier.
+         */
         public Optional<Supplier<S>> supplier() {
             return Optional.ofNullable(supplier);
         }
@@ -70,7 +107,7 @@ public interface Core<T> {
     }
 
     /**
-     * Set the main window once.
+     * Sets the main window once.
      * Saft works without the main window (e.g. Application in the tray), but it's highly advisable to set it.
      * It can only be set once.
      *
@@ -80,10 +117,28 @@ public interface Core<T> {
      */
     void initMain(T window) throws NullPointerException, IllegalStateException;
 
+    /**
+     * Unwraps a UiParent.
+     *
+     * @param parent the parent to unwrap. A null parent will retrunt an empty Optional.
+     * @return an optional, containing the window implementation.
+     */
     Optional<T> unwrap(UiParent parent);
 
-    Optional<T> unwrap(Optional<UiParent> parent);
+    /**
+     * Unwraps the optional ui parent.
+     *
+     * @param parent the optional parent to unwrap, must not be null
+     * @return an optional, containing the window implementation.
+     * @throws NullPointerException if parent is null.
+     */
+    Optional<T> unwrap(Optional<UiParent> parent) throws NullPointerException;
 
+    /**
+     * Returns an optional main ui parent.
+     *
+     * @return an optional main ui parent.
+     */
     Optional<T> unwrapMain();
 
     /**
@@ -115,7 +170,7 @@ public interface Core<T> {
     /**
      * Returns true if the core of this type is active.
      *
-     * @return
+     * @return true if the core of this type is active.
      */
     boolean isActiv();
 
@@ -139,7 +194,7 @@ public interface Core<T> {
     boolean showOnce(String key) throws NullPointerException;
 
     /**
-     * Show an alert via a Gluon Dialog.
+     * Show an alert.
      *
      * @param message  the message, must not be null
      * @param uiparent an optional parent, must not be null
@@ -149,8 +204,31 @@ public interface Core<T> {
      */
     void showAlert(String message, Optional<UiParent> uiparent, Optional<String> title, Optional<AlertType> type) throws NullPointerException;
 
+    /**
+     * Non-compilesafe show implementaion used by all builders.
+     * The Core implementation will enforces all it's rules on the supplied parameters.
+     *
+     * @param <R>         type of the uielement.
+     * @param <S>         type of supplier of the element.
+     * @param prebuilder  the prebuilder, must not be null
+     * @param preProducer an optional preproduce. If not empty, the R of In must implement a Consumer of the return type.
+     * @param in          input for the uielement to be shown.
+     * @return a CompletableFuture containing the active window element.
+     */
     <R, S extends R> CompletableFuture<T> show(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in);
 
+    /**
+     * Non-comilesafe eval implementation used by all builders.
+     * The Core implementation will enforces all it's rules on the supplied parameters.
+     *
+     * @param <Q>         type of the evaluated result.
+     * @param <R>         type of the uielement.
+     * @param <S>         type of supplier of the element.
+     * @param prebuilder  prebuilder, must not be null.
+     * @param preProducer an optional preproduce. If not empty, the R of In must implement a Consumer of the return type.
+     * @param in          input for the uielement to be shown.
+     * @return a Result of the ui.
+     */
     <Q, R, S extends R> Result<Q> eval(PreBuilder prebuilder, Optional<Callable<?>> preProducer, Core.In<R, S> in);
 
 }

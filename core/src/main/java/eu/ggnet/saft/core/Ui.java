@@ -1,8 +1,24 @@
+/*
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
+ */
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 
 import javafx.scene.Node;
@@ -14,19 +30,8 @@ import org.slf4j.LoggerFactory;
 import eu.ggnet.saft.core.ui.ExceptionWrapper;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 
-/*
- Notes of olli:
-- alles was mit ui zuständen des frameworks zu tun hat, startet hier. zb. mainFrame, progress, failure messager, excetion output.
- */
 /**
- * The main entry point.
- * Some rules which I invented on the way:
- * <ul>
- * <li>Result of null is indicator to break the chain</li>
- * <li></li>
- * <li></li>
- * <li></li>
- * </ul>
+ * Contains usefull shortcuts to {@link UiCore#global() }.
  *
  * @author oliver.guenther
  */
@@ -38,7 +43,7 @@ public class Ui {
      * Static global version of {@link Saft#build() } via {@link UiCore#global() }
      *
      * @see Saft for direct usage.
-     * @return a new Ui builder.
+     * @return the prebuilder.
      */
     public static PreBuilder build() {
         return UiCore.global().build();
@@ -47,27 +52,28 @@ public class Ui {
     /**
      * Static global version of {@link Saft#build() } via {@link UiCore#global() }
      *
-     * @param swingParent optional swing parrent
-     * @return a new Ui builder.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @return the prebuilder.
      */
-    public static PreBuilder build(Component swingParent) {
-        return UiCore.global().build(swingParent);
+    public static PreBuilder build(Component parent) {
+        return UiCore.global().build(parent);
     }
 
     /**
      * Static global version of {@link Saft#build() } via {@link UiCore#global() }
      *
-     * @param javaFxParent optional javafx parrent
-     * @return a new Ui builder.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @return the prebuilder.
      */
-    public static PreBuilder build(Parent javaFxParent) {
-        return UiCore.global().build(javaFxParent);
+    public static PreBuilder build(Parent parent) {
+        return UiCore.global().build(parent);
     }
 
     /**
-     * Wrapper around {@link ForkJoinPool#commonPool() } with Ui Exception handling.
+     * Static global version of {@link ExecutorService#execute(java.lang.Runnable) } on {@link Saft#executorService() } on {@link UiCore#global() }
+     * with exception handling via {@link Saft#handle(java.lang.Throwable) }.
      *
-     * @param <V>      type parameter
+     * @param <V>      type of the callable result.
      * @param callable a callable for the background.
      */
     public static <V> void exec(Callable<V> callable) {
@@ -80,6 +86,12 @@ public class Ui {
         });
     }
 
+    /**
+     * Static global version of {@link ExecutorService#execute(java.lang.Runnable) } on {@link Saft#executorService() } on {@link UiCore#global() }
+     * with exception handling via {@link Saft#handle(java.lang.Throwable) }.
+     *
+     * @param runnable a runnable for the background.
+     */
     public static void exec(Runnable runnable) {
         UiCore.global().executorService().execute(() -> {
             try {
@@ -94,7 +106,7 @@ public class Ui {
      * Allows the wrapping of Exeptions into {@link java.util.concurrent.CompletionException}.
      *
      * @return the ExceptionWrapper.
-     * @deprecated {@link UiUtil}
+     * @deprecated use {@link UiUtil#exceptionRun(eu.ggnet.saft.core.UiUtil.ExceptionRunnable) }.
      */
     @Deprecated
     public static ExceptionWrapper exception() {

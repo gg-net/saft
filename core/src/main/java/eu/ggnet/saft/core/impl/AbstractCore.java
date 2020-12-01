@@ -1,7 +1,18 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core.impl;
 
@@ -31,7 +42,9 @@ import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Core;
 import eu.ggnet.saft.core.impl.UiParameter.Builder;
+import eu.ggnet.saft.core.ui.Bind.Type;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 
@@ -86,17 +99,23 @@ public abstract class AbstractCore {
 
     private final static Logger L = LoggerFactory.getLogger(AbstractCore.class);
 
+    /**
+     * Extract a the {@link StringProperty} from the supplied instance, which is annotated by {@link Bind} and {@link Type#TITLE}.
+     *
+     * @param instance the instance to extract from.
+     * @return returns an optional StringProperty.
+     */
     // HINT: Core usage, but also in UiUtil,
-    public static Optional<StringProperty> findTitleProperty(Object o) {
+    public static Optional<StringProperty> findTitleProperty(Object instance) {
         try {
-            List<Field> fields = allDeclaredFields(o.getClass());
+            List<Field> fields = allDeclaredFields(instance.getClass());
             L.debug("findTitleProperty() inspecting fields for Bind(TITLE): {}", fields);
             for (Field field : fields) {
                 Bind bind = field.getAnnotation(Bind.class);
                 if ( bind != null && bind.value() == TITLE ) {
                     L.debug("findTitleProperty() found Bind(TITLE), extrating property");
                     field.setAccessible(true);
-                    return Optional.ofNullable((StringProperty)field.get(o)); // Cast is safe, Look at the BindingProcessor.
+                    return Optional.ofNullable((StringProperty)field.get(instance)); // Cast is safe, Look at the BindingProcessor.
                 }
             }
         } catch (IllegalAccessException e) {

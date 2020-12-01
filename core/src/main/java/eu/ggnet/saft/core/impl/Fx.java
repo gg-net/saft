@@ -1,7 +1,18 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core.impl;
 
@@ -27,14 +38,14 @@ import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.saft.core.Saft;
-import eu.ggnet.saft.core.UiUtil;
+import eu.ggnet.saft.core.*;
 import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.core.ui.UiParent;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 import eu.ggnet.saft.core.ui.builder.Result;
 
 /**
+ * The Fx core, see {@link Core} for documentation.
  *
  * @author oliver.guenther
  */
@@ -64,24 +75,42 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     private final Callback<Class<?>, Object> INSTANCE_INITIALZER;
 
+    /**
+     * Creates a new Fx core.
+     *
+     * @param saft the saft, this core is connected to.
+     */
     public Fx(Saft saft) {
         this(saft, null, null);
     }
 
+    /**
+     * Creates a new Fx core.
+     *
+     * @param saft        the saft, this core is connected to.
+     * @param initialzier an initializer for all class token builder methods, may be null.
+     */
     public Fx(Saft saft, Callback<Class<?>, Object> initialzier) {
         this(saft, null, initialzier);
     }
 
     /**
-     * Ceates a new Fx Core, should only be used in Saft.
+     * Creates a new Fx core.
      *
-     * @param saft       the saft using this core.
-     * @param mainParent the mainParent.
+     * @param saft       the saft, this core is connected to.
+     * @param mainParent the mainParent, may be null.
      */
     public Fx(Saft saft, Stage mainParent) {
         this(saft, mainParent, null);
     }
 
+    /**
+     * Creates a new Fx core.
+     *
+     * @param saft        the saft, this core is connected to.
+     * @param mainParent  the mainParent, may be null.
+     * @param initialzier an initializer for all class token builder methods, may be null.
+     */
     public Fx(Saft saft, Stage mainParent, Callback<Class<?>, Object> initialzier) {
         this.saft = Objects.requireNonNull(saft, "saft must not be null");
         this.mainStage = mainParent;
@@ -155,29 +184,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
         return true;
     }
 
-    /**
-     * Returns the Stage containing the swingnode with the component or null if not found.
-     *
-     * @param c the component
-     * @return the stage or null
-     */
-    // TODO: Look into the future if we need the stage or can use the window.
-    private Stage find(Component c) {
-        L.debug("find({})", c);
-        SwingNode sn = deepfind(Objects.requireNonNull(c, "Component for find is null"));
-        if ( sn == null ) return null;
-        javafx.stage.Window window = sn.getScene().getWindow();
-        if ( window instanceof Stage ) return (Stage)window;
-        return null;
-    }
-
-    private SwingNode deepfind(Component c) {
-        L.debug("deep({})", c);
-        if ( c == null ) return null;
-        if ( JAVAFX_PARENT_HELPER.containsKey(c) ) return JAVAFX_PARENT_HELPER.get(c);
-        return deepfind(c.getParent());
-    }
-
     @Override
     public void closeOf(UiParent parent) {
         unwrap(parent).ifPresent(s -> run(() -> s.close()));
@@ -206,16 +212,6 @@ public class Fx extends AbstractCore implements Core<Stage> {
             w.setHeight(600);
             i = i + 20;
         }
-    }
-
-    private void registerActiveAndToFront(String key, Stage s) {
-        L.debug("registerActiveAndToFront(key={})", key);
-        ONCES_ACTIVE.put(key, s);
-        s.setOnCloseRequest((t) -> {
-            L.debug("closeRequest() once closeing {}, removing from active map", key);
-            ONCES_ACTIVE.remove(key);
-        });
-        s.toFront();
     }
 
     @Override
@@ -476,6 +472,39 @@ public class Fx extends AbstractCore implements Core<Stage> {
     private void run(Runnable r) {
         if ( Platform.isFxApplicationThread() ) r.run();
         else Platform.runLater(r);
+    }
+
+    /**
+     * Returns the Stage containing the swingnode with the component or null if not found.
+     *
+     * @param c the component
+     * @return the stage or null
+     */
+    // TODO: Look into the future if we need the stage or can use the window.
+    private Stage find(Component c) {
+        L.debug("find({})", c);
+        SwingNode sn = deepfind(Objects.requireNonNull(c, "Component for find is null"));
+        if ( sn == null ) return null;
+        javafx.stage.Window window = sn.getScene().getWindow();
+        if ( window instanceof Stage ) return (Stage)window;
+        return null;
+    }
+
+    private SwingNode deepfind(Component c) {
+        L.debug("deep({})", c);
+        if ( c == null ) return null;
+        if ( JAVAFX_PARENT_HELPER.containsKey(c) ) return JAVAFX_PARENT_HELPER.get(c);
+        return deepfind(c.getParent());
+    }
+
+    private void registerActiveAndToFront(String key, Stage s) {
+        L.debug("registerActiveAndToFront(key={})", key);
+        ONCES_ACTIVE.put(key, s);
+        s.setOnCloseRequest((t) -> {
+            L.debug("closeRequest() once closeing {}, removing from active map", key);
+            ONCES_ACTIVE.remove(key);
+        });
+        s.toFront();
     }
 
 }

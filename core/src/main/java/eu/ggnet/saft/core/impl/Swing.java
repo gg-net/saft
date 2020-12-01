@@ -1,7 +1,18 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Swing and JavaFx Together (Saft)
+ * Copyright (C) 2020  Oliver Guenther <oliver.guenther@gg-net.de>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3 with
+ * Classpath Exception.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * with Classpath Exception along with this program.
  */
 package eu.ggnet.saft.core.impl;
 
@@ -30,6 +41,7 @@ import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.Core;
 import eu.ggnet.saft.core.Saft;
 import eu.ggnet.saft.core.ui.AlertType;
 import eu.ggnet.saft.core.ui.UiParent;
@@ -39,6 +51,7 @@ import eu.ggnet.saft.core.ui.builder.Result;
 import static eu.ggnet.saft.core.impl.UiParameter.Type.*;
 
 /**
+ * The Swing core, see {@link Core} for documentation.
  *
  * @author oliver.guenther
  */
@@ -69,18 +82,42 @@ public class Swing extends AbstractCore implements Core<Window> {
 
     private final Callback<Class<?>, Object> INSTANCE_INITIALZER;
 
-    public Swing(Saft saft, JFrame mainParent) {
-        this(saft, mainParent, null);
+    /**
+     * Creates a new Swing core.
+     *
+     * @param saft       the saft, this core is connected to.
+     * @param mainWindow the mainWindow, may be null.
+     */
+    public Swing(Saft saft, JFrame mainWindow) {
+        this(saft, mainWindow, null);
     }
 
+    /**
+     * Creates a new Swing core.
+     *
+     * @param saft the saft, this core is connected to.
+     */
     public Swing(final Saft saft) {
         this(saft, null, null);
     }
 
+    /**
+     * Creates a new Swing core.
+     *
+     * @param saft        the saft, this core is connected to.
+     * @param initialzier an initializer for all class token builder methods, may be null.
+     */
     public Swing(final Saft saft, Callback<Class<?>, Object> initialzier) {
         this(saft, null, initialzier);
     }
 
+    /**
+     * Creates a new Swing core.
+     *
+     * @param saft        the saft, this core is connected to.
+     * @param mainWindow  the mainWindow, may be null.
+     * @param initialzier an initializer for all class token builder methods, may be null.
+     */
     public Swing(final Saft saft, JFrame mainWindow, Callback<Class<?>, Object> initialzier) {
         // TODO: Global activity. reconsider.
         new JFXPanel(); // Start the Fx platform.
@@ -91,6 +128,16 @@ public class Swing extends AbstractCore implements Core<Window> {
         if ( mainWindow != null ) initMain(mainWindow);
     }
 
+    /**
+     * Sets the main window once.
+     * Saft works without the main window (e.g. Application in the tray), but it's highly advisable to set it.
+     * It can only be set once.
+     * <b>The Swing core will shutdown saft on closing this window.</b>
+     *
+     * @param window the window to be set.
+     * @throws NullPointerException  if window is null.
+     * @throws IllegalStateException if window was set allready.
+     */
     @Override
     public void initMain(Window window) {
         if ( this.mainWindow != null ) throw new IllegalStateException("Main is allready set");
@@ -195,7 +242,6 @@ public class Swing extends AbstractCore implements Core<Window> {
     }
 
     // TODO: Baue noch was ein, das wenn show (also das Runable aufgerufen wird, das bist etwas im der ONCES_ACTIVE map ankommt, es nicht noch ein 2 mal gestartet wird.
-    // TODO: Registiere einen window closing adapter, der wenn es geclosed wird, es aus et active List rausgeschmissen wird.
     @Override
     public void registerOnce(String key, Core.In<?, ?> in) {
         Objects.requireNonNull(key, "key must not be null");
@@ -344,13 +390,6 @@ public class Swing extends AbstractCore implements Core<Window> {
         }
     }
 
-    /**
-     * New jframe based on parameters.
-     *
-     * @param titleProperty
-     * @param component
-     * @return
-     */
     private JFrame newJFrame(StringProperty titleProperty, JComponent component) {
         JFrame jframe = new JFrame();
         jframe.setName(titleProperty.get());
@@ -364,15 +403,6 @@ public class Swing extends AbstractCore implements Core<Window> {
         return jframe;
     }
 
-    /**
-     * New JDialog based on parameters.
-     *
-     * @param swingParent
-     * @param titleProperty
-     * @param component
-     * @param modalityType
-     * @return
-     */
     private JDialog newJDailog(Window swingParent, StringProperty titleProperty, JComponent component, ModalityType modalityType) {
         JDialog dialog = new JDialog(swingParent);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -391,7 +421,7 @@ public class Swing extends AbstractCore implements Core<Window> {
     /**
      * Sets default values.
      *
-     * @param <T>
+     * @param <T>                   the type of the window.
      * @param window                the window to modify
      * @param iconReferenzClass     reference class for icons. see SwingSaft.loadIcons.
      * @param relativeLocationAnker anker for relative location placement, propably also the parent.
@@ -427,10 +457,10 @@ public class Swing extends AbstractCore implements Core<Window> {
     }
 
     /**
-     * Modifies the Dialog to be used in a swingOrMain environment.
+     * Modifies a javafx Dialog to be used in Swing mode.
      *
-     * @param in
-     * @return
+     * @param in the uiparameter, with a set javafx dialog.
+     * @return the in parameter with the modified dialog.
      */
     private UiParameter modifyDialog(UiParameter in) {
         javafx.scene.control.Dialog dialog = in.dialog().get();
