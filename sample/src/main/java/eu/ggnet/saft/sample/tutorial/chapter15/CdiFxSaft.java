@@ -24,6 +24,7 @@ import eu.ggnet.saft.core.ui.LocationStorage;
 @Specializes
 public class CdiFxSaft extends Saft {
 
+    // Wird nur verwendet um später in den Uielementen injected zu werden. Nicht notwendig für Cdi Saft.
     @Produces
     @Value
     private String value = "Ein Wert über CDI Inject";
