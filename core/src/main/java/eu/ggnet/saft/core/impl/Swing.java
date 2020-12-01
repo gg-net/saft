@@ -195,6 +195,10 @@ public class Swing extends AbstractCore implements Core<Window> {
             windowRef.get().setVisible(false); // Close all windows.
             windowRef.get().dispose();
         }
+        for (Window window : ONCES_ACTIVE.values()) {
+            window.setVisible(false);
+            window.dispose();
+        }
         // TODO: This is a global call. In the multiple safts in one vm, this cannot be used. Some other semantic is needed.
         for (Window window : java.awt.Frame.getWindows()) {
             window.setVisible(false);
@@ -241,7 +245,6 @@ public class Swing extends AbstractCore implements Core<Window> {
         }
     }
 
-    // TODO: Baue noch was ein, das wenn show (also das Runable aufgerufen wird, das bist etwas im der ONCES_ACTIVE map ankommt, es nicht noch ein 2 mal gestartet wird.
     @Override
     public void registerOnce(String key, Core.In<?, ?> in) {
         Objects.requireNonNull(key, "key must not be null");
@@ -251,6 +254,11 @@ public class Swing extends AbstractCore implements Core<Window> {
         ONCES_BUILDER.put(key, () -> show(new PreBuilder(saft).frame(true), Optional.empty(), in).thenAccept(w -> registerActiveAndToFront(key, w)));
     }
 
+    // TODO: Consider handling of quick doulbe call
+    /*
+     * If the method is bound to a button and the user clicks very fast, it is possible that it will be constructed 2 times.
+     * This behavior should be handled here.
+     */
     @Override
     public boolean showOnce(String key) throws NullPointerException {
         Objects.requireNonNull(key, "key must not be null");

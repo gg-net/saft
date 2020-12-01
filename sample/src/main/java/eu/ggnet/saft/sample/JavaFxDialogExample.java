@@ -41,16 +41,11 @@ public class JavaFxDialogExample {
             dialog.getDialogPane().getButtonTypes().addAll(OK, CANCEL);
             dialog.showAndWait();
         }
-        
-        public static void main(String[] args) {
-            launch(args);
-        }
-        
 
     }
 
     public static void main(String[] args) {
-        JavaFxDialog.main(args); // Double Main , openjfx workaround
+        Application.launch(JavaFxDialog.class, args);
     }
 
 }

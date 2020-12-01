@@ -21,7 +21,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.*;
@@ -124,44 +123,6 @@ public abstract class AbstractCore {
         return Optional.empty();
     }
 
-    /**
-     * Returns a url of the FXML file based on the controllerClazz.
-     * Nameconvention:
-     * <p>
-     * A Controller class must end with Controller or Presenter and implement {@link FxController}.
-     * The FXML file must be in the same package and may end with View.fxml or only the name either in bump writing or everything lowercase.
-     * If Icons are wanted, look into {@link IconConfig}.
-     * <p>
-     * Example: LoginHelper
-     * <ul>
-     * <li>Controller: LoginHelperController.java or LoginHelperPresenter.java</li>
-     * <li>FXMKL file: LoginHelperView.fxml or LoginHelper.fxml or loginhelper.fxml</li>
-     * </ul>
-     *
-     * @param <R>             the type of the contorller class
-     * @param controllerClazz the controller class
-     * @return a url of the FXML file, ready to be used in the FXMLLoader.
-     * @throws IllegalArgumentException if the controller class does conform to the nameing convetion, it must end with Controller or Presenter
-     * @throws NullPointerException     if no resource can be found, hence there is no file in the same package trewe with the ending View.fxml
-     */
-    // HINT: Core usage, but also in UiUtil,
-    public static <R extends FxController> URL loadView(Class<R> controllerClazz) throws IllegalArgumentException, NullPointerException {
-        String head = null;
-        if ( controllerClazz.getSimpleName().endsWith("Controller") ) {
-            head = controllerClazz.getSimpleName().substring(0, controllerClazz.getSimpleName().length() - "Controller".length());
-        } else if ( controllerClazz.getSimpleName().endsWith("Presenter") ) {
-            head = controllerClazz.getSimpleName().substring(0, controllerClazz.getSimpleName().length() - "Presenter".length());
-        }
-        if ( head == null ) throw new IllegalArgumentException(controllerClazz + " does not end with Controller or Presenter");
-
-        List<String> names = Arrays.asList(head + "View.fxml", head + ".fxml", head.toLowerCase() + ".fxml");
-
-        return names.stream()
-                .map(n -> controllerClazz.getResource(n))
-                .filter(Objects::nonNull)
-                .findFirst().orElseThrow(() -> new NullPointerException("No fxml found with any of the names " + names));
-    }
-
     protected abstract Optional<Callback<Class<?>, Object>> initializer();
 
     // TODO: keep as instance method, for future cdi usage.
@@ -207,8 +168,8 @@ public abstract class AbstractCore {
         try {
             Class<FxController> controllerClazz = (Class<FxController>)in.clazz();  // Cast is a shortcut.
             FXMLLoader loader = initializer().isPresent()
-                    ? new FXMLLoader(Objects.requireNonNull(loadView(controllerClazz), "fxml must not be null"), null, null, initializer().get(), StandardCharsets.UTF_8)
-                    : new FXMLLoader(Objects.requireNonNull(loadView(controllerClazz), "No View for " + controllerClazz));
+                    ? new FXMLLoader(FxController.loadView(controllerClazz), null, null, initializer().get(), StandardCharsets.UTF_8)
+                    : new FXMLLoader(FxController.loadView(controllerClazz));
             loader.load();
             Objects.requireNonNull(loader.getController(), "No controller based on " + controllerClazz + ". Controller set in Fxml ?");
             Pane pane = loader.getRoot();

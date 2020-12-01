@@ -70,22 +70,22 @@ public class UiUtil {
     /**
      * Constructs (loads) an FXML and controller pair, finding all elements base on the class and calling load, so direct calls to getRoot() or getController()
      * are possible. Might be run on the Platfrom thread depending on the used widgets (e.g. If webview is used, it must be run on the ui thread.)
-     * Resources are discovered as described in {@link AbstractCore#loadView(java.lang.Class) }.
+     * Resources are discovered as described in {@link FxController#loadView(java.lang.Class) }.
      *
      * @param <T>             type parameter
      * @param <R>             type parameter
      * @param controllerClazz the controller class.
      * @return a loaded loader.
-     * @throws IllegalArgumentException see {@link AbstractCore#loadView(java.lang.Class) }
+     * @throws IllegalArgumentException see {@link FxController#loadView(java.lang.Class) }
      * @throws IllegalStateException    if not called on the Platform thread.
-     * @throws NullPointerException     see {@link AbstractCore#loadView(java.lang.Class) }
+     * @throws NullPointerException     see {@link FxController#loadView(java.lang.Class) }
      * @throws RuntimeException         wrapped IOException of {@link FXMLLoader#load() }.
      */
     // HINT: internal use
     public static <T, R extends FxController> FXMLLoader constructFxml(Class<R> controllerClazz) throws IllegalArgumentException, NullPointerException, IllegalStateException, RuntimeException {
         if ( !Platform.isFxApplicationThread() )
             throw new IllegalStateException("Method constructFxml is not called from the JavaFx Ui Thread, illegal (e.g. construct of WebView fails on other threads)");
-        FXMLLoader loader = new FXMLLoader(AbstractCore.loadView(controllerClazz));
+        FXMLLoader loader = new FXMLLoader(FxController.loadView(controllerClazz));
         try {
             loader.load();
             return loader;

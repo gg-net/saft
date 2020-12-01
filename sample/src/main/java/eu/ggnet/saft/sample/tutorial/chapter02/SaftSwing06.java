@@ -33,11 +33,6 @@ public class SaftSwing06 {
             }));
         }
 
-        @Override
-        public void stop() throws Exception {
-            UiCore.global().shutdown();
-        }
-
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {

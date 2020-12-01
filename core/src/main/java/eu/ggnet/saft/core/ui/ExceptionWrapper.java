@@ -82,7 +82,7 @@ public class ExceptionWrapper {
     /**
      * @deprecated use {@link UiUtil#exceptionRun(eu.ggnet.saft.core.UiUtil.ExceptionRunnable) }
      *
-     * @param runable
+     * @param runable the runable
      * @deprecated
      */
     @Deprecated

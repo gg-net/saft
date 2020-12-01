@@ -55,7 +55,6 @@ public class SaftCdi {
 
         @Override
         public void stop() throws Exception {
-            saft.shutdown();
             container.close();
         }
 

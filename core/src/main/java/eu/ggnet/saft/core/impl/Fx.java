@@ -108,13 +108,13 @@ public class Fx extends AbstractCore implements Core<Stage> {
      * Creates a new Fx core.
      *
      * @param saft        the saft, this core is connected to.
-     * @param mainParent  the mainParent, may be null.
+     * @param mainStage   the mainParent, may be null.
      * @param initialzier an initializer for all class token builder methods, may be null.
      */
-    public Fx(Saft saft, Stage mainParent, Callback<Class<?>, Object> initialzier) {
+    public Fx(Saft saft, Stage mainStage, Callback<Class<?>, Object> initialzier) {
         this.saft = Objects.requireNonNull(saft, "saft must not be null");
-        this.mainStage = mainParent;
         this.INSTANCE_INITIALZER = initialzier;
+        if ( mainStage != null ) initMain(mainStage);
     }
 
     @Override
@@ -123,8 +123,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
         if ( stage == null ) throw new NullPointerException("stage must not be null");
         L.debug("initMain(stage={})", stage.getClass().getName());
         this.mainStage = stage;
-        // TODO: Doku, that in fx, it should be called in the Application stop method.
-        //  mainStage.setOnCloseRequest(t -> saft.shutdown());
+        mainStage.setOnCloseRequest(t -> saft.shutdown());
     }
 
     @Override
@@ -175,6 +174,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
     @Override
     public void shutdown() {
         allStages.forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
+        ONCES_ACTIVE.values().forEach(Stage::hide);
         // TODO: This is a global call. In the multiple safts in one vm, this cannot be used. Some other semantic is needed.
         UiUtil.findAllOpenFxWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
     }
@@ -224,6 +224,11 @@ public class Fx extends AbstractCore implements Core<Stage> {
         ONCES_BUILDER.put(key, () -> show(new PreBuilder(saft).frame(true), Optional.empty(), in).thenAccept(w -> registerActiveAndToFront(key, w)));
     }
 
+    // TODO: Consider handling of quick doulbe call
+    /*
+     * If the method is bound to a button and the user clicks very fast, it is possible that it will be constructed 2 times.
+     * This behavior should be handled here.
+     */
     @Override
     public boolean showOnce(String key) throws NullPointerException {
         Objects.requireNonNull(key, "key must not be null");

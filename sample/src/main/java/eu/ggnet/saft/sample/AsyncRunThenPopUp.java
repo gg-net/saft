@@ -2,8 +2,7 @@ package eu.ggnet.saft.sample;
 
 import java.awt.EventQueue;
 
-import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.UiCore;
+import eu.ggnet.saft.core.*;
 import eu.ggnet.saft.sample.progress.SimpleBackgroundProgress;
 import eu.ggnet.saft.sample.support.DocumentAdressUpdateViewOkCanceler;
 import eu.ggnet.saft.sample.support.MainPanel;
@@ -31,7 +30,7 @@ public class AsyncRunThenPopUp {
 
     public static void main(String[] args) {
         final MainPanel panel = new MainPanel();
-        UiCore.startSwing(() -> panel);
+        UiCore.continueSwing(UiUtil.startup(() -> panel));
         SimpleBackgroundProgress.initGlobal(new SimpleBackgroundProgress());
         SimpleBackgroundProgress.globalProgress().activityProperty().addListener((o, ov, nv) -> {
             EventQueue.invokeLater(() -> {

@@ -30,7 +30,8 @@ public class SimpleBackgroundProgress {
      * @param i the saft.
      */
     public static void initGlobal(SimpleBackgroundProgress i) {
-        if ( i != null ) throw new IllegalStateException(SimpleBackgroundProgress.class.getSimpleName() + " already inited, call to initGlobal() not allowed.");
+        if ( instance != null )
+            throw new IllegalStateException(SimpleBackgroundProgress.class.getSimpleName() + " already inited, call to initGlobal() not allowed.");
         instance = Objects.requireNonNull(i, SimpleBackgroundProgress.class.getSimpleName() + " must not be null");
     }
 
