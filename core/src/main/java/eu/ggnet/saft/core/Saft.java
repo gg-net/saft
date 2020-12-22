@@ -17,7 +17,6 @@
 package eu.ggnet.saft.core;
 
 import java.awt.Component;
-import java.awt.EventQueue;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -33,8 +32,9 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.dwoss.assembly.client.support.exception.DefaultExceptionConsumer;
 import eu.ggnet.saft.core.Core.In;
-import eu.ggnet.saft.core.impl.*;
+import eu.ggnet.saft.core.impl.AndFinallyHandler;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 import eu.ggnet.saft.core.ui.builder.Result;
@@ -49,6 +49,17 @@ public class Saft {
 
     private final static Core<Object> DEAD_CORE = new Core<Object>() {
         private final Logger log = LoggerFactory.getLogger(Core.class);
+
+        @Override
+        public void captureMode(boolean b) {
+            log.warn("captureMode() call on dead core");
+        }
+
+        @Override
+        public boolean captureMode() {
+            log.warn("captureMode() call on dead core");
+            return false;
+        }
 
         @Override
         public void initMain(Object window) throws NullPointerException, IllegalStateException {
@@ -143,23 +154,7 @@ public class Saft {
     private final Set<Runnable> onShutdown = new HashSet<>();
 
     // This implementation only handles parents in swing mode. in Fx mode it's displayed anythere.
-    private BiConsumer<Optional<UiParent>, Throwable> exceptionConsumerFinal = (Optional<UiParent> parent, Throwable throwable) -> {
-        if ( throwable == null ) return;
-        if ( throwable instanceof CancellationException ) {
-            log().debug("FinalExceptionConsumer catches CancellationException({}), which is ignored by default", throwable.getMessage());
-            return;
-        }
-        if ( throwable instanceof CancellationException || throwable.getCause() instanceof CancellationException ) {
-            log().debug("FinalExceptionConsumer catches CancellationException({}), which is ignored by default", throwable.getCause().getMessage());
-            return;
-        }
-
-        EventQueue.invokeLater(() -> SwingExceptionDialog.show(
-                Saft.this.core(Swing.class).unwrap(parent).orElse(Saft.this.core(Swing.class).unwrapMain().orElse(null)),
-                "Systemfehler",
-                throwable));
-
-    };
+    private BiConsumer<Optional<UiParent>, Throwable> exceptionConsumerFinal = new DefaultExceptionConsumer();
 
     /**
      * Default Constructor, ready for own implementations. In

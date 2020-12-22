@@ -108,12 +108,13 @@ public class UiCore {
     }
 
     /**
-     * Shortcut for UiCore.global().init(new Swing(UiCore.global(), mainView));
+     * Shortcut for UiCore.global().init(new Swing(UiCore.global(), mainView)) and global().core().captureMode(true).
      *
      * @param mainView the mainView to continue on.
      */
     public static void continueSwing(JFrame mainView) {
         global().init(new Swing(global(), mainView));
+        global().core().captureMode(true);
     }
 
     /**
@@ -129,16 +130,13 @@ public class UiCore {
     }
 
     /**
-     * Shortcut for UiCore.global().init(new Fx(UiCore.global(), primaryStage));
+     * Shortcut for UiCore.global().init(new Fx(UiCore.global(), primaryStage)) and global().core().captureMode(true).
      *
      * @param primaryStage the primaryStage for the application, not yet visible.
      */
     public static void continueJavaFx(final Stage primaryStage) {
         global().init(new Fx(global(), primaryStage));
-        // TODO: Docu, that the shutdown must be done in the Application.stop()
-//        primaryStage.setOnCloseRequest((e) -> {
-//            global().shutdown();
-//        });
+        global().core().captureMode(true);
     }
 
     /**

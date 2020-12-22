@@ -1,14 +1,18 @@
 package eu.ggnet.saft.sample.support;
 
+import java.util.concurrent.CompletableFuture;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import javafx.fxml.FXML;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextArea;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.*;
 
 /**
@@ -25,6 +29,9 @@ public class BasicApplicationController implements FxController {
     @FXML
     private TextArea textArea;
 
+    @FXML
+    private MenuItem exceptionItem;
+
     @Inject
     private CdiInput cdiInput;
 
@@ -32,6 +39,11 @@ public class BasicApplicationController implements FxController {
     private void initialize() {
         L.debug("initialize() cdiInput set ? (" + (cdiInput != null) + "), textArea set ? (" + (textArea != null) + ")");
         if ( cdiInput != null ) textArea.setText(cdiInput.msg());
+        exceptionItem.setOnAction(e -> {
+            CompletableFuture.runAsync(() -> {
+                throw new RuntimeException("Blub");
+            }).handle(UiCore.global().handler(textArea));
+        });
     }
 
     @PostConstruct

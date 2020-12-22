@@ -155,6 +155,25 @@ public interface Core<T> {
     void relocate();
 
     /**
+     * Enable the core to handle all open windows in global operations, not only windows by saft.
+     * Will work on the following acitons:
+     * <ul>
+     * <li>{@link Core#relocate()}</li>
+     * <li>{@link Core#shutdown()}</li>
+     * </ul>
+     *
+     * @param b if true, will capture all windows.
+     */
+    void captureMode(boolean b);
+
+    /**
+     * Returns true if capure mode is on.
+     *
+     * @return true if capute mode is on.
+     */
+    boolean captureMode();
+
+    /**
      * Weak register of windows.
      * Remove is not needed, as it will be weak referenced.
      *

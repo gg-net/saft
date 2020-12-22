@@ -23,6 +23,7 @@ public class SwingJavaFxDialog {
     public static void main(String[] args) {
         Ui.exec(() -> {
             UiCore.startSwing(() -> new MainPanel());
+            UiCore.global().core().captureMode(true);
 
             Ui.build().dialog().eval(() -> {
                 Dialog<String> dialog = new Dialog<>();

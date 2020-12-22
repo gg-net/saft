@@ -123,8 +123,8 @@ public class ShowCaseUniversal {
     }
 
     public static void registerGlobals() {
-        UiCore.global().registerOnceSwing(ONCE_JPANEL_CLASS, PanelAsOnceFrame.class);
-        UiCore.global().registerOnceSwing(ONCE_JPANEL_SUPPLIER, () -> new PanelAsOnceFrame());
+        UiCore.global().registerOnceSwing(ONCE_JPANEL_CLASS, PanelWithTitleAndStoreLocation.class);
+        UiCore.global().registerOnceSwing(ONCE_JPANEL_SUPPLIER, () -> new PanelWithTitleAndStoreLocation());
         UiCore.global().registerOnceFx(ONCE_PANE_CLASS, PaneAsFrameWithSelfCloser.class);
         UiCore.global().registerOnceFx(ONCE_PANE_SUPPLIER, () -> new PaneAsFrameWithSelfCloser());
         UiCore.global().registerOnceFxml(ONCE_FXML, BasicApplicationController.class);
@@ -139,8 +139,8 @@ public class ShowCaseUniversal {
                         item("JPanel with SelfCloser", () -> Ui.build().swing().show(() -> new PanelWithSelfCloser()))
                 ),
                 menu("SwingFrames",
-                        item("Once via Class", () -> UiCore.global().showOnce(ONCE_JPANEL_CLASS)),
-                        item("Once via Supplier", () -> UiCore.global().showOnce(ONCE_JPANEL_SUPPLIER)),
+                        item("Once via Class (Title,StoreLocation)", () -> UiCore.global().showOnce(ONCE_JPANEL_CLASS)),
+                        item("Once via Supplier (Title,StoreLocation)", () -> UiCore.global().showOnce(ONCE_JPANEL_SUPPLIER)),
                         item("Frame with ClosedListener via Supplier", () -> Ui.build().swing().show(() -> new PanelAsFrame())),
                         item("Frame with ClosedListener via Class", () -> Ui.build().swing().show(PanelAsFrame.class))
                 ),
@@ -173,6 +173,9 @@ public class ShowCaseUniversal {
                         item("OnceInput with CompletableFuture Result handling",
                                 () -> Ui.build().fx().eval(() -> "Preload", () -> new OnceInputPane()).cf()
                                         .thenAccept(r -> Ui.build().alert("Eingabe war:" + r)).handle(Ui.handler())),
+                        item("OnceInput with CompletableFuture Result handling (and null preproducer)",
+                                () -> Ui.build().fx().eval(() -> null, () -> new OnceInputPane()).cf()
+                                        .thenAccept(r -> Ui.build().alert("Eingabe war:" + r)).handle(Ui.handler())),
                         item("Dialog of Dialogs", () -> Ui.build().fx().show(() -> new DialogOfDialogs()))
                 ),
                 menu("JavaFxFrames",
@@ -182,7 +185,7 @@ public class ShowCaseUniversal {
                         item("Frame Fxml", () -> Ui.build().fxml().show(BasicApplicationController.class)),
                         item("Once Pane via Class", () -> UiCore.global().showOnce(ONCE_PANE_CLASS)),
                         item("Once Pane via Supplier", () -> UiCore.global().showOnce(ONCE_PANE_SUPPLIER)),
-                        item("Once Fxml", () -> UiCore.global().showOnce(ONCE_FXML))
+                        item("Once Fxml (StoreLocation)", () -> UiCore.global().showOnce(ONCE_FXML))
                 )
         );
     }

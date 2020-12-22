@@ -61,7 +61,7 @@ public class Swing extends AbstractCore implements Core<Window> {
     private final static Logger L = LoggerFactory.getLogger(Swing.class);
 
     // TODO: Implement cyclic verification of null weak references and remove elements.
-    private final List<WeakReference<Window>> allWindows = new ArrayList<>();
+    private final List<WeakReference<Window>> ALL_WINDOWS = new ArrayList<>();
 
     private final Saft saft;
 
@@ -81,6 +81,8 @@ public class Swing extends AbstractCore implements Core<Window> {
     private final Map<String, Runnable> ONCES_BUILDER = new HashMap<>();
 
     private final Callback<Class<?>, Object> INSTANCE_INITIALZER;
+
+    private boolean captureMode = false;
 
     /**
      * Creates a new Swing core.
@@ -145,9 +147,8 @@ public class Swing extends AbstractCore implements Core<Window> {
         L.debug("initMain(window={})", window.getClass().getName());
         this.mainWindow = window;
         mainWindow.addWindowListener(new WindowAdapter() {
-
             @Override
-            public void windowClosed(WindowEvent e) {
+            public void windowClosing(WindowEvent e) {
                 saft.shutdown();
             }
 
@@ -185,12 +186,12 @@ public class Swing extends AbstractCore implements Core<Window> {
     @Override
     public void add(Window window) {
         Objects.requireNonNull(window, "window must not be null");
-        allWindows.add(new WeakReference<>(window));
+        ALL_WINDOWS.add(new WeakReference<>(window));
     }
 
     @Override
     public void shutdown() {
-        for (WeakReference<Window> windowRef : allWindows) {
+        for (WeakReference<Window> windowRef : ALL_WINDOWS) {
             if ( windowRef.get() == null ) continue;
             windowRef.get().setVisible(false); // Close all windows.
             windowRef.get().dispose();
@@ -199,12 +200,14 @@ public class Swing extends AbstractCore implements Core<Window> {
             window.setVisible(false);
             window.dispose();
         }
-        // TODO: This is a global call. In the multiple safts in one vm, this cannot be used. Some other semantic is needed.
-        for (Window window : java.awt.Frame.getWindows()) {
-            window.setVisible(false);
-            window.dispose();
+        if ( captureMode ) {
+            L.info("shutdown() with captureMode, closing all free open windows");
+            for (Window window : java.awt.Frame.getWindows()) {
+                window.setVisible(false);
+                window.dispose();
+            }
+            Platform.exit();
         }
-        Platform.exit();
     }
 
     @Override
@@ -226,23 +229,43 @@ public class Swing extends AbstractCore implements Core<Window> {
     }
 
     @Override
+    public void captureMode(boolean b) {
+        this.captureMode = b;
+    }
+
+    @Override
+    public boolean captureMode() {
+        return captureMode;
+    }
+
+    @Override
     public void relocate() {
-        unwrapMain().ifPresent(m -> {
-            L.debug("relocate() relocating mainParent {}", m);
-            m.setSize(800, 600);
-            m.setLocation(20, 20);
-        });
+        if ( captureMode ) {
+            L.info("relocate() in captureMode");
+            int i = 40;
+            for (Window window : java.awt.Frame.getWindows()) {
+                relocate(i, window);
+                i = i + 20;
+            }
+        } else {
+            unwrapMain().ifPresent(m -> {
+                relocate(20, m);
+            });
 
-        int i = 40;
-
-        for (Iterator<java.awt.Window> iterator = allWindows.stream().map(w -> w.get()).filter(w -> w != null).iterator();
-                iterator.hasNext();) {
-            Window w = iterator.next();
-            L.debug("relocate() relocating {}", w);
-            w.setSize(800, 600);
-            w.setLocation(i, i);
-            i = i + 20;
+            int i = 40;
+            for (Iterator<java.awt.Window> iterator = ALL_WINDOWS.stream().map(w -> w.get()).filter(w -> w != null).iterator();
+                    iterator.hasNext();) {
+                Window w = iterator.next();
+                relocate(i, w);
+                i = i + 20;
+            }
         }
+    }
+
+    private void relocate(int offset, Window w) {
+        L.debug("relocate(offset={},window={})", offset, w);
+        w.setSize(800, 600);
+        w.setLocation(offset, offset);
     }
 
     @Override
@@ -382,6 +405,28 @@ public class Swing extends AbstractCore implements Core<Window> {
                     ? newJFrame(in.toTitleProperty(), component)
                     : newJDailog(parent, in.toTitleProperty(), component, in.asSwingModality());
             setWindowProperties(in, window, in.extractReferenceClass(), parent, in.extractReferenceClass(), in.toKey());
+
+            in.showingProperty().ifPresent(s -> {
+                s.set(false);
+
+                window.addWindowListener(new WindowAdapter() {
+                    @Override
+                    public void windowOpened(WindowEvent e) {
+                        s.setValue(true);
+                    }
+
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        s.setValue(false);
+                    }
+
+                });
+
+                s.addListener((ob, o, n) -> {
+                    if ( !n ) EventQueue.invokeLater(() -> window.setVisible(false));
+                });
+            });
+
             in.getClosedListenerImplemetation().ifPresent(elem -> window.addWindowListener(new WindowAdapter() {
 
                 @Override
@@ -443,7 +488,7 @@ public class Swing extends AbstractCore implements Core<Window> {
         window.pack();
         window.setLocationRelativeTo(relativeLocationAnker);
         if ( in.isStoreLocation() ) saft.locationStorage().loadLocation(storeLocationClass, window);
-        in.saft().core(Swing.class).add(window);
+        add(window);
         // Removes on close.
         window.addWindowListener(new WindowAdapter() {
             @Override

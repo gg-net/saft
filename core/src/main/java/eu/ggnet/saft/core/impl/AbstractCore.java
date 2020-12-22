@@ -194,12 +194,12 @@ public abstract class AbstractCore {
 
     protected UiParameter optionalRunPreProducer(UiParameter in, Optional<Callable<?>> optPreProducer) {
         if ( !optPreProducer.isPresent() ) return in;
-        return in.toBuilder().preResult(exceptionRun(optPreProducer.get())).build();
+        return in.toBuilder().nullablePreResult(exceptionRun(optPreProducer.get())).preResultProduced(true).build();
     }
 
     protected UiParameter optionalConsumePreProducer(UiParameter in) {
-        if ( in.preResult().isPresent() && (in.type().selectRelevantInstance(in) instanceof Consumer) ) {
-            ((Consumer)in.type().selectRelevantInstance(in)).accept(in.preResult().get());
+        if ( in.preResultProduced() && (in.type().selectRelevantInstance(in) instanceof Consumer) ) {
+            ((Consumer)in.type().selectRelevantInstance(in)).accept(in.preResult().orElse(null));
         }
         return in;
     }

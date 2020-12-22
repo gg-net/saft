@@ -5,16 +5,21 @@
  */
 package eu.ggnet.saft.sample.support;
 
+import eu.ggnet.saft.core.ui.StoreLocation;
+import eu.ggnet.saft.core.ui.Title;
+
 /**
  *
  * @author oliver.guenther
  */
-public class PanelAsOnceFrame extends javax.swing.JPanel {
+@Title("Title of PanelAsOnceFrame")
+@StoreLocation
+public class PanelWithTitleAndStoreLocation extends javax.swing.JPanel {
 
     /**
      * Creates new form PanelAsOnceFrame
      */
-    public PanelAsOnceFrame() {
+    public PanelWithTitleAndStoreLocation() {
         initComponents();
     }
 

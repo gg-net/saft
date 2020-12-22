@@ -16,17 +16,16 @@
  */
 package eu.ggnet.saft.sample;
 
-import eu.ggnet.saft.sample.support.ShowCaseUniversal;
-
 import java.awt.BorderLayout;
 
 import javax.swing.*;
 
 import eu.ggnet.saft.core.UiCore;
 import eu.ggnet.saft.core.ui.Title;
+import eu.ggnet.saft.sample.support.MainPanelAddButtons;
+import eu.ggnet.saft.sample.support.ShowCaseUniversal;
 import eu.ggnet.saft.sample.support.ShowCaseUniversal.Sitem;
 import eu.ggnet.saft.sample.support.ShowCaseUniversal.Smenu;
-import eu.ggnet.saft.sample.support.MainPanelAddButtons;
 
 /**
  *
@@ -56,6 +55,7 @@ public class ShowCaseSwing {
     public static void main(String[] args) {
         UiCore.startSwing(() -> new SwingPanel());
         ShowCaseUniversal.registerGlobals();
+        UiCore.global().core().captureMode(true);
     }
 
 }

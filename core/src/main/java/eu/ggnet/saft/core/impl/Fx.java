@@ -56,7 +56,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
     private Stage mainStage;
 
     // TODO: Implement cyclic verification of null weak references and remove elements.
-    private final List<WeakReference<Stage>> allStages = new ArrayList<>();
+    private final List<WeakReference<Stage>> ALL_STAGES = new ArrayList<>();
 
     private final static Logger L = LoggerFactory.getLogger(Fx.class);
 
@@ -74,6 +74,8 @@ public class Fx extends AbstractCore implements Core<Stage> {
     private final Map<String, Runnable> ONCES_BUILDER = new HashMap<>();
 
     private final Callback<Class<?>, Object> INSTANCE_INITIALZER;
+
+    private boolean captureMode = false;
 
     /**
      * Creates a new Fx core.
@@ -168,15 +170,17 @@ public class Fx extends AbstractCore implements Core<Stage> {
 
     @Override
     public void add(Stage window) {
-        allStages.add(new WeakReference<>(window));
+        ALL_STAGES.add(new WeakReference<>(window));
     }
 
     @Override
     public void shutdown() {
-        allStages.forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
+        ALL_STAGES.forEach(w -> Optional.ofNullable(w.get()).ifPresent(s -> s.hide()));
         ONCES_ACTIVE.values().forEach(Stage::hide);
-        // TODO: This is a global call. In the multiple safts in one vm, this cannot be used. Some other semantic is needed.
-        UiUtil.findAllOpenFxWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
+        if ( captureMode ) {
+            L.info("shutdown() with caputreMode, closing all free open windows");
+            UiUtil.findAllOpenFxWindows().stream().filter(w -> w != mainStage).forEach(javafx.stage.Window::hide); // close/hide all free stages.
+        }
     }
 
     @Override
@@ -190,28 +194,47 @@ public class Fx extends AbstractCore implements Core<Stage> {
     }
 
     @Override
+    public void captureMode(boolean b) {
+        this.captureMode = b;
+    }
+
+    @Override
+    public boolean captureMode() {
+        return captureMode;
+    }
+
+    @Override
     public void relocate() {
-        //TODO: Needs to be tested.
-        unwrapMain().ifPresent(m -> {
-            L.debug("relocate() relocating mainParent {}", m);
-            m.setX(20);
-            m.setY(20);
-            m.setWidth(800);
-            m.setHeight(600);
+        if ( captureMode ) {
+            L.info("relocate() in captureMode");
+            int i = 20;
+            for (Iterator<javafx.stage.Window> iterator = UiUtil.findAllOpenFxWindows().iterator();
+                    iterator.hasNext();) {
+                javafx.stage.Window w = iterator.next();
+                relocate(i, w);
+                i = i + 20;
+            }
+        } else {
+            unwrapMain().ifPresent(m -> {
+                relocate(20, m);
+            });
+            int i = 40;
 
-        });
-        int i = 40;
-
-        for (Iterator<Stage> iterator = allStages.stream().map(w -> w.get()).filter(w -> w != null).iterator();
-                iterator.hasNext();) {
-            Stage w = iterator.next();
-            L.debug("relocate() relocating {}", w);
-            w.setX(i);
-            w.setY(i);
-            w.setWidth(800);
-            w.setHeight(600);
-            i = i + 20;
+            for (Iterator<Stage> iterator = ALL_STAGES.stream().map(w -> w.get()).filter(w -> w != null).iterator();
+                    iterator.hasNext();) {
+                Stage w = iterator.next();
+                relocate(i, w);
+                i = i + 20;
+            }
         }
+    }
+
+    private void relocate(int offset, javafx.stage.Window w) {
+        L.debug("relocate(offset={},stage={})", offset, w);
+        w.setX(offset);
+        w.setY(offset);
+        w.setWidth(800);
+        w.setHeight(600);
     }
 
     @Override
@@ -389,7 +412,7 @@ public class Fx extends AbstractCore implements Core<Stage> {
             s.set(false);
             stage.showingProperty().addListener((ob, o, n) -> s.set(n));
             s.addListener((ob, o, n) -> {
-                if ( !n ) stage.close();
+                if ( !n ) Platform.runLater(() -> stage.close());
             });
         });
 

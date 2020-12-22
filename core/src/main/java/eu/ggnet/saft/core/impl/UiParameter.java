@@ -105,6 +105,8 @@ public abstract class UiParameter {
 
     public abstract Optional<Object> preResult();
 
+    public abstract boolean preResultProduced();
+
     public abstract Optional<Class<?>> rootClass();
 
     public abstract Optional<Pane> pane();
@@ -126,6 +128,7 @@ public abstract class UiParameter {
         @SuppressWarnings("OverridableMethodCallInConstructor")
         public Builder() {
             frame(false);
+            preResultProduced(false);
         }
 
     }
