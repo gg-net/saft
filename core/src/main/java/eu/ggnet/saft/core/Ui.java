@@ -77,13 +77,7 @@ public class Ui {
      * @param callable a callable for the background.
      */
     public static <V> void exec(Callable<V> callable) {
-        UiCore.global().executorService().execute(() -> {
-            try {
-                callable.call();
-            } catch (Exception e) {
-                UiCore.global().handle(e);
-            }
-        });
+        UiCore.global().exec(callable);
     }
 
     /**
@@ -93,13 +87,7 @@ public class Ui {
      * @param runnable a runnable for the background.
      */
     public static void exec(Runnable runnable) {
-        UiCore.global().executorService().execute(() -> {
-            try {
-                runnable.run();
-            } catch (RuntimeException e) {
-                UiCore.global().handle(e);
-            }
-        });
+        UiCore.global().exec(runnable);
     }
 
     /**

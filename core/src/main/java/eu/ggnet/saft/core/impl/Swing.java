@@ -193,18 +193,16 @@ public class Swing extends AbstractCore implements Core<Window> {
     public void shutdown() {
         for (WeakReference<Window> windowRef : ALL_WINDOWS) {
             if ( windowRef.get() == null ) continue;
-            windowRef.get().setVisible(false); // Close all windows.
-            windowRef.get().dispose();
+            Window window = windowRef.get();
+            window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING));
         }
         for (Window window : ONCES_ACTIVE.values()) {
-            window.setVisible(false);
-            window.dispose();
+            window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING));
         }
         if ( captureMode ) {
             L.info("shutdown() with captureMode, closing all free open windows");
             for (Window window : java.awt.Frame.getWindows()) {
-                window.setVisible(false);
-                window.dispose();
+                window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING));
             }
             Platform.exit();
         }
@@ -218,8 +216,7 @@ public class Swing extends AbstractCore implements Core<Window> {
     @Override
     public void closeOf(UiParent parent) {
         unwrap(parent).ifPresent(p -> run(() -> {
-            p.setVisible(false);
-            p.dispose();
+            p.dispatchEvent(new WindowEvent(p, WindowEvent.WINDOW_CLOSING));
         }));
     }
 
@@ -423,7 +420,7 @@ public class Swing extends AbstractCore implements Core<Window> {
                 });
 
                 s.addListener((ob, o, n) -> {
-                    if ( !n ) EventQueue.invokeLater(() -> window.setVisible(false));
+                    if ( !n ) EventQueue.invokeLater(() -> window.dispatchEvent(new WindowEvent(window, WindowEvent.WINDOW_CLOSING)));
                 });
             });
 

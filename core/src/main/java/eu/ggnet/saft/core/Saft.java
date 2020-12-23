@@ -243,6 +243,37 @@ public class Saft {
     }
 
     /**
+     * Uses the {@link Saft#executorService() } with exception handling via {@link Saft#handle(java.lang.Throwable) }.
+     *
+     * @param <V>      type of the callable result.
+     * @param callable a callable for the background.
+     */
+    public <V> void exec(Callable<V> callable) {
+        executorService().execute(() -> {
+            try {
+                callable.call();
+            } catch (Exception e) {
+                handle(e);
+            }
+        });
+    }
+
+    /**
+     * Uses the {@link Saft#executorService() } with exception handling via {@link Saft#handle(java.lang.Throwable) }.
+     *
+     * @param runnable a runnable for the background.
+     */
+    public void exec(Runnable runnable) {
+        executorService().execute(() -> {
+            try {
+                runnable.run();
+            } catch (RuntimeException e) {
+                handle(e);
+            }
+        });
+    }
+
+    /**
      * Saft Builder.
      *
      * @return the prebuilder.
