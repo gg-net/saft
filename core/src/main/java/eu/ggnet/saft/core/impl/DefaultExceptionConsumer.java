@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package eu.ggnet.dwoss.assembly.client.support.exception;
+package eu.ggnet.saft.core.impl;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import eu.ggnet.saft.core.Ui;
-import eu.ggnet.saft.core.impl.DetailView;
 import eu.ggnet.saft.core.ui.UiParent;
 
 /**

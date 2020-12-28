@@ -32,9 +32,9 @@ import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import eu.ggnet.dwoss.assembly.client.support.exception.DefaultExceptionConsumer;
 import eu.ggnet.saft.core.Core.In;
 import eu.ggnet.saft.core.impl.AndFinallyHandler;
+import eu.ggnet.saft.core.impl.DefaultExceptionConsumer;
 import eu.ggnet.saft.core.ui.*;
 import eu.ggnet.saft.core.ui.builder.PreBuilder;
 import eu.ggnet.saft.core.ui.builder.Result;
