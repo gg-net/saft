@@ -54,6 +54,7 @@ public class CdiSwingSaft extends Saft {
             L.debug("initializing via cid: {} ", param.getName());
             return instance.select(param).get();
         }));
+        core().captureMode(true);
     }
 
 }
