@@ -21,8 +21,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 
-import eu.ggnet.dwoss.assembly.client.support.exception.DefaultExceptionConsumer;
 import eu.ggnet.saft.core.*;
+import eu.ggnet.saft.core.impl.DefaultExceptionConsumer;
 import eu.ggnet.saft.core.impl.DetailView;
 import eu.ggnet.saft.sample.support.BasicApplicationController;
 import eu.ggnet.saft.sample.support.FramePanel;
