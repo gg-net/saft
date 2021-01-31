@@ -468,7 +468,7 @@ public class Saft {
      * @param parent an optional uielement enclosed by the window which should be the parent, if empty main is used.
      * @return the BiFunction.
      */
-    public <Z> AndFinallyHandler handler(Optional<UiParent> parent) {
+    public <Z> AndFinallyHandler<Z> handler(Optional<UiParent> parent) {
         return new AndFinallyHandler<>(this, parent);
     }
 
@@ -481,8 +481,8 @@ public class Saft {
      * @param parent uielement enclosed by the window which should be the parent, must not be null.
      * @return the BiFunction.
      */
-    public <Z> BiFunction<Z, Throwable, Z> handler(UiParent parent) {
-        return new AndFinallyHandler<>(this, Optional.of(parent));
+    public <Z> AndFinallyHandler<Z> handler(UiParent parent) {
+        return handler(Optional.of(parent));
     }
 
     /**
@@ -493,7 +493,7 @@ public class Saft {
      * @param <Z> type of incomming value.
      * @return the BiFunction.
      */
-    public <Z> AndFinallyHandler handler() {
+    public <Z> AndFinallyHandler<Z> handler() {
         return handler(Optional.empty());
     }
 
