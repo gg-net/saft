@@ -422,7 +422,7 @@ public class Saft {
     /**
      * Handles the supplied exception via the registered exceptionhandlers and the final exceptionconsumer.
      *
-     * @param javafxParentAnchor an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @param javafxParentAnchor an uielement enclosed by the window which should be the parent, must not be null.
      * @param exception          the exception to handle, if null nothing happens.
      */
     public void handle(Node javafxParentAnchor, Throwable exception) {
@@ -432,11 +432,21 @@ public class Saft {
     /**
      * Handles the supplied exception via the registered exceptionhandlers and the final exceptionconsumer.
      *
-     * @param swingParentAnchor an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @param swingParentAnchor an uielement enclosed by the window which should be the parent, must not be null.
      * @param exception         the exception to handle, if null nothing happens.
      */
     public void handle(Component swingParentAnchor, Throwable exception) {
         handle(Optional.of(UiParent.of(swingParentAnchor)), exception);
+    }
+
+    /**
+     * Handles the supplied exception via the registered exceptionhandlers and the final exceptionconsumer.
+     *
+     * @param parent    an uielement enclosed by the window which should be the parent, must not be null.
+     * @param exception the exception to handle, if null nothing happens.
+     */
+    public void handle(UiParent parent, Throwable exception) {
+        handle(Optional.of(parent), exception);
     }
 
     /**
@@ -454,11 +464,24 @@ public class Saft {
      * In case of an exception, a {@link CancellationException} is thrown after the handling.
      *
      * @param <Z>    type of incomming value.
-     * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
+     * @param parent an optional uielement enclosed by the window which should be the parent, if empty main is used.
      * @return the BiFunction.
      */
     public <Z> BiFunction<Z, Throwable, Z> handler(Optional<UiParent> parent) {
         return new AndFinallyHandler<>(this, parent);
+    }
+
+    /**
+     * Returns a Handler to be used in {@link CompletableFuture#handle(java.util.function.BiFunction) },
+     * which uses {@link Saft#handle(java.util.Optional, java.lang.Throwable) } for exception handling.
+     * In case of an exception, a {@link CancellationException} is thrown after the handling.
+     *
+     * @param <Z>    type of incomming value.
+     * @param parent uielement enclosed by the window which should be the parent, must not be null.
+     * @return the BiFunction.
+     */
+    public <Z> BiFunction<Z, Throwable, Z> handler(UiParent parent) {
+        return new AndFinallyHandler<>(this, Optional.of(parent));
     }
 
     /**
