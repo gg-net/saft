@@ -20,7 +20,8 @@ import java.awt.Component;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.*;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -467,7 +468,7 @@ public class Saft {
      * @param parent an optional uielement enclosed by the window which should be the parent, if empty main is used.
      * @return the BiFunction.
      */
-    public <Z> BiFunction<Z, Throwable, Z> handler(Optional<UiParent> parent) {
+    public <Z> AndFinallyHandler handler(Optional<UiParent> parent) {
         return new AndFinallyHandler<>(this, parent);
     }
 
@@ -492,7 +493,7 @@ public class Saft {
      * @param <Z> type of incomming value.
      * @return the BiFunction.
      */
-    public <Z> BiFunction<Z, Throwable, Z> handler() {
+    public <Z> AndFinallyHandler handler() {
         return handler(Optional.empty());
     }
 
@@ -505,7 +506,7 @@ public class Saft {
      * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
      * @return the BiFunction.
      */
-    public <Z> BiFunction<Z, Throwable, Z> handler(Node parent) {
+    public <Z> AndFinallyHandler handler(Node parent) {
         return handler(Optional.of(UiParent.of(parent)));
     }
 
@@ -518,7 +519,7 @@ public class Saft {
      * @param parent an optional uielement enclosed by the window which should be the parent, if null main is used.
      * @return the BiFunction.
      */
-    public <Z> BiFunction<Z, Throwable, Z> handler(Component parent) {
+    public <Z> AndFinallyHandler handler(Component parent) {
         return handler(Optional.of(UiParent.of(parent)));
     }
 

@@ -94,14 +94,4 @@ public class AndFinallyHandler<Z> implements BiFunction<Z, Throwable, Z> {
 
     }
 
-    /**
-     * Creates a new Handler combining the original Handler and the supplied runnable.
-     *
-     * @param runnable the runnable to be run on a final condition.
-     * @return a new Handler.
-     */
-    public BiFunction<Z, Throwable, Z> andFinally(Runnable runnable) {
-        return andFinally((ExceptionRunnable)() -> runnable.run());
-    }
-
 }
