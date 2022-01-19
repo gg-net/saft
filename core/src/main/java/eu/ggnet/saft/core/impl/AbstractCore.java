@@ -32,9 +32,11 @@ import javax.swing.JPanel;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.StringProperty;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
+import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.util.Callback;
 
@@ -49,8 +51,7 @@ import eu.ggnet.saft.core.ui.builder.PreBuilder;
 
 import static eu.ggnet.saft.core.UiUtil.exceptionRun;
 import static eu.ggnet.saft.core.impl.UiParameter.Type.*;
-import static eu.ggnet.saft.core.ui.Bind.Type.SHOWING;
-import static eu.ggnet.saft.core.ui.Bind.Type.TITLE;
+import static eu.ggnet.saft.core.ui.Bind.Type.*;
 
 /**
  *
@@ -123,6 +124,31 @@ public abstract class AbstractCore {
         return Optional.empty();
     }
 
+    /**
+     * Extract a the {@link StringProperty} from the supplied instance, which is annotated by {@link Bind} and {@link Type#TITLE}.
+     *
+     * @param instance the instance to extract from.
+     * @return returns an optional StringProperty.
+     */
+    // HINT: Core usage, but also in UiUtil,
+    public static Optional<ObservableList<Image>> findIcons(Object instance) {
+        try {
+            List<Field> fields = allDeclaredFields(instance.getClass());
+            L.debug("findIcons() inspecting fields for Bind(ICONS): {}", fields);
+            for (Field field : fields) {
+                Bind bind = field.getAnnotation(Bind.class);
+                if ( bind != null && bind.value() == ICONS ) {
+                    L.debug("findIcons() found Bind(ICONS), extrating property");
+                    field.setAccessible(true);
+                    return Optional.ofNullable((ObservableList<Image>)field.get(instance)); // Cast is safe, Look at the BindingProcessor.
+                }
+            }
+        } catch (IllegalAccessException e) {
+            L.error("findIcons() Exception on field.get()", e);
+        }
+        return Optional.empty();
+    }
+
     protected abstract Optional<Callback<Class<?>, Object>> initializer();
 
     // TODO: keep as instance method, for future cdi usage.
@@ -147,6 +173,7 @@ public abstract class AbstractCore {
         Builder b = param.toBuilder().rootClass(panel.getClass()).jPanel(panel);
         b.titleProperty(findTitleProperty(panel));
         b.showingProperty(findShowingProperty(panel));
+        b.icons(findIcons(panel));
         return b.build();
     }
 
@@ -157,6 +184,7 @@ public abstract class AbstractCore {
         Pane pane = (Pane)createInstance(in);
         Builder b = param.toBuilder().rootClass(pane.getClass()).pane(pane);
         b.titleProperty(findTitleProperty(pane));
+        b.icons(findIcons(pane));
         b.showingProperty(findShowingProperty(pane));
         return b.build();
     }
@@ -177,6 +205,7 @@ public abstract class AbstractCore {
             Builder b = param.toBuilder().pane(pane).fxController(controller).rootClass(in.clazz());
             b.showingProperty(findShowingProperty(controller));
             b.titleProperty(findTitleProperty(controller));
+            b.icons(findIcons(controller));
             return b.build();
         } catch (IOException ex) {
             throw new CompletionException(ex);

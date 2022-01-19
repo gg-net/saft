@@ -10,7 +10,7 @@
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.ggnet.saft.sample.support.BasicApplicationController">
+<VBox prefHeight="400.0" prefWidth="640.0" xmlns="http://javafx.com/javafx/15.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="eu.ggnet.saft.sample.support.BasicApplicationController">
     <children>
         <MenuBar VBox.vgrow="NEVER">
             <menus>
@@ -46,6 +46,8 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="Help">
                     <items>
+                  <MenuItem mnemonicParsing="false" onAction="#onActionIconOne" text="Set Icon 1" />
+                  <MenuItem mnemonicParsing="false" onAction="#onActionIconTwo" text="Set Icon 2" />
                         <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
                     </items>
                 </Menu>

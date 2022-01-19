@@ -4,7 +4,7 @@
     <parent>
         <groupId>eu.ggnet.saft</groupId>
         <artifactId>saft</artifactId>
-        <version>2.0</version>
+        <version>2.1</version>
     </parent>
     <artifactId>saft-core</artifactId>
     <name>GG-Net Saft Core</name>
@@ -55,6 +55,26 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-web</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>

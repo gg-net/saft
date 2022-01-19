@@ -23,6 +23,8 @@ import java.util.Optional;
 import javax.swing.JComponent;
 
 import javafx.beans.property.*;
+import javafx.collections.ObservableList;
+import javafx.scene.image.Image;
 import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
@@ -96,6 +98,13 @@ public abstract class UiParameter {
      * @return an optional property.
      */
     public abstract Optional<BooleanProperty> showingProperty();
+
+    /**
+     * Optional property containing changeable icons.
+     *
+     * @return oberservable list of icons.
+     */
+    public abstract Optional<ObservableList<Image>> icons();
 
     public abstract Optional<Modality> modality();
 

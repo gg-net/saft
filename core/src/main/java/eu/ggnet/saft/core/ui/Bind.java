@@ -54,7 +54,19 @@ public @interface Bind {
          * <li>Swing: {@link javax.swing.JFrame#setVisible(boolean) } or {@link javax.swing.JDialog#setVisible(boolean) }</li>
          * </ul>
          */
-        SHOWING("javafx.beans.property.BooleanProperty");
+        SHOWING("javafx.beans.property.BooleanProperty"),
+        /**
+         * Binding to the icon images of the container, must be of type {@link javafx.collections.ObservableList<javafx.scene.image.Image>}.
+         * <p>
+         * Binds to or registers a {@link javafx.beans.value.ChangeListener} :
+         * </p>
+         * <ul>
+         * <li>JavaFx: {@link javafx.stage.Stage#getIcons() }</li>
+         * <li>Swing: {@link javax.swing.JFrame#setIconImages(java.util.List) }</li>
+         * </ul>
+         */
+        //ICONS("javafx.collections.ObservableList");
+        ICONS("javafx.collections.ObservableList<javafx.scene.image.Image>");
 
         // If using the class token, the annotation processor fails in netbeans 11.x with jdk8.
         private final String allowedClassName;

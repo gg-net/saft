@@ -27,6 +27,7 @@ import javax.swing.JComponent;
 
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
+import javafx.collections.ListChangeListener.Change;
 import javafx.embed.swing.SwingNode;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -417,6 +418,15 @@ public class Fx extends AbstractCore implements Core<Stage> {
         });
 
         stage.getIcons().addAll(loadJavaFxImages(in.extractReferenceClass()));
+        // Overwrite if icons exist as property
+        in.icons().ifPresent(boundIcons -> {
+            if ( !boundIcons.isEmpty() ) stage.getIcons().setAll(boundIcons); // Only if not empty on start.
+            boundIcons.addListener((Change<? extends javafx.scene.image.Image> c) -> {
+                L.debug("onChanged(): change of icons detected, replacing all icons on the Stage");
+                stage.getIcons().setAll(boundIcons);
+            });
+        });
+
         in.saft().core(Fx.class).add(stage);
         if ( in.isStoreLocation() ) registerAndSetStoreLocation(in.extractReferenceClass(), stage);
         in.getClosedListenerImplemetation().ifPresent(elem -> stage.setOnCloseRequest(e -> elem.closed()));

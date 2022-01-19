@@ -33,7 +33,9 @@ import javax.swing.*;
 import javafx.application.Platform;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ObservableValue;
+import javafx.collections.ListChangeListener.Change;
 import javafx.embed.swing.JFXPanel;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.util.Callback;
@@ -403,6 +405,16 @@ public class Swing extends AbstractCore implements Core<Window> {
                     : newJDailog(parent, in.toTitleProperty(), component, in.asSwingModality());
             setWindowProperties(in, window, in.extractReferenceClass(), parent, in.extractReferenceClass(), in.toKey());
 
+            in.icons().ifPresent(boundIcons -> {
+                if ( !boundIcons.isEmpty() ) { // First time only if not empty
+                    window.setIconImages(boundIcons.stream().map(i -> SwingFXUtils.fromFXImage(i, null)).collect(Collectors.toList()));
+                }
+
+                boundIcons.addListener((Change<? extends javafx.scene.image.Image> c) -> {
+                    L.debug("onChanged(): change of icons detected, replacing all icons on the Window");
+                    window.setIconImages(boundIcons.stream().map(i -> SwingFXUtils.fromFXImage(i, null)).collect(Collectors.toList()));
+                });
+            });
             in.showingProperty().ifPresent(s -> {
                 s.set(false);
 

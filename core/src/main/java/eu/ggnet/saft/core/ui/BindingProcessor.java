@@ -21,7 +21,8 @@ import java.util.Set;
 import javax.annotation.processing.*;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
 import static javax.lang.model.SourceVersion.RELEASE_8;
@@ -39,22 +40,37 @@ public class BindingProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment re) {
-        processingEnv.getMessager().printMessage(Kind.NOTE, getClass().getSimpleName() + " processing " + annotations);
+        Messager m = processingEnv.getMessager();
+        Elements eu = processingEnv.getElementUtils();
+        Types tu = processingEnv.getTypeUtils();
+
+        m.printMessage(Kind.NOTE, getClass().getSimpleName() + " processing " + annotations);
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedElements = re.getElementsAnnotatedWith(annotation);
             for (Element annotatedElement : annotatedElements) {
                 if ( annotatedElement.getKind() != FIELD )
-                    processingEnv.getMessager().printMessage(Kind.ERROR, getClass().getSimpleName() + " Annotation on " + annotatedElement + " not on a field, but on " + annotatedElement.getKind(), annotatedElement);
+                    m.printMessage(Kind.ERROR, getClass().getSimpleName() + " Annotation on " + annotatedElement + " not on a field, but on " + annotatedElement.getKind(), annotatedElement);
 
                 if ( annotatedElement.getAnnotation(Bind.class) != null ) {
                     Bind bindAnnotation = annotatedElement.getAnnotation(Bind.class);
-                    // Converting Type to TypeMirror. No Better way found yet.
-                    TypeMirror classType = processingEnv.getElementUtils().getTypeElement(bindAnnotation.value().allowedClassName()).asType();
-                    if ( !processingEnv.getTypeUtils().isSubtype(annotatedElement.asType(), classType) ) {
-                        processingEnv.getMessager().printMessage(Kind.ERROR, getClass().getSimpleName()
+
+                    if ( !annotatedElement.asType().toString().equals(bindAnnotation.value().allowedClassName()) ) {
+                        m.printMessage(Kind.ERROR, getClass().getSimpleName()
                                 + " allowed fieldClass is " + bindAnnotation.value().allowedClassName()
                                 + " but is " + annotatedElement.asType(), annotatedElement);
-                    };
+                    }
+
+                    // This is a more direct way to inspect the types, but it gets complex with generics.
+//                    TypeElement typeElement = eu.getTypeElement(bindAnnotation.value().allowedClassName());
+//                    if ( typeElement == null ) {
+//                        m.printMessage(Kind.ERROR, getClass().getSimpleName()
+//                                + " Bind annotation of " + bindAnnotation.value() + " is broken,"
+//                                + " allowed class " + bindAnnotation.value().allowedClassName() + " cannot become a TypeElement", annotatedElement);
+//                    } else if ( !tu.isAssignable(typeElement.asType(), tu.erasure(annotatedElement.asType())) ) {
+//                        m.printMessage(Kind.ERROR, getClass().getSimpleName()
+//                                + " allowed fieldClass is " + bindAnnotation.value().allowedClassName()
+//                                + " but is " + annotatedElement.asType(), annotatedElement);
+//                    };
                 }
 
 //                processingEnv.getMessager().printMessage(Kind.OTHER, BindingProcessor.class.getSimpleName() + " found " + bindAnnotation + " on " + annotatedElement, annotatedElement);
